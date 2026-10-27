@@ -11301,7 +11301,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '38.8', GAME_VER_NAME = 'Іконка виходу';
+        const GAME_VER = '39.1', GAME_VER_NAME = 'Чат';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27133,12 +27133,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         mpSend = (function (o) { return function (m) { if (m && m.t === 'chat' && czCmd(m.text)) return; return o.apply(this, arguments); }; })(mpSend);
         {
-            const inp = document.createElement('input'); inp.id = 'cz-in'; inp.maxLength = 60; inp.autocomplete = 'off'; document.body.appendChild(inp);
+            const inp = document.createElement('input'); inp.id = 'cz-in'; inp.maxLength = 120; inp.placeholder = 'Повідомлення… (Enter — надіслати, Esc — скасувати)'; inp.autocomplete = 'off'; document.body.appendChild(inp);
             const close = () => { inp.style.display = 'none'; inp.blur(); CZ.typing = false; };
             window.addEventListener('keydown', e => {
                 if (document.activeElement === inp) {
                     e.stopImmediatePropagation();
-                    if (e.code === 'Enter') { const t = inp.value; inp.value = ''; close(); czCmd(t); } else if (e.code === 'Escape') { inp.value = ''; close(); }
+                    if (e.code === 'Enter') { const t = inp.value; inp.value = ''; close(); if (!czCmd(t)) { const s = String(t || '').trim(); if (s) { try { if (s[0] === '/') mpChatAdd('', 'Невідома команда', false, true); else mpChatAdd((typeof currentWorld !== 'undefined' && currentWorld && currentWorld.heroName) || 'Ти', s, true); } catch (e) { } } } } else if (e.code === 'Escape') { inp.value = ''; close(); }
                     return;
                 }
                 const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
@@ -27393,6 +27393,82 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 b.onclick = () => { try { playSound('click'); } catch (e) { } try { window.close(); } catch (e) { } setTimeout(() => { try { if (typeof wzToast === 'function') wzToast('Закрий вкладку або вікно браузера'); } catch (e) { } }, 350); };
                 mm.appendChild(b); { const im = b.querySelector('img'); const f = () => { try { im.src = itemSprites.door || ''; } catch (e) { } }; f(); setTimeout(f, 600); setTimeout(f, 2500); }
             }
+        }
+
+        // ================= 💾 vh.16: ЗБЕРЕЖЕННЯ СВІТІВ У ФАЙЛИ (лаунчер: %APPDATA%\GrogCraft\saves\worlds) =================
+        const Y2 = { on: false, synced: {}, mt: {}, t: 0, busy: false, dirty: false, ready: null };
+        function y2Sig(w) { return (w.meta.lastSaved || 0) + ':' + ((w.inventory && w.inventory.length) || 0) + ':' + (w.player ? Math.round(w.player.x) + ',' + Math.round(w.player.y) : ''); }
+        function y2Worlds() { try { const a = JSON.parse(localStorage.getItem('grogcraft_worlds') || '[]'); return Array.isArray(a) ? a.filter(w => w && w.meta && w.meta.name) : []; } catch (e) { return []; } }
+        async function y2Flush() {
+            if (!Y2.on) return; if (Y2.busy) { Y2.dirty = true; return; } Y2.busy = true;
+            try {
+                const ws = y2Worlds(), names = new Set(ws.map(w => w.meta.name));
+                for (const w of ws) {
+                    const sig = y2Sig(w);
+                    if (Y2.synced[w.meta.name] === sig) continue;
+                    const r = await fetch('/disk/world', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(w) });
+                    if (r.ok) { Y2.synced[w.meta.name] = sig; try { Y2.mt[w.meta.name] = (await r.json()).m; } catch (e) { } }
+                }
+                for (const n of Object.keys(Y2.synced)) if (!names.has(n)) { delete Y2.mt[n]; await fetch('/disk/world?name=' + encodeURIComponent(n), { method: 'DELETE' }); delete Y2.synced[n]; }
+            } catch (e) { }
+            Y2.busy = false; if (Y2.dirty) { Y2.dirty = false; y2Sched(); }
+        }
+        function y2Sched() { if (!Y2.on) return; clearTimeout(Y2.t); Y2.t = setTimeout(y2Flush, 1200); }
+        {
+            const so = Storage.prototype.setItem;
+            Storage.prototype.setItem = function (k) { const r = so.apply(this, arguments); try { if (this === window.localStorage && k === 'grogcraft_worlds') y2Sched(); } catch (e) { } return r; };
+            window.addEventListener('pagehide', () => { try { Y2.on && y2Flush(); } catch (e) { } });
+        }
+        Y2.ready = (async function y2Init() {
+            try {
+                const pr = await fetch('/disk/ping'); if (!pr.ok) return false; const j = await pr.json(); if (!j || !j.ok) return false;
+                const disk = await (await fetch('/disk/list')).json();
+                const cur = y2Worlds(), byName = {}; cur.forEach(w => byName[w.meta.name] = w);
+                let changed = 0;
+                (disk || []).forEach(d => { if (!d || !d.meta) return; const c = byName[d.meta.name]; if (!c || (d.meta.lastSaved || 0) > (c.meta.lastSaved || 0)) { byName[d.meta.name] = d; changed++; } });
+                Y2.synced = {}; Y2.mt = {};
+                const nm = await (await fetch('/disk/names')).json(); const mm = {}; (nm || []).forEach(x => mm[x.name] = x.m);
+                (disk || []).forEach(d => { if (d && d.meta) { const w = byName[d.meta.name]; if (w === d) { Y2.synced[d.meta.name] = y2Sig(d); Y2.mt[d.meta.name] = mm[d.meta.name]; } } });
+                Y2.on = true;
+                if (changed) { localStorage.setItem('grogcraft_worlds', JSON.stringify(Object.values(byName))); try { renderSavedWorldsList(); } catch (e) { } }
+                y2Sched(); return true;
+            } catch (e) { return false; }
+        })();
+
+        // ---- файли на диску = джерело правди: видалив папку світу — світ зникає, поклав назад — з'являється ----
+        async function y2Reconcile() {
+            if (!Y2.on || Y2.busy || Y2.rec) return; Y2.rec = true;
+            try {
+                const nm = await (await fetch('/disk/names')).json(); if (!Array.isArray(nm)) throw 0;
+                const onDisk = {}; nm.forEach(x => onDisk[x.name] = x.m);
+                let ws = y2Worlds(); const have = {}; ws.forEach(w => have[w.meta.name] = w);
+                const playing = (typeof gameState !== 'undefined' && (gameState === 'PLAYING' || gameState === 'PAUSE') && typeof currentWorld !== 'undefined' && currentWorld) ? currentWorld.name : null;
+                let changed = false;
+                for (const n of Object.keys(onDisk)) {
+                    const isNew = !have[n] && !(n in Y2.synced), isChg = (n in Y2.synced) && Y2.mt[n] !== onDisk[n];
+                    if (n === playing && isChg) continue;
+                    if (isNew || isChg) {
+                        const r = await fetch('/disk/world?name=' + encodeURIComponent(n)); if (!r.ok) continue; const w = await r.json(); if (!w || !w.meta) continue;
+                        have[n] = w; Y2.synced[n] = y2Sig(w); Y2.mt[n] = onDisk[n]; changed = true;
+                    }
+                }
+                for (const n of Object.keys(Y2.synced)) if (!(n in onDisk) && n !== playing) { delete have[n]; delete Y2.synced[n]; delete Y2.mt[n]; changed = true; }
+                if (changed) { localStorage.setItem('grogcraft_worlds', JSON.stringify(Object.values(have))); try { const s = document.getElementById('world-select-screen'); if (s && !s.classList.contains('hidden')) renderSavedWorldsList(); } catch (e) { } }
+            } catch (e) { }
+            Y2.rec = false;
+        }
+        v33Restore = (function (o) { return async function () { try { if (await Y2.ready) return 0; } catch (e) { } return o.apply(this, arguments); }; })(v33Restore);
+        openScreen = (function (o) { return function (id) { const r = o.apply(this, arguments); if (id === 'world-select-screen') y2Reconcile().then(() => { try { renderSavedWorldsList(); } catch (e) { } }); return r; }; })(openScreen);
+        window.addEventListener('focus', () => { setTimeout(y2Reconcile, 300); });
+        setInterval(() => { try { if (gameState !== 'PLAYING') y2Reconcile(); } catch (e) { } }, 4000);
+
+        // ================= vh.17: прибрано файли-кнопки, надійне введення тексту (Electron) =================
+        {
+            document.querySelectorAll('.v33-row,#v33-note').forEach(e => e.remove());
+            const refocus = () => { try { if (window.grogHost && window.grogHost.refocus) window.grogHost.refocus(); } catch (e) { } };
+            ['alert', 'confirm', 'prompt'].forEach(k => { const o = window[k]; window[k] = function () { const r = o.apply(window, arguments); setTimeout(refocus, 30); return r; }; });
+            // клік по полю вводу завжди ставить фокус
+            document.addEventListener('mousedown', e => { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && t.type !== 'range' && t.type !== 'checkbox' && t.type !== 'button') { setTimeout(() => { if (document.activeElement !== t) { refocus(); try { t.focus(); } catch (er) { } } }, 0); } }, true);
         }
 
         // ================= 📖 ГАЙДИ v38.0 (етап 1) =================
