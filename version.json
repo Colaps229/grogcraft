@@ -1,7 +1,7 @@
 {
-  "version": "38.4",
-  "name": "Чесний ринок",
-  "notes": "Обновлення Нові",
+  "version": "38.5",
+  "name": "Швидкий пошук",
+  "notes": "Пошук крафтів в інвентарі, покращений довідник (N), нові скрині",
   "file": "index.html",
-  "sha256": "4723f1c380018a3dc9e213d59368f1f9070ef64f9f98b01facdfe6ba7444b96b"
+  "sha256": "eae7db7df8b7f3ef57cea8714de6b9bda53507a925dacb6be0dec125ecc6fc54"
 }

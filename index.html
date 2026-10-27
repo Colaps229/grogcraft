@@ -11300,7 +11300,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '38.4', GAME_VER_NAME = 'Чесний ринок';
+        const GAME_VER = '38.5', GAME_VER_NAME = 'Швидкий пошук';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27189,6 +27189,127 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 if (a > 0.8 && Math.random() < 0.22) { createParticles(px + 8 + Math.random() * 16, py + 8, tier === 8 ? '#ffe27a' : '#dfe9f2', 1, 0.8, 2.6, 28); const q = particles[particles.length - 1]; if (q) { q.vy = -1.2; q.gravity = -0.02; } }
             };
         })(v16Chest);
+
+        // ================= 🔎 vh.13: ПОШУК КРАФТІВ В ІНВЕНТАРІ + КРАЩИЙ ПОШУК (N) =================
+        const CQ = { q: '' };
+        {
+            const st = document.createElement('style');
+            st.textContent = `#craft-qw{display:flex;align-items:center;gap:8px;margin:2px 0 8px;padding:6px 10px;border-radius:10px;border:2px solid #34506f;background:#0c1626;transition:border-color .15s,box-shadow .15s}
+            #craft-qw:focus-within{border-color:#6fb4ff;box-shadow:0 0 14px #3b8cff44}
+            #craft-q{flex:1;min-width:0;background:none;border:none;outline:none;color:#eaf3ff;font:600 15px 'Segoe UI',sans-serif}
+            #craft-qw button{background:#26384f;border:none;color:#bcd;border-radius:7px;min-width:28px;height:26px;cursor:pointer;font:700 12px 'Segoe UI'}#craft-qw button:hover{background:#2f6fb8;color:#fff}
+            #craft-qx{display:none}#craft-qw.has #craft-qx{display:block}#craft-qc{color:#8fb4d8;font:600 12px 'Segoe UI';white-space:nowrap}
+            #craft-cats.cq-on{opacity:.4}
+            .craft-item-row strong mark{background:#ffd54a;color:#1a1204;border-radius:3px;padding:0 1px}
+            .v34s-row b mark{background:#ffd54a;color:#1a1204;border-radius:3px;padding:0 1px}
+            .v34s-row .bd i.ok{color:#6fe08c;font-weight:900;opacity:1}.v34s-row .bd span.hv{font:700 11.5px system-ui;color:#ffe08a;margin-left:4px}
+            .v34s-chips button em{font-style:normal;background:#0a1322;border-radius:9px;padding:0 6px;margin-left:5px;font-size:11px;color:#9fd6ff}.v34s-chips button.on em{background:#12335f;color:#fff}
+            #v34s-hist{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}#v34s-hist small{color:#6f87a2;font-size:11.5px}
+            #v34s-hist button{padding:2px 9px;border-radius:12px;border:1px solid #34506f;background:#0f1b30;color:#a9c0d8;font:600 12px system-ui;cursor:pointer}#v34s-hist button:hover{border-color:#6fb4ff;color:#fff}`;
+            document.head.appendChild(st);
+        }
+        const u1Stem = w => { if (w.length < 5) return w; const s = w.replace(/(ий|ій|ої|ою|ую|ів|ами|ях|ою|а|я|о|е|и|і|у|ю|ь|й)$/, ''); return s.length >= 4 ? s : w; };
+        const cqTok = () => CQ.q.trim().toLowerCase().split(/\s+/).filter(Boolean).map(u1Stem);
+        function cqText(rec) { const n = ITEM_METADATA[rec.result], nm = ((n && n.name) || rec.result).toLowerCase(); let ing = ''; for (const k in rec.req) ing += ' ' + ((ITEM_METADATA[k] && ITEM_METADATA[k].name) || k).toLowerCase(); let sn = ''; try { const s = stationOf(rec.result); if (s && STN[s]) sn = ' ' + STN[s].name.toLowerCase(); } catch (e) { } return { nm, ing, sn }; }
+        function cqMatch(rec) { const t = cqTok(); if (!t.length) return true; const x = cqText(rec), all = x.nm + ' ' + rec.result.toLowerCase() + x.ing + x.sn; return t.every(w => all.indexOf(w) >= 0); }
+        function cqBuild() {
+            if (document.getElementById('craft-q')) return; const bar = document.getElementById('station-bar') || document.getElementById('craft-cats'); if (!bar) return;
+            const w = document.createElement('div'); w.id = 'craft-qw';
+            w.innerHTML = '<span>🔍</span><input id="craft-q" placeholder="Пошук крафту: назва або інгредієнт…  (/ або Ctrl+F)" autocomplete="off" spellcheck="false"><button id="craft-qx" title="Очистити (Esc)">✕</button><small id="craft-qc"></small><button id="craft-qn" title="Великий довідник (N)">📖 N</button>';
+            bar.before(w); const inp = w.querySelector('#craft-q');
+            inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') { if (inp.value) { inp.value = ''; CQ.q = ''; renderCraftingRecipes(); } else inp.blur(); e.preventDefault(); } });
+            inp.addEventListener('keyup', e => e.stopPropagation());
+            inp.addEventListener('input', () => { CQ.q = inp.value; renderCraftingRecipes(); });
+            w.querySelector('#craft-qx').onclick = () => { inp.value = ''; CQ.q = ''; inp.focus(); renderCraftingRecipes(); };
+            w.querySelector('#craft-qn').onclick = () => { V34S.q = CQ.q; v34sOpen(); };
+        }
+        cqBuild();
+        const _cs = catShown, _rs = rpgRecipeShown;
+        catShown = function (rec) { if (!cqTok().length) return _cs(rec); return cqMatch(rec) && (!bldOnlyCan || recCanCraft(rec)); };
+        rpgRecipeShown = function (rec) { if (!cqTok().length) return _rs(rec); return rpgFilterMode === 'can' ? recCanCraft(rec) : true; };
+        renderCraftingRecipes = (function (o) {
+            return function () {
+                o.apply(this, arguments);
+                try {
+                    cqBuild(); const w = document.getElementById('craft-qw'), cats = document.getElementById('craft-cats'), t = cqTok(); if (w) w.classList.toggle('has', !!CQ.q); if (cats) cats.classList.toggle('cq-on', t.length > 0);
+                    const cl = document.getElementById('crafting-recipes-list'), cc = document.getElementById('craft-qc'); if (!cl) return;
+                    const rows = [...cl.querySelectorAll('.craft-item-row')], shown = recipes.filter(r => rpgRecipeShown(r) && catShown(r));
+                    if (cc) cc.textContent = t.length ? 'Знайдено: ' + shown.length : '';
+                    if (t.length && rows.length && rows.length === shown.length) {
+                        const sc = shown.map((r, i) => { const x = cqText(r), p = x.nm.indexOf(t[0]); return { row: rows[i], k: p === 0 ? 0 : p > 0 ? 1 : 2, n: x.nm }; });
+                        sc.sort((a, b) => a.k - b.k || a.n.localeCompare(b.n, 'uk')); sc.forEach(s => cl.appendChild(s.row));
+                        const re = new RegExp('(' + t.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+                        rows.forEach(r => { const s = r.querySelector('.craft-info strong'); if (s && !s.querySelector('mark')) s.innerHTML = s.textContent.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(re, '<mark>$1</mark>'); });
+                    } else if (t.length && !rows.length) cl.innerHTML = '<p style="color:#8a98ab;text-align:center;padding:18px">Нічого не знайдено 🤷<br><small>Спробуй іншу назву або інгредієнт.</small></p>';
+                } catch (e) { }
+            };
+        })(renderCraftingRecipes);
+        window.addEventListener('keydown', e => {
+            if (!inventoryOpen || gameState !== 'PLAYING' || (typeof rpgPane !== 'undefined' && rpgPane !== 'inv')) return;
+            const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA') return;
+            if (e.code === 'Slash' || e.key === '/' || ((e.ctrlKey || e.metaKey) && e.code === 'KeyF')) { const i = document.getElementById('craft-q'); if (i) { e.preventDefault(); e.stopImmediatePropagation(); i.focus(); i.select(); } }
+        }, true);
+
+        // ---- довідник (N) ----
+        const U1H = () => { try { return JSON.parse(localStorage.getItem('gc_v385_qh') || '[]'); } catch (e) { return []; } };
+        function u1Hist(q) { q = (q || '').trim(); if (q.length < 2) return; const a = U1H().filter(x => x !== q); a.unshift(q); try { localStorage.setItem('gc_v385_qh', JSON.stringify(a.slice(0, 6))); } catch (e) { } }
+        V34_CATS.splice(2, 0, ['can', '✅ Можу створити']);
+        v34sIdx = (function (o) {
+            return function () {
+                const X = o.apply(this, arguments);
+                if (!X._u1) { X._u1 = 1; for (const e of X.items) { const r = X.byRes[e.id]; if (r) { let s = ''; for (const k in r.req) s += ' ' + ((ITEM_METADATA[k] && ITEM_METADATA[k].name) || k).toLowerCase(); e.low += s; } } }
+                return X;
+            };
+        })(v34sIdx);
+        v34sFilter = (function (o) {
+            return function () {
+                const q0 = V34S.q, q1 = q0.trim().toLowerCase().split(/\s+/).filter(Boolean).map(u1Stem).join(' ');
+                if (V34S.cat !== 'can') { V34S.q = q1; try { return o.apply(this, arguments); } finally { V34S.q = q0; } }
+                V34S.q = q1; const sv = V34S.cat; V34S.cat = 'recipe'; let r; try { r = o.apply(this, arguments); } finally { V34S.cat = sv; V34S.q = q0; }
+                const X = v34sIdx(); r.list = r.list.filter(e => e.k === 'item' && e.rec && recCanCraft(X.byRes[e.id])); r.head = r.list.length ? '✅ Що можна створити просто зараз' : '✅ Зараз нічого не можна створити — збери ресурси або підійди до станції';
+                return r;
+            };
+        })(v34sFilter);
+        function u1Cnts() {
+            const c = document.getElementById('v34s-chips'); if (!c) return; const X = v34sIdx(), q = V34S.q.trim().toLowerCase(), toks = q.split(/\s+/).filter(Boolean).map(u1Stem), n = {};
+            if (toks.length) for (const e of X.all) { if (!toks.every(t => e.low.indexOf(t) >= 0)) continue; n.all = (n.all || 0) + 1; if (e.k === 'item' && e.rec) { n.recipe = (n.recipe || 0) + 1; try { if (recCanCraft(X.byRes[e.id])) n.can = (n.can || 0) + 1; } catch (x) { } } n[e.cat] = (n[e.cat] || 0) + 1; }
+            c.querySelectorAll('button').forEach(b => { const o = b.querySelector('em'); if (o) o.remove(); if (toks.length) { const em = document.createElement('em'); em.textContent = n[b.dataset.k] || 0; b.appendChild(em); } });
+        }
+        function u1Hl() {
+            const box = document.getElementById('v34s-list'); if (!box) return; const toks = V34S.q.trim().toLowerCase().split(/\s+/).filter(Boolean).map(u1Stem), X = v34sIdx(), inv = v34sInv();
+            const re = toks.length ? new RegExp('(' + toks.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi') : null;
+            box.querySelectorAll('.v34s-row').forEach(r => {
+                const e = V34S.rows[+r.dataset.i]; if (!e) return; const b = r.querySelector('b'), bd = r.querySelector('.bd');
+                if (re && b && !b.querySelector('mark')) b.innerHTML = e.name.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(re, '<mark>$1</mark>');
+                if (bd && e.k === 'item' && !bd.querySelector('.hv') && !bd.querySelector('i.ok')) {
+                    try { if (e.rec && recCanCraft(X.byRes[e.id])) bd.insertAdjacentHTML('afterbegin', '<i class="ok" title="Можна створити зараз">✔</i>'); } catch (x) { }
+                    if (inv[e.id]) bd.insertAdjacentHTML('beforeend', '<span class="hv" title="У тебе в інвентарі">×' + inv[e.id] + '</span>');
+                }
+            });
+        }
+        function u1HistRender() {
+            const h = document.getElementById('v34s-hist'); if (!h) return; const a = U1H();
+            if (V34S.q.trim() || !a.length) { h.style.display = 'none'; return; } h.style.display = 'flex'; h.innerHTML = '<small>Нещодавно:</small>';
+            a.forEach(q => { const b = document.createElement('button'); b.textContent = q; b.onclick = () => { const i = document.getElementById('v34s-in'); i.value = q; V34S.q = q; V34S.sel = null; V34S.hist = []; v34sRows(); i.focus(); }; h.appendChild(b); });
+        }
+        v34sRows = (function (o) { return function () { const r = o.apply(this, arguments); try { u1Hl(); u1Cnts(); u1HistRender(); const n = document.getElementById('v34s-cnt'); if (n) n.textContent = V34S.rows.length ? V34S.rows.length + ' знайдено' : ''; } catch (e) { } return r; }; })(v34sRows);
+        v34sChips = (function (o) { return function () { const r = o.apply(this, arguments); try { u1Cnts(); } catch (e) { } return r; }; })(v34sChips);
+        v34sBuild = (function (o) {
+            return function () {
+                const was = V34S.built; o.apply(this, arguments); if (was) return;
+                try {
+                    const top = document.querySelector('#v34s-ov .v34s-top'); const h = document.createElement('div'); h.id = 'v34s-hist'; top.appendChild(h);
+                    const ft = document.querySelector('#v34s-ov .v34s-foot span'); if (ft) ft.textContent = '↑↓ вибір · Enter — створити · Tab — категорія · клік по інгредієнту — перейти · Esc — закрити';
+                    const inp = document.getElementById('v34s-in');
+                    inp.addEventListener('keydown', e => {
+                        if (e.key === 'Tab') { e.preventDefault(); const ks = V34_CATS.map(x => x[0]), i = ks.indexOf(V34S.cat), j = (i + (e.shiftKey ? -1 : 1) + ks.length) % ks.length; V34S.cat = ks[j]; V34S.lsig = ''; V34S.sel = null; v34sChips(); v34sRows(); try { playSound('click'); } catch (x) { } }
+                        else if (e.key === 'Enter') { const s = V34S.sel; u1Hist(V34S.q); if (s && s.k === 'item' && s.rec) { try { if (recCanCraft(v34sIdx().byRes[s.id])) v34Craft(s.id); } catch (x) { } } }
+                    });
+                    ['click'].forEach(() => document.getElementById('v34s-list').addEventListener('click', () => u1Hist(V34S.q)));
+                } catch (e) { }
+            };
+        })(v34sBuild);
+        v34sClose = (function (o) { return function () { try { u1Hist(V34S.q); } catch (e) { } return o.apply(this, arguments); }; })(v34sClose);
 
         // ================= 📖 ГАЙДИ v38.0 (етап 1) =================
         guide.adviceList.push('Зоряна руда з’являється в глибинах після падіння будь-якого боса. Для видобутку потрібна залізна кирка, для плавки — пічка.', 'Поселення з трьох і більше мешканців стає «безпечною зоною»: монстри в ньому не з’являються. Орда — виняток.', 'Що більше мешканців, то вищий рівень поселення — і сильніші бафи в його межах.');
