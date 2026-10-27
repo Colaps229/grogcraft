@@ -846,7 +846,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        let WZ = 1; try { const z0 = parseFloat(localStorage.getItem('gc_wz')); if (z0 >= 0.5 && z0 <= 2) WZ = z0; } catch (e) { }
+        function resizeCanvas() { canvas.width = Math.round(window.innerWidth / WZ); canvas.height = Math.round(window.innerHeight / WZ); }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
@@ -3174,8 +3175,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
         let mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false, rightDown: false, rightPressed: false };
         window.addEventListener('mousemove', e => { 
-            mouse.x = e.clientX; 
-            mouse.y = e.clientY; 
+            mouse.x = e.clientX / WZ; 
+            mouse.y = e.clientY / WZ; 
             mouse.worldX = mouse.x + camera.x;
             mouse.worldY = mouse.y + camera.y;
         });
@@ -3183,8 +3184,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         window.addEventListener('mousedown', e => {
             if (gameState !== 'PLAYING' || inventoryOpen || chestOpen || furnaceOpen) return;
             
-            mouse.worldX = e.clientX + camera.x;
-            mouse.worldY = e.clientY + camera.y;
+            mouse.worldX = e.clientX / WZ + camera.x;
+            mouse.worldY = e.clientY / WZ + camera.y;
 
             if (e.button === 0) {
                 let activeItem = inventory[selectedHotbarSlot];
@@ -7597,7 +7598,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         function dropAt(id, count) { const f = player.facing >= 0 ? 1 : -1; floatingItems.push({ x: player.x + player.width / 2 + f * 14, y: player.y + 6, vx: f * 3.6 + player.vx * 0.3, vy: -2.6, itemId: id, count, delay: 80 }); }
         function dropHovered(whole) {
             if (typeof draggedSlotIndex !== 'undefined' && draggedSlotIndex !== null) return;
-            let idx = -1; const el = document.elementFromPoint(mouse.x, mouse.y);
+            let idx = -1; const el = document.elementFromPoint(mouse.x * WZ, mouse.y * WZ);
             const slot = el && el.closest ? el.closest('.inv-slot, .hotbar-slot') : null;
             if (slot) { idx = Array.prototype.indexOf.call(slot.parentElement.children, slot) + (slot.parentElement.id === 'bp-grid' ? 30 : 0); } else if (!inventoryOpen && !chestOpen && !furnaceOpen) idx = selectedHotbarSlot;
             const it = inventory[idx]; if (!it) return;
@@ -11300,7 +11301,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '38.5', GAME_VER_NAME = 'Швидкий пошук';
+        const GAME_VER = '38.6', GAME_VER_NAME = 'Масштаб';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -19823,7 +19824,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         {
             const st = document.createElement('style'); st.textContent = 'html,body{margin:0;width:100%;height:100%;overflow:hidden}canvas#gameCanvas,#gameCanvas{width:100vw!important;height:100vh!important;left:0!important;top:0!important}';
             document.head.appendChild(st);
-            const fit = () => { try { const w = window.innerWidth, h = window.innerHeight; if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) resizeCanvas(); } catch (e) { } };
+            const fit = () => { try { const w = window.innerWidth, h = window.innerHeight; if (w > 0 && h > 0 && (canvas.width !== Math.round(w / WZ) || canvas.height !== Math.round(h / WZ))) resizeCanvas(); } catch (e) { } };
             setInterval(fit, 300);
             ['resize', 'orientationchange', 'fullscreenchange', 'webkitfullscreenchange', 'focus'].forEach(ev => window.addEventListener(ev, () => { fit(); setTimeout(fit, 150); setTimeout(fit, 600); }));
             if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { fit(); setTimeout(fit, 200); });
@@ -27310,6 +27311,60 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             };
         })(v34sBuild);
         v34sClose = (function (o) { return function () { try { u1Hist(V34S.q); } catch (e) { } return o.apply(this, arguments); }; })(v34sClose);
+
+        // ================= 🔍 vh.14: МАСШТАБ ГРИ ТА ІНТЕРФЕЙСУ (налаштування) =================
+        const WZ_UI = { v: 1 };
+        try { const u = parseFloat(localStorage.getItem('gc_uiz')); if (u >= 0.7 && u <= 1.4) WZ_UI.v = u; } catch (e) { }
+        {
+            const st = document.createElement('style'); st.id = 'wz-css';
+            st.textContent = `.wz-box{width:100%;margin:6px 0 10px;padding:12px 12px 10px;border:2px solid #3b5a7a;border-radius:12px;background:linear-gradient(180deg,rgba(24,40,64,.85),rgba(12,20,34,.9));box-shadow:inset 0 0 20px #0006}
+            .wz-box h3{margin:0 0 8px;font-size:1.05rem;color:#9fd6ff;letter-spacing:.5px}.wz-r{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:.9rem;color:#cfe0f2}.wz-r>span{min-width:128px}.wz-r input[type=range]{flex:1}
+            .wz-r b{min-width:48px;text-align:right;color:#ffe08a}.wz-r button{width:30px;height:28px;border-radius:8px;border:2px solid #34506f;background:#13213a;color:#bcd;font:700 15px system-ui,sans-serif;cursor:pointer}.wz-r button:hover{border-color:#6fb4ff;color:#fff}
+            .wz-r .rs{width:auto;padding:0 9px;font-size:12px}.wz-h{font-size:.78rem;color:#7f95ad;margin:2px 2px 0;line-height:1.4}
+            #wz-toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:9002;padding:7px 16px;border-radius:10px;background:rgba(10,18,28,.92);border:2px solid #3b8fc0;color:#dff;font:700 14px 'Segoe UI';pointer-events:none;opacity:0;transition:opacity .25s}`;
+            document.head.appendChild(st);
+            const us = document.createElement('style'); us.id = 'wz-ui-css'; document.head.appendChild(us);
+        }
+        function wzApplyUi() {
+            const z = WZ_UI.v, el = document.getElementById('wz-ui-css'); if (!el) return;
+            el.textContent = z === 1 ? '' : `#game-hud>*,#minimap,#v34-qb,#v28-jb,#v378-bk,#v39-fq,#v32-air,#v20-corner{zoom:${z}}`;
+        }
+        function wzToast(t) { let el = document.getElementById('wz-toast'); if (!el) { el = document.createElement('div'); el.id = 'wz-toast'; document.body.appendChild(el); } el.textContent = t; el.style.opacity = 1; clearTimeout(wzToast.t); wzToast.t = setTimeout(() => { el.style.opacity = 0; }, 1300); }
+        function wzSetWorld(z, quiet) {
+            z = Math.round(Math.max(0.5, Math.min(2, z)) * 20) / 20; WZ = z; try { localStorage.setItem('gc_wz', String(z)); } catch (e) { }
+            resizeCanvas(); wzSync(); if (!quiet) wzToast('🔍 Масштаб гри: ' + Math.round(z * 100) + '%');
+        }
+        function wzSetUi(z) { z = Math.round(Math.max(0.7, Math.min(1.4, z)) * 20) / 20; WZ_UI.v = z; try { localStorage.setItem('gc_uiz', String(z)); } catch (e) { } wzApplyUi(); wzSync(); }
+        function wzSync() {
+            const a = document.getElementById('wz-w'), b = document.getElementById('wz-u');
+            if (a) { a.value = Math.round(WZ * 100); document.getElementById('wz-wv').textContent = Math.round(WZ * 100) + '%'; }
+            if (b) { b.value = Math.round(WZ_UI.v * 100); document.getElementById('wz-uv').textContent = Math.round(WZ_UI.v * 100) + '%'; }
+        }
+        (function () {
+            const card = document.querySelector('#settings-screen .menu-card'); if (!card) return;
+            const box = document.createElement('div'); box.className = 'wz-box'; box.id = 'wz-box';
+            box.innerHTML = `<h3>🔍 Масштаб</h3>
+              <div class="wz-r"><span>Масштаб гри</span><button id="wz-wm">−</button><input type="range" id="wz-w" min="50" max="200" step="5"><button id="wz-wp">+</button><b id="wz-wv"></b><button class="rs" id="wz-wr" title="100%">↺</button></div>
+              <div class="wz-r"><span>Масштаб інтерфейсу</span><button id="wz-um">−</button><input type="range" id="wz-u" min="70" max="140" step="5"><button id="wz-up">+</button><b id="wz-uv"></b><button class="rs" id="wz-ur" title="100%">↺</button></div>
+              <div class="wz-h">Менше значення — видно більше світу, більше — ближче й крупніше. Швидко: <b>Ctrl + колесо миші</b> у грі, <b>Ctrl +</b> / <b>Ctrl −</b> / <b>Ctrl 0</b>.</div>`;
+            const gfx = document.getElementById('v34-gfx'); if (gfx) gfx.after(box); else card.insertBefore(box, card.firstChild);
+            const $$ = id => box.querySelector('#' + id);
+            $$('wz-w').oninput = e => wzSetWorld(+e.target.value / 100, true); $$('wz-wm').onclick = () => wzSetWorld(WZ - 0.05); $$('wz-wp').onclick = () => wzSetWorld(WZ + 0.05); $$('wz-wr').onclick = () => wzSetWorld(1);
+            $$('wz-u').oninput = e => wzSetUi(+e.target.value / 100); $$('wz-um').onclick = () => wzSetUi(WZ_UI.v - 0.05); $$('wz-up').onclick = () => wzSetUi(WZ_UI.v + 0.05); $$('wz-ur').onclick = () => wzSetUi(1);
+            wzSync();
+        })();
+        wzApplyUi(); if (WZ !== 1) resizeCanvas();
+        // швидкі клавіші: Ctrl + колесо, Ctrl +/−/0
+        window.addEventListener('wheel', e => {
+            if (!e.ctrlKey || gameState !== 'PLAYING' || inventoryOpen || chestOpen || furnaceOpen) return;
+            e.preventDefault(); e.stopImmediatePropagation(); wzSetWorld(WZ + (e.deltaY < 0 ? 0.05 : -0.05));
+        }, { passive: false, capture: true });
+        window.addEventListener('keydown', e => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey) return; const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA') return;
+            if (e.code === 'Equal' || e.code === 'NumpadAdd') { e.preventDefault(); wzSetWorld(WZ + 0.05); }
+            else if (e.code === 'Minus' || e.code === 'NumpadSubtract') { e.preventDefault(); wzSetWorld(WZ - 0.05); }
+            else if (e.code === 'Digit0' || e.code === 'Numpad0') { e.preventDefault(); wzSetWorld(1); }
+        }, true);
 
         // ================= 📖 ГАЙДИ v38.0 (етап 1) =================
         guide.adviceList.push('Зоряна руда з’являється в глибинах після падіння будь-якого боса. Для видобутку потрібна залізна кирка, для плавки — пічка.', 'Поселення з трьох і більше мешканців стає «безпечною зоною»: монстри в ньому не з’являються. Орда — виняток.', 'Що більше мешканців, то вищий рівень поселення — і сильніші бафи в його межах.');
