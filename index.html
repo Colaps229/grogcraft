@@ -11301,7 +11301,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '38.7', GAME_VER_NAME = 'Чисте меню';
+        const GAME_VER = '38.8', GAME_VER_NAME = 'Іконка виходу';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27389,9 +27389,9 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             // кнопка «Вийти з гри» в головному меню
             const mm = document.querySelector('#main-menu .menu-card');
             if (mm && !document.getElementById('y1-quit')) {
-                const b = document.createElement('button'); b.className = 'menu-btn danger-btn'; b.id = 'y1-quit'; b.innerHTML = '<span>⏻ Вийти з гри</span>';
+                const b = document.createElement('button'); b.className = 'menu-btn danger-btn'; b.id = 'y1-quit'; b.innerHTML = '<img class="btn-ico" data-sprite="door" alt=""><span>Вийти з гри</span>';
                 b.onclick = () => { try { playSound('click'); } catch (e) { } try { window.close(); } catch (e) { } setTimeout(() => { try { if (typeof wzToast === 'function') wzToast('Закрий вкладку або вікно браузера'); } catch (e) { } }, 350); };
-                mm.appendChild(b);
+                mm.appendChild(b); { const im = b.querySelector('img'); const f = () => { try { im.src = itemSprites.door || ''; } catch (e) { } }; f(); setTimeout(f, 600); setTimeout(f, 2500); }
             }
         }
 
