@@ -972,7 +972,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             ember: { H: '#fff2c8', L: '#ffc15a', M: '#e0561f', D: '#8a1f0a', O: '#2b0805' },
             astral: { H: '#ffffff', L: '#d8c4ff', M: '#8a5cff', D: '#3a1f8a', O: '#120838' },
             verdant: { H: '#f4ffd8', L: '#a8f07a', M: '#3fb85a', D: '#17632f', O: '#06260f' },
-            blood: { H: '#ffd6dc', L: '#ff5a6e', M: '#c0182f', D: '#6a0a1a', O: '#240208' }
+            blood: { H: '#ffd6dc', L: '#ff5a6e', M: '#c0182f', D: '#6a0a1a', O: '#240208' },
+            tempest: { H: '#f4f6ff', L: '#a8c8ff', M: '#6a7cff', D: '#3a35b8', O: '#12104a' },
+            magma: { H: '#ffe9b0', L: '#ff9a3a', M: '#d8321a', D: '#6a1208', O: '#1c0604' }
         };
         const RPG_TIERS = [
             { r: 'Звичайний', c: '#ffffff' }, { r: 'Незвичайний', c: '#2ecc71' }, { r: 'Рідкісний', c: '#3498db' },
@@ -1095,7 +1097,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             ['starlore_tome', 'Том Зоряних Переказів', 'magic', 'tome', 'astral', 168, 30, 4, { mana: 16, radius: 265, nova: 'rune' }, 'Книга з вежі Мага: хвиля рун б’є всіх навколо. Продає лише Маг.'],
             ['verdant_wand', 'Жезл Вічної Оранжереї', 'magic', 'wand', 'verdant', 74, 7, 4, { mana: 4, orb: 'stardust', homing: 1 }, 'Самонавідні насінини-ракети. Продає Алхімік в оранжереї найвищого затишку.'],
             ['blood_fang', 'Ікло Кривавого Місяця', 'melee', 'dagger', 'blood', 112, 5, 4, {}, 'Заборонений кинджал із чорного ринку. Неймовірно швидкий і частіше б’є критично. Продає лише Контрабандист.'],
-            ['stardust_sentry', 'Посох зоряного стража', 'summon', 'sentry_staff', 'stardust', 64, 35, 4, { mana: 20, sentry: 'star', head: 'star_tower' }, 'Ставить кристал, що стріляє зірками.']
+            ['stardust_sentry', 'Посох зоряного стража', 'summon', 'sentry_staff', 'stardust', 64, 35, 4, { mana: 20, sentry: 'star', head: 'star_tower' }, 'Ставить кристал, що стріляє зірками.'],
+            ['tempest_blade', 'Клинок Грому', 'melee', 'sword', 'tempest', 205, 22, 4, { wave: 'rune' }, 'Грозовий меч із небесної сталі. Кожен змах випускає хвилю статичного струму. Куєтся з Ядра Бурі.'],
+            ['tempest_bow', 'Лук Громової Хмари', 'ranged', 'bow', 'tempest', 105, 18, 4, { ammo: 'arrow', multi: 3 }, 'Три стріли за раз — і всі із зарядом. Куєтся з Ядра Бурі.'],
+            ['tempest_staff', 'Посох Громовиці', 'magic', 'staff', 'tempest', 140, 26, 4, { mana: 14, orb: 'nebula', aoe: 120 }, 'Кулі розряду вибухають крапками блискавок. Куєтся з Ядра Бурі.'],
+            ['magma_cleaver', 'Тесак Горна Безодні', 'melee', 'sword', 'magma', 255, 22, 4, { wave: 'fire' }, 'Важкий клинок, що не охолов за століття. Хвиля вогню з кожним змахом. Куєтся з Ядра Магми.'],
+            ['magma_arbalest', 'Арбалет Розлому', 'ranged', 'crossbow', 'magma', 190, 28, 4, { ammo: 'bolt', pierce: 6 }, 'Розплавлені болти пронизують до шести ворогів. Куєтся з Ядра Магми.'],
+            ['magma_staff', 'Посох Розлому', 'magic', 'staff', 'magma', 170, 26, 4, { mana: 16, orb: 'solar', aoe: 150 }, 'Магмова куля ламає землю вибухом. Куєтся з Ядра Магми.']
         ];
         WROWS.forEach(r => { WEAPONS[r[0]] = Object.assign({ name: r[1], t: r[2], k: r[3], pal: r[4], dmg: r[5], cd: r[6], tier: r[7], desc: r[9] }, r[8]); });
         Object.keys(WEAPONS).forEach(id => { const W = WEAPONS[id]; W.aim = W.aim || (W.k !== 'sword' && W.k !== 'dagger' ? 1 : 0); });
@@ -1136,7 +1144,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             nebula: { name: 'Броня туманності', def: [4, 7, 5, 3], pieces: ['Шолом туманності', 'Нагрудник туманності', 'Поножі туманності', 'Чоботи туманності'], bonus: '+18% магічної шкоди, +80 мани, швидка регенерація мани', cls: 'mage' },
             jungle: { name: 'Броня джунглів', def: [4, 7, 5, 3], pieces: ['Шолом джунглів', 'Нагрудник джунглів', 'Поножі джунглів', 'Чоботи джунглів'], bonus: '+14% шкоди дальнього бою, +15% економії боєприпасів, +10% швидкості, 30% шанс отруїти ціль', cls: 'ranger' },
             crystal: { name: 'Кришталева броня', def: [5, 8, 6, 4], pieces: ['Кришталевий шолом', 'Кришталевий нагрудник', 'Кришталеві поножі', 'Кришталеві чоботи'], bonus: '+60 здоров’я, +8% швидкості, холодна аура сповільнює ворогів, імунітет до холоду ельфів', cls: 'any' },
-            stardust: { name: 'Броня зоряного пилу', def: [3, 5, 4, 2], pieces: ['Шолом зоряного пилу', 'Нагрудник зоряного пилу', 'Поножі зоряного пилу', 'Чоботи зоряного пилу'], bonus: '+18% шкоди помічників, +1 міньйон, +1 вартовий, зоряні іскри', cls: 'summoner' }
+            stardust: { name: 'Броня зоряного пилу', def: [3, 5, 4, 2], pieces: ['Шолом зоряного пилу', 'Нагрудник зоряного пилу', 'Поножі зоряного пилу', 'Чоботи зоряного пилу'], bonus: '+18% шкоди помічників, +1 міньйон, +1 вартовий, зоряні іскри', cls: 'summoner' },
+            tempest: { name: 'Броня Громовиці', def: [8, 12, 10, 7], pieces: ['Шолом Громовиці', 'Нагрудник Громовиці', 'Поножі Громовиці', 'Чоботи Громовиці'], bonus: '+12% усієї шкоди, +12% швидкості, блискавки Володаря Бурі б’ють на 35% слабше, вітер не відкидає' },
+            magma: { name: 'Броня Горна Безодні', def: [10, 15, 12, 9], pieces: ['Шолом Горна Безодні', 'Нагрудник Горна Безодні', 'Поножі Горна Безодні', 'Чоботи Горна Безодні'], bonus: '+70 здоров’я, +10% усієї шкоди, повний імунітет до лави, вогонь б’є на 45% слабше' }
         };
         const ARMOR_PIECES = ['helmet', 'chestplate', 'leggings', 'boots'];
         const OLD_ARMOR_DEF = { wood: 1.5, iron: 3, gold: 4.5 };
@@ -1972,7 +1982,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 nebula: { main: RPG_PAL.nebula, trim: { H: '#ffd6fb', L: '#ff8be6', M: '#a02fc0', D: '#561078', O: '#1f0430' }, stud: '#ffe0fb' },
                 jungle: { main: RPG_PAL.jungle, trim: { H: '#fff1b0', L: '#e8c25a', M: '#a8742a', D: '#5e3d14', O: '#241505' }, stud: '#ff9a3c' },
                 crystal: { main: RPG_PAL.crystal, trim: { H: '#ffffff', L: '#d6b8ff', M: '#9a66e6', D: '#5a34a8', O: '#1d0b46' }, stud: '#eafcff' },
-                stardust: { main: RPG_PAL.stardust, trim: { H: '#ffffff', L: '#d6f0ff', M: '#7fc4ff', D: '#3b78d0', O: '#0c1f52' }, stud: '#ffffff' }
+                stardust: { main: RPG_PAL.stardust, trim: { H: '#ffffff', L: '#d6f0ff', M: '#7fc4ff', D: '#3b78d0', O: '#0c1f52' }, stud: '#ffffff' },
+                tempest: { main: RPG_PAL.tempest, trim: { H: '#ffffff', L: '#ffe98a', M: '#f0b820', D: '#9a6a08', O: '#3a2402' }, stud: '#fff6b0' },
+                magma: { main: RPG_PAL.magma, trim: { H: '#fff3c8', L: '#ffd24a', M: '#ff8a1f', D: '#8a3a08', O: '#2a0e02' }, stud: '#ffe08a' }
             };
             const px1 = (cx, x, y, c, w, h) => { cx.fillStyle = c; cx.fillRect(x, y, w || 1, h || 1); };
             function armAccent(cx, s, piece) {
@@ -5048,7 +5060,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             phantom_stride: ['Хода Привида', 4, { spd: 0.16, crit: 0.05, def: 2 }, 'Плащ без тіні: у ньому ступаєш тихіше за подих. Продає Контрабандист.', 'cloak', '#b388ff', '#1a0a2a'],
             loaded_dice: ['Підроблені кості', 4, { barter: 0.08, xp: 0.1, crit: 0.03 }, 'Випадає завжди те, що треба. Торговці дають на 8% більше за твій товар. Продає Контрабандист.', 'sigil', '#f2c417', '#8a1f0a'],
             blood_chalice: ['Кривава чаша', 4, { life: 0.04, hp: 40, melee: 0.08, rhp: 1.5 }, 'Пий, поки тепле. Лікує тебе від ударів по ворогах. Продає Контрабандист.', 'heart', '#d0243c', '#3a0610'],
-            dune_cloak: ['Плащ Дюн', 3, { spd: 0.12, hp: 20, sandproof: 1 }, 'Легкий, як пісок на вітрі.', 'cloak', '#e8c47a', '#8a5a1a']
+            dune_cloak: ['Плащ Дюн', 3, { spd: 0.12, hp: 20, sandproof: 1 }, 'Легкий, як пісок на вітрі.', 'cloak', '#e8c47a', '#8a5a1a'],
+            storm_eye: ['Око Бурі', 4, { all: 0.10, aspd: 0.08, crit: 0.06 }, 'Зіниця, у якій блимає грім. Падає з Володаря Бурі.', 'eye', '#a8c8ff', '#3a35b8'],
+            volcano_core: ['Серце Вулкана', 4, { def: 6, hp: 50, rhp: 1.2, melee: 0.10 }, 'Ще б’ється, повільно заливаючи рани жаром. Падає з Володаря Магми.', 'core', '#ff9a3a', '#5a0a02'],
+            cloud_boots: ['Хмарні чоботи', 3, { jump: 0.22, spd: 0.08 }, 'Легкі, мов хмаринка: стрибаєш вище. Знайдені у скринях Небесної цитаделі.', 'boots', '#e6f0ff', '#4a7ab8']
         };
         const ACC_LABEL = { hp: v => '+' + v + ' здоров’я', def: v => '+' + v + ' захисту', mana: v => '+' + v + ' мани', crit: v => '+' + Math.round(v * 100) + '% крита', spd: v => '+' + Math.round(v * 100) + '% швидкості', all: v => '+' + Math.round(v * 100) + '% усієї шкоди', melee: v => '+' + Math.round(v * 100) + '% шкоди ближнього бою', ranged: v => '+' + Math.round(v * 100) + '% шкоди дальнього бою', magic: v => '+' + Math.round(v * 100) + '% магічної шкоди', summon: v => '+' + Math.round(v * 100) + '% шкоди виклику', rhp: v => '+' + v + ' HP/с', rmp: v => '+' + v + ' мани/с', xp: v => '+' + Math.round(v * 100) + '% досвіду', ammo: v => Math.round(v * 100) + '% шанс зберегти набій', minions: v => '+' + v + ' міньйон', sentries: v => '+' + v + ' вартовий', life: v => Math.round(v * 100) + '% вампіризму', kb: v => '+' + Math.round(v * 100) + '% відкидання', aspd: v => '+' + Math.round(v * 100) + '% швидкості атаки', jump: v => '+' + Math.round(v * 100) + '% висоти стрибка', magnet: v => 'Притягує здобич та досвід', storm: v => 'Піщана буря: кожні 5 с відкидає й ранить ворогів поряд', ward: v => 'Імунітет до Прокляття Сфінкса та засліплення', sandproof: v => 'Пісок пасток не сповільнює і не шкодить', noslip: v => 'Ніколи не ковзаєш по льоду', frostnova: v => 'Отримавши шкоду, випускає хвилю, що заморожує ворогів (раз на ~4 с)' };
         ACC_LABEL.barter = v => '+' + Math.round(v * 100) + '% до цін продажу';
@@ -8783,7 +8798,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         {
             const i = GUIDE_PAGES.findIndex(p => p.id === 'boss');
             const B = [
-                ['decay', 'rot_totem', 'Тотем гнилі', 'Зоряні нитки ×6, гель ×30, космічні злитки ×4 (рівень 30)', 'Величезний гнилий вартовий-дерево. Б’є корінням з-під землі, у другій фазі пускає токсичні хмари та шипи й накладає «Гниль» (менше лікування). Лут: Кристалізована Жовч.'],
+                ['decay', 'rot_totem', 'Тотем гнилі', 'Зоряні нитки ×6, гель ×30, космічні злитки ×4, Ядро Бурі ×1, Ядро Магми ×1 (рівень 30)', 'Величезний гнилий вартовий-дерево. Б’є корінням з-під землі, у другій фазі пускає токсичні хмари та шипи й накладає «Гниль» (менше лікування). Лут: Кристалізована Жовч.'],
                 ['scorpion', 'desert_altar', 'Вівтар Пустелі', 'Кристалізована Жовч ×6, золоті злитки ×10, космічні злитки ×4 (рівень 32)', 'Швидкий скорпіон: подвійний удар клешнями, стрибки й ривки. Відбиває частину стріл. У другій фазі випускає промінь, що обертається, і палить усіх поруч. Лут: Загартоване Сонячне Жало.'],
                 ['annihilator', 'bunker_key', 'Ключ від Бункеру', 'Сонячне Жало ×4, залізні злитки ×20, космічні злитки ×5 (рівень 34)', 'Бойовий робот з високим захистом. Пускає самонавідні ракети, у другій фазі накриває арену лазерними прицілами й плазмовими бомбами (оглушують). Слабший до фізичної шкоди, ніж до магії. Лут: Ядро Перевантаження.'],
                 ['astral', 'abyss_portal', 'Портал Безодні', 'Ядро Перевантаження ×3, зоряні нитки ×20, космічні злитки ×10 (рівень 36)', 'Фінальний бос. Телепортується за спину та рубає тіньовими клинками, має двійників (поки вони живі — захист вищий), у другій фазі створює чорну діру й комети. Кожен його удар зменшує твоє макс. HP до кінця бою. Лут: Душа Безодні.']
@@ -11302,7 +11317,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '40.4', GAME_VER_NAME = 'Темп бою';
+        const GAME_VER = '41.3', GAME_VER_NAME = 'Спільна куля і міцніші боси';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -28574,6 +28589,109 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         v378Mk = (function (o) { return function () { const m = o.apply(this, arguments); try { m.hp = Math.round(m.hp * ZB.horde); m.maxHp = Math.round(m.maxHp * ZB.horde); } catch (e) { } return m; }; })(v378Mk);
         window.__zb = ZB;
 
+        // ================= ✦ v41.0: ПЕРЕВТІЛЕННЯ (ПРЕСТИЖ) =================
+        // На максимальному рівні можна почати шлях знову: рівень і навики скидаються, спорядження лишається,
+        // а герой отримує постійні бонуси й «Зірки перевтілення». Світ відповідає зростанням небезпеки.
+        const ZP = {
+            MAX: 10, keep: false,
+            perks: [
+                { id: 'pow', ic: '⚔', n: 'Сила предків', d: '+3% шкоди', max: 5 },
+                { id: 'hp', ic: '❤', n: 'Загартування', d: '+4% здоров’я', max: 5 },
+                { id: 'xp', ic: '📘', n: 'Мудрість', d: '+6% досвіду', max: 5 },
+                { id: 'mana', ic: '🔮', n: 'Резонанс', d: '+8% мани та її відновлення', max: 5 },
+                { id: 'lck', ic: '🍀', n: 'Фортуна', d: '+1.5% шансу криту', max: 5 },
+                { id: 'reg', ic: '✚', n: 'Живучість', d: '+0.15 здоров’я/с', max: 5 }
+            ]
+        };
+        function zpFresh() { return { r: 0, st: 0, pk: {} }; }
+        function zpNorm(d) { const o = zpFresh(); if (d && typeof d === 'object') { o.r = Math.max(0, Math.min(ZP.MAX, d.r | 0)); o.st = Math.max(0, d.st | 0); for (const p of ZP.perks) o.pk[p.id] = Math.max(0, Math.min(p.max, (d.pk && d.pk[p.id]) | 0)); } return o; }
+        RPG.pr = zpFresh();
+        const zpR = () => (RPG.pr && RPG.pr.r) || 0, zpK = id => (RPG.pr && RPG.pr.pk && RPG.pr.pk[id]) || 0;
+        // ---------- збереження ----------
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); d.pr = RPG.pr; return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { RPG.pr = zpNorm(d && d.pr); const r = o.apply(this, arguments); try { recalcStats(); } catch (e) { } return r; }; })(rpgLoad);
+        rpgNew = (function (o) { return function (cls, keepInv) { if (!ZP.keep && !keepInv) RPG.pr = zpFresh(); return o.apply(this, arguments); }; })(rpgNew);
+        // ---------- бонуси ----------
+        recalcStats = (function (o) {
+            return function () {
+                const r0 = o.apply(this, arguments), r = zpR(); if (!r || !RPG.st) return r0; const st = RPG.st;
+                try {
+                    const dm = 1 + 0.03 * r + 0.03 * zpK('pow'); for (const k in st.mult) st.mult[k] *= dm;
+                    st.xpMult = (st.xpMult || 1) * (1 + 0.25 * r + 0.06 * zpK('xp')); st.crit = (st.crit || 0) + 0.015 * zpK('lck'); st.hpRegen = (st.hpRegen || 0) + 0.15 * zpK('reg');
+                    if (zpK('mana')) { st.maxMana = Math.round(st.maxMana * (1 + 0.08 * zpK('mana'))); st.mpRegen = (st.mpRegen || 0) * (1 + 0.08 * zpK('mana')); RPG.maxMana = Math.round(st.maxMana); if (RPG.mana > RPG.maxMana) RPG.mana = RPG.maxMana; }
+                    const old = player.maxHealth; player.maxHealth = Math.round(player.maxHealth * (1 + 0.03 * r + 0.04 * zpK('hp')));
+                    if (old && player.maxHealth > old && RPG.ready) player.health += player.maxHealth - old; if (player.health > player.maxHealth) player.health = player.maxHealth;
+                } catch (e) { rpgErr(e); }
+                return r0;
+            };
+        })(recalcStats);
+        // ---------- небезпека світу ----------
+        function zpDanger(o, hpMul) {
+            return function () {
+                const r = zpR(); if (!r) return o.apply(this, arguments); const L = RPG.level; RPG.level = L + 6 * r;
+                try { return o.apply(this, arguments) * (1 + hpMul * r); } finally { RPG.level = L; }
+            };
+        }
+        rpgMobHp = zpDanger(rpgMobHp, 0.25); rpgMobDmg = zpDanger(rpgMobDmg, 0.2); rpgBossHp = zpDanger(rpgBossHp, 0.25);
+        // ---------- перевтілення ----------
+        function zpCan() { return RPG.ready && RPG.level >= LEVEL_CAP && zpR() < ZP.MAX && gameState === 'PLAYING'; }
+        function zpAscend(changeClass) {
+            if (!zpCan()) return false;
+            const P = RPG.pr; P.r++; P.st += 2 + (P.r % 3 === 0 ? 1 : 0);
+            ZP.keep = true; try { rpgNew(RPG.cls, true); } finally { ZP.keep = false; }
+            RPG.pts = 6 + 2 * P.r; recalcStats(); player.health = player.maxHealth; RPG.mana = RPG.maxMana;
+            try { createParticles(player.x + 12, player.y + 20, '#ffd84a', 50, 6, 5, 60); createParticles(player.x + 12, player.y + 20, '#c06aff', 30, 5, 4, 50); } catch (e) { }
+            try { v26Banner('✦ Перевтілення ' + P.r, 'Ти став сильнішим, але світ це відчув. Зірок для талантів: ' + P.st); } catch (e) { }
+            try { v20Tone('triangle', 330, 1320, 0.9, 0.1); setTimeout(() => v20Tone('triangle', 660, 1980, 0.9, 0.09), 250); } catch (e) { }
+            try { shake = Math.max(shake, 6); } catch (e) { }
+            updateInventoryUI(); try { saveGameWithAnimation(); } catch (e) { }
+            if (changeClass) { try { openClassPick(); } catch (e) { } }
+            return true;
+        }
+        function zpBuy(id) {
+            const p = ZP.perks.find(x => x.id === id), P = RPG.pr; if (!p || P.st <= 0 || (P.pk[id] | 0) >= p.max) return;
+            P.pk[id] = (P.pk[id] | 0) + 1; P.st--; recalcStats(); try { playSound('pickup'); } catch (e) { } rpgRefreshPane(true); try { zpPaint(); } catch (e) { }
+        }
+        // ---------- інтерфейс ----------
+        {
+            const st = document.createElement('style'); st.textContent = `
+            #skills-body .sk-right{max-height:calc(100vh - 170px);overflow-y:auto}
+            .zp-card{margin-top:10px;padding:10px 12px;border-radius:10px;border:2px solid #7a5ad0;background:linear-gradient(180deg,rgba(58,36,110,.55),rgba(28,18,56,.55));color:#ece4ff;font:600 12px 'Segoe UI',sans-serif}
+            .zp-card h4{margin:0 0 4px;font:800 14px 'Segoe UI',sans-serif;color:#ffd84a}
+            .zp-card .zr{display:flex;align-items:center;gap:6px;margin:3px 0}.zp-card .zr b{flex:1}.zp-card .zr small{color:#bfb0e8}
+            .zp-card button{cursor:pointer;border:2px solid #0b0e13;border-radius:7px;padding:3px 9px;background:linear-gradient(#6a4ac0,#40288a);color:#fff;font:700 12px 'Segoe UI',sans-serif}
+            .zp-card button:disabled{opacity:.4;cursor:default}.zp-card .big{width:100%;margin-top:6px;padding:7px;background:linear-gradient(#c8902a,#8a5a14);font-size:13px}
+            .zp-card .big:disabled{background:linear-gradient(#4a4a58,#30303c)}
+            #zp-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65)}
+            #zp-modal.on{display:flex}#zp-modal .box{width:min(460px,92vw);padding:18px 20px;border-radius:12px;border:3px solid #7a5ad0;background:linear-gradient(180deg,#241a48,#140e2a);color:#eee6ff;font:600 13px 'Segoe UI',sans-serif}
+            #zp-modal h3{margin:0 0 8px;color:#ffd84a;font:800 20px 'Segoe UI',sans-serif}#zp-modal ul{margin:6px 0 10px 18px;padding:0}#zp-modal li{margin:2px 0}
+            #zp-modal .bt{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}#zp-modal button{flex:1;cursor:pointer;border:2px solid #0b0e13;border-radius:8px;padding:8px;font:800 13px 'Segoe UI',sans-serif;color:#fff;background:linear-gradient(#6a4ac0,#40288a)}
+            #zp-modal button.go{background:linear-gradient(#c8902a,#8a5a14)}#zp-modal button.no{background:linear-gradient(#5a5a68,#3a3a46)}
+            #zp-modal label{display:flex;align-items:center;gap:8px;margin-top:6px}`;
+            document.head.appendChild(st);
+            const m = document.createElement('div'); m.id = 'zp-modal'; m.innerHTML = '<div class="box"></div>'; document.body.appendChild(m);
+        }
+        function zpPaint() {
+            const body = document.getElementById('skills-body'); if (!body || !inventoryOpen || rpgPane !== 'skills') return;
+            const side = body.querySelector('.sk-right'); if (!side) return; let c = side.querySelector('.zp-card'); if (!c) { c = document.createElement('div'); c.className = 'zp-card'; side.appendChild(c); }
+            const P = RPG.pr, r = P.r, can = zpCan();
+            let h = '<h4>✦ Перевтілення' + (r ? ' · ранг ' + r + '/' + ZP.MAX : '') + '</h4>';
+            if (r) h += '<div class="zr"><small>Постійно: +' + 3 * r + '% шкоди, +' + 3 * r + '% здоров’я, +' + 25 * r + '% досвіду · світ небезпечніший на +' + 25 * r + '%</small></div>';
+            else h += '<div class="zr"><small>На максимальному рівні (' + LEVEL_CAP + ') можна почати знову з постійними бонусами й Зірками талантів.</small></div>';
+            if (r) { h += '<div class="zr"><b>★ Зірок: ' + P.st + '</b></div>'; for (const p of ZP.perks) { const n = P.pk[p.id] | 0; h += '<div class="zr"><span>' + p.ic + '</span><b>' + p.n + ' <small>' + p.d + ' · ' + n + '/' + p.max + '</small></b><button data-pk="' + p.id + '" ' + (P.st > 0 && n < p.max ? '' : 'disabled') + '>+</button></div>'; } }
+            h += '<button class="big" id="zp-go" ' + (can ? '' : 'disabled') + '>' + (r >= ZP.MAX ? 'Максимальний ранг' : can ? '✦ Перевтілитися' : '🔒 Потрібен ' + LEVEL_CAP + ' рівень') + '</button>';
+            c.innerHTML = h;
+            c.querySelectorAll('[data-pk]').forEach(b => b.onclick = () => zpBuy(b.dataset.pk)); const g = c.querySelector('#zp-go'); if (g) g.onclick = zpOpen;
+        }
+        rpgRefreshPane = (function (o) { return function () { const r = o.apply(this, arguments); try { zpPaint(); } catch (e) { rpgErr(e); } return r; }; })(rpgRefreshPane);
+        function zpOpen() {
+            if (!zpCan()) return; const m = document.getElementById('zp-modal'), r = zpR() + 1;
+            m.querySelector('.box').innerHTML = '<h3>✦ Перевтілення · ранг ' + r + '</h3><div>Ти почнеш шлях заново — але станеш сильнішим назавжди.</div><b style="color:#9fe8a0">Ти отримаєш:</b><ul><li>+' + 3 * r + '% шкоди та +' + 3 * r + '% здоров’я (постійно)</li><li>+' + 25 * r + '% досвіду</li><li>★ ' + (2 + (r % 3 === 0 ? 1 : 0)) + ' зірки для талантів</li><li>' + (6 + 2 * r) + ' очок навичок на старті</li></ul><b style="color:#ff9a8a">Скинеться:</b><ul><li>Рівень (→ 1), досвід і розподіл навичок</li></ul><b style="color:#8fd8ff">Лишається:</b><ul><li>Усе спорядження, предмети, будинок, світ</li></ul><b style="color:#ffb36b">Ціна:</b><ul><li>Вороги й боси міцніші на ' + 25 * r + '%, і рахуються як на ' + 6 * r + ' рівнів вище</li></ul><label><input type="checkbox" id="zp-cls"> Змінити клас після перевтілення</label><div class="bt"><button class="no" id="zp-no">Скасувати</button><button class="go" id="zp-yes">Перевтілитися</button></div>';
+            m.classList.add('on'); m.querySelector('#zp-no').onclick = () => m.classList.remove('on'); m.querySelector('#zp-yes').onclick = () => { const cc = m.querySelector('#zp-cls').checked; m.classList.remove('on'); zpAscend(cc); };
+        }
+        rpgHud = (function (o) { return function () { const r = o.apply(this, arguments); try { const e = document.getElementById('lvl-num'), k = zpR(); if (e) { const t = String(RPG.level) + (k ? ' ✦' + k : ''); if (e.textContent !== t) e.textContent = t; } } catch (x) { } return r; }; })(rpgHud);
+        window.__zp = ZP;
+
         // ================= 📖 ГАЙДИ v38.0 (етап 1) =================
         guide.adviceList.push('Зоряна руда з’являється в глибинах після падіння будь-якого боса. Для видобутку потрібна залізна кирка, для плавки — пічка.', 'Поселення з трьох і більше мешканців стає «безпечною зоною»: монстри в ньому не з’являються. Орда — виняток.', 'Що більше мешканців, то вищий рівень поселення — і сильніші бафи в його межах.');
         {
@@ -28757,16 +28875,1239 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             if (np) { const old = np.html; np.html = () => old().replace('<div class="g-grid2">', `<div class="g-grid2">
                 <div class="g-card" style="border-color:#ff8aa8"><h4>💞 Сімейні історії — v37.9</h4><p>Мешканці дружать, закохуються, одружуються й мають дітей. Візити в гості, весілля з феєрверками, прохання родин та Родинний журнал (U). Розділ «Сімейні історії».</p></div>`); }
         }
+        // ================= ☁🌋 v41.1: НЕБЕСНІ ОСТРОВИ І ВУЛКАНІЧНА БЕЗОДНЯ — БЛОКИ, ПРЕДМЕТИ, КРАФТ =================
+        const ZF = { lavaT: 0, hudT: 0, tipT: 0 };
+        // ---------- блоки ----------
+        {
+            const B = {
+                79: ['cloud_block', 'Хмарний блок', 1, 30, '#e6f0ff'], 80: ['sky_brick', 'Небесна цегла', 1, 150, '#9db4d8'], 81: ['storm_ore', 'Грозова руда', 1, 185, '#7b7bff'],
+                82: ['basalt', 'Базальт', 1, 140, '#3a3744'], 83: ['obsidian', 'Обсидіан', 1, 240, '#241a38'], 84: ['magma_ore', 'Магмова руда', 1, 195, '#ff6a2a'],
+                85: ['lava', 'Лава', 0, 1000, '#ff5a14'], 86: ['ember_lamp', 'Жарник', 0, 6, '#ff8a3a'], 87: ['storm_lamp', 'Громова лампа', 0, 6, '#9fb4ff']
+            };
+            for (const k in B) { const [item, name, sol, hard, col] = B[k]; BLOCKS[k] = { name, solid: !!sol, item, hardness: hard, color: col }; MAP_COL[k] = col; }
+            BLOCKS[85].liquid = true; [84, 85, 86, 87].forEach(i => { BLOCKS[i].light = true; });
+            BLOCK_NEED[80] = 1; BLOCK_NEED[82] = 1; BLOCK_NEED[81] = 2; BLOCK_NEED[83] = 2; BLOCK_NEED[84] = 2;
+            MAP_COL[85] = '#ff4a10'; MAP_COL[79] = '#f2f8ff';
+            V34_LC[84] = [255, 120, 44]; V34_LI[84] = 0.55; V34_LC[85] = [255, 112, 30]; V34_LI[85] = 1.0; V34_LC[86] = [255, 152, 62]; V34_LI[86] = 1.1; V34_LC[87] = [150, 172, 255]; V34_LI[87] = 1.05;
+        }
+        // ---------- спрайти ----------
+        const zfH = (x, y, s) => { let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(s | 0, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+        const zfFr = (cx, col, list) => { cx.fillStyle = col; list.forEach(r => cx.fillRect(r[0], r[1], r[2], r[3])); };
+        const zfPoly = (cx, pts, col, st) => { cx.beginPath(); pts.forEach((p, i) => i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1])); cx.closePath(); cx.fillStyle = col; cx.fill(); if (st) { cx.strokeStyle = st; cx.lineWidth = 1.2; cx.stroke(); } };
+        const zfC = (cx, x, y, r, f, s, lw) => { cx.beginPath(); cx.arc(x, y, r, 0, 7); if (f) { cx.fillStyle = f; cx.fill(); } if (s) { cx.strokeStyle = s; cx.lineWidth = lw || 1.5; cx.stroke(); } };
+        const zfNoise = (cx, cols, seed, n, sz) => { for (let i = 0; i < n; i++) { cx.fillStyle = cols[(zfH(i, 3, seed) * cols.length) | 0]; cx.fillRect((zfH(i, 1, seed) * 32) | 0, (zfH(i, 2, seed) * 32) | 0, sz || 2, sz || 2); } };
+        {
+            const S = itemSprites;
+            S.cloud_block = generateSprite(cx => {
+                cx.fillStyle = '#dbe8fa'; cx.fillRect(0, 0, 32, 32);
+                zfFr(cx, '#f4f9ff', [[2, 2, 12, 8], [17, 5, 12, 9], [5, 16, 10, 8], [19, 20, 11, 8]]); zfFr(cx, '#ffffff', [[3, 2, 8, 3], [18, 5, 8, 3], [6, 16, 6, 3], [20, 20, 7, 3]]);
+                zfFr(cx, '#b9cfeb', [[0, 28, 32, 4], [14, 12, 3, 8], [0, 12, 4, 3], [26, 14, 6, 3]]); zfFr(cx, '#a3bde0', [[0, 30, 32, 2]]);
+            });
+            S.sky_brick = generateSprite(cx => {
+                cx.fillStyle = '#4b6288'; cx.fillRect(0, 0, 32, 32);
+                for (let r = 0; r < 4; r++) for (let c = 0; c < 2; c++) { const x = c * 16 + (r % 2 ? -8 : 0); zfFr(cx, r % 2 ? '#b6c9e6' : '#c7d6ee', [[x + 1, r * 8 + 1, 14, 6]]); zfFr(cx, '#e8f1ff', [[x + 1, r * 8 + 1, 14, 1]]); zfFr(cx, '#8aa2c6', [[x + 1, r * 8 + 6, 14, 1]]); }
+                zfFr(cx, '#7fe8ff', [[15, 14, 2, 4]]); zfFr(cx, '#ffffff', [[15, 14, 1, 1]]);
+            });
+            S.storm_ore = generateSprite(cx => {
+                cx.fillStyle = '#4a4f66'; cx.fillRect(0, 0, 32, 32); zfFr(cx, '#626982', [[0, 0, 32, 3], [3, 6, 9, 5], [17, 5, 11, 6], [5, 20, 10, 6], [20, 22, 9, 6]]); zfFr(cx, '#2c3042', [[2, 14, 9, 2], [16, 17, 12, 2], [8, 29, 14, 2]]);
+                const bolt = (x, y, k) => { zfPoly(cx, [[x + 4 * k, y - 7 * k], [x - 1 * k, y - 1 * k], [x + 2 * k, y - 1 * k], [x - 4 * k, y + 7 * k], [x + 1 * k, y + 1 * k], [x - 2 * k, y + 1 * k]], '#8f94ff', '#2a2a8a'); zfFr(cx, '#ffffff', [[x, y - 2 * k, 1, 2]]); };
+                bolt(9, 11, 1.1); bolt(22, 15, 1.3); bolt(12, 24, 0.9); zfFr(cx, '#ffe98a', [[26, 7, 2, 2], [4, 27, 2, 2]]);
+            });
+            S.storm_ingot = generateSprite(cx => {
+                zfPoly(cx, [[4, 20], [10, 10], [28, 10], [22, 20]], '#cfd8ff'); zfPoly(cx, [[4, 20], [22, 20], [22, 26], [4, 26]], '#4a56d8'); zfPoly(cx, [[22, 20], [28, 10], [28, 16], [22, 26]], '#2a2a8a');
+                zfFr(cx, '#ffffff', [[12, 12, 8, 1], [6, 21, 8, 1]]); zfFr(cx, '#13124a', [[4, 25, 18, 1]]); zfPoly(cx, [[17, 12], [14, 17], [16, 17], [14, 22], [19, 16], [17, 16]], '#ffe98a');
+            });
+            S.sky_shard = generateSprite(cx => {
+                zfPoly(cx, [[16, 2], [24, 12], [20, 28], [12, 28], [8, 12]], '#5fc8ff', '#14407a'); zfPoly(cx, [[16, 2], [24, 12], [16, 16]], '#e8fbff'); zfPoly(cx, [[16, 16], [24, 12], [20, 28], [16, 28]], '#2a8ae0'); zfFr(cx, '#ffffff', [[13, 8, 2, 4]]);
+            });
+            S.storm_core = generateSprite(cx => {
+                const g = cx.createRadialGradient(16, 16, 2, 16, 16, 14); g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, '#a8c8ff'); g.addColorStop(1, '#2a2aa0'); zfC(cx, 16, 16, 13, g, '#0a0a40', 2);
+                cx.strokeStyle = '#ffe98a'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(19, 5); cx.lineTo(13, 15); cx.lineTo(18, 15); cx.lineTo(12, 27); cx.stroke();
+            });
+            S.storm_lamp = generateSprite(cx => {
+                zfFr(cx, '#2a2e4a', [[14, 0, 4, 6]]); zfPoly(cx, [[9, 6], [23, 6], [25, 22], [16, 28], [7, 22]], '#3a4070', '#12143a'); zfPoly(cx, [[11, 8], [21, 8], [22, 21], [16, 25], [10, 21]], '#9fb4ff'); zfPoly(cx, [[17, 10], [14, 16], [16, 16], [14, 22], [19, 15], [17, 15]], '#ffffff');
+            });
+            S.basalt = generateSprite(cx => {
+                cx.fillStyle = '#34313d'; cx.fillRect(0, 0, 32, 32); for (let c = 0; c < 4; c++) { zfFr(cx, c % 2 ? '#3f3b4a' : '#46424f', [[c * 8 + 1, 0, 6, 32]]); zfFr(cx, '#23202b', [[c * 8, 0, 1, 32]]); zfFr(cx, '#5a566a', [[c * 8 + 1, 0, 2, 32]]); }
+                zfNoise(cx, ['#27242f', '#55515f'], 4, 14, 2); zfFr(cx, '#1c1a22', [[0, 30, 32, 2]]);
+            });
+            S.obsidian = generateSprite(cx => {
+                cx.fillStyle = '#1a1226'; cx.fillRect(0, 0, 32, 32); zfPoly(cx, [[0, 0], [14, 0], [6, 14], [0, 10]], '#2c2046'); zfPoly(cx, [[18, 6], [32, 0], [32, 16], [22, 20]], '#2a1e44'); zfPoly(cx, [[4, 20], [18, 16], [26, 32], [0, 32]], '#241938');
+                zfFr(cx, '#7a56d8', [[3, 3, 5, 1], [21, 9, 6, 1], [8, 22, 7, 1]]); zfFr(cx, '#b79bff', [[3, 3, 2, 1], [21, 9, 2, 1]]); zfFr(cx, '#0e0818', [[0, 30, 32, 2]]);
+            });
+            S.magma_ore = generateSprite(cx => {
+                cx.fillStyle = '#34313d'; cx.fillRect(0, 0, 32, 32); zfFr(cx, '#46424f', [[0, 0, 32, 3], [3, 6, 9, 5], [17, 5, 11, 6], [5, 20, 10, 6], [20, 22, 9, 6]]); zfFr(cx, '#1c1a22', [[2, 14, 9, 2], [16, 17, 12, 2], [8, 29, 14, 2]]);
+                cx.strokeStyle = '#ff6a1a'; cx.lineWidth = 3; cx.lineCap = 'round'; [[[3, 12], [10, 16], [14, 24]], [[18, 6], [24, 14], [29, 12]], [[8, 28], [16, 22], [26, 27]]].forEach(p => { cx.beginPath(); cx.moveTo(p[0][0], p[0][1]); cx.lineTo(p[1][0], p[1][1]); cx.lineTo(p[2][0], p[2][1]); cx.stroke(); });
+                cx.strokeStyle = '#ffd24a'; cx.lineWidth = 1; [[[3, 12], [10, 16], [14, 24]], [[18, 6], [24, 14], [29, 12]]].forEach(p => { cx.beginPath(); cx.moveTo(p[0][0], p[0][1]); cx.lineTo(p[1][0], p[1][1]); cx.lineTo(p[2][0], p[2][1]); cx.stroke(); });
+            });
+            S.magma_ingot = generateSprite(cx => {
+                zfPoly(cx, [[4, 20], [10, 10], [28, 10], [22, 20]], '#ffd24a'); zfPoly(cx, [[4, 20], [22, 20], [22, 26], [4, 26]], '#e0481a'); zfPoly(cx, [[22, 20], [28, 10], [28, 16], [22, 26]], '#8a1a08');
+                zfFr(cx, '#fff3c8', [[12, 12, 8, 1], [6, 21, 8, 1]]); zfFr(cx, '#3a0a02', [[4, 25, 18, 1]]); zfFr(cx, '#ffe58a', [[15, 15, 2, 2]]);
+            });
+            S.lava = generateSprite(cx => {
+                const g = cx.createLinearGradient(0, 0, 0, 32); g.addColorStop(0, '#ffb02a'); g.addColorStop(0.5, '#ff5a14'); g.addColorStop(1, '#b81e08'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32);
+                zfFr(cx, '#ffe58a', [[2, 4, 8, 2], [18, 10, 10, 2], [6, 20, 9, 2], [22, 26, 7, 2]]); zfFr(cx, '#7a1004', [[12, 14, 6, 2], [2, 28, 8, 2]]);
+            });
+            S.ember_lamp = generateSprite(cx => {
+                zfFr(cx, '#2a2024', [[6, 24, 20, 4], [10, 20, 12, 5]]); zfPoly(cx, [[8, 20], [24, 20], [21, 12], [11, 12]], '#4a3a40', '#1a1014');
+                zfPoly(cx, [[16, 3], [22, 12], [19, 18], [13, 18], [10, 12]], '#ff8a1f'); zfPoly(cx, [[16, 8], [19, 14], [16, 18], [13, 14]], '#ffe58a');
+            });
+            S.ember_core = generateSprite(cx => {
+                const g = cx.createRadialGradient(16, 16, 1, 16, 16, 13); g.addColorStop(0, '#fff6c0'); g.addColorStop(0.4, '#ffb02a'); g.addColorStop(1, '#8a1a08'); zfC(cx, 16, 16, 12, g, '#2a0802', 2);
+                cx.strokeStyle = '#3a0a02'; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(6, 12); cx.lineTo(13, 15); cx.lineTo(11, 22); cx.moveTo(26, 10); cx.lineTo(20, 17); cx.stroke();
+            });
+            S.magma_core = generateSprite(cx => {
+                zfPoly(cx, [[16, 2], [27, 10], [24, 25], [16, 30], [8, 25], [5, 10]], '#2a1a1c', '#0c0404'); const g = cx.createRadialGradient(16, 16, 1, 16, 16, 12); g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, '#ffd24a'); g.addColorStop(1, '#e0481a'); zfC(cx, 16, 16, 9, g);
+                cx.strokeStyle = '#ffb02a'; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(9, 7); cx.lineTo(13, 12); cx.moveTo(24, 8); cx.lineTo(20, 13); cx.moveTo(16, 28); cx.lineTo(16, 22); cx.stroke();
+            });
+            S.storm_beacon = generateSprite(cx => {
+                zfPoly(cx, [[10, 29], [12, 14], [20, 14], [22, 29]], '#3a4070', '#12143a'); zfFr(cx, '#8aa0ff', [[14, 16, 4, 10]]); const g = cx.createRadialGradient(16, 9, 1, 16, 9, 8); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#a8c8ff'); g.addColorStop(1, '#4a56d8'); zfC(cx, 16, 9, 7, g, '#12143a', 1.5);
+                cx.strokeStyle = '#ffe98a'; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(18, 3); cx.lineTo(14, 9); cx.lineTo(18, 9); cx.lineTo(14, 15); cx.stroke();
+            });
+            S.magma_heart = generateSprite(cx => {
+                zfPoly(cx, [[16, 29], [4, 15], [4, 9], [9, 4], [16, 9], [23, 4], [28, 9], [28, 15]], '#3a1a1c', '#0c0404'); zfPoly(cx, [[16, 26], [7, 15], [7, 10], [10, 7], [16, 12], [22, 7], [25, 10], [25, 15]], '#ff5a14');
+                zfPoly(cx, [[16, 21], [11, 14], [11, 11], [13, 10], [16, 14], [19, 10], [21, 11], [21, 14]], '#ffd24a'); zfFr(cx, '#fff6c0', [[13, 11, 2, 2]]); zfFr(cx, '#ff8a1f', [[12, 1, 2, 3], [19, 0, 2, 4]]);
+            });
+            S.biome_compass = generateSprite(cx => {
+                zfC(cx, 16, 16, 13, '#c8941a', '#3b2504', 2); zfC(cx, 16, 16, 10, '#f4ead0'); zfPoly(cx, [[16, 5], [19, 16], [16, 14], [13, 16]], '#6fc8ff'); zfPoly(cx, [[16, 27], [13, 16], [16, 18], [19, 16]], '#ff6a2a'); zfC(cx, 16, 16, 2, '#3b2504');
+            });
+        }
+        // ---------- метадані ----------
+        {
+            const T = i => RPG_TIERS[i], mk = (id, name, ti, type, desc, stat) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, desc }; if (stat) ITEM_METADATA[id].stat = stat; };
+            mk('cloud_block', 'Хмарний блок', 1, 'Блок', 'Щільна хмара з Небесних островів. Легко ламається, чудово підходить для сходів у небо.');
+            mk('sky_brick', 'Небесна цегла', 2, 'Блок', 'Кладка Небесної цитаделі. Потрібна залізна кирка.');
+            mk('storm_ore', 'Грозова руда', 3, 'Руда', 'Руда, що тріщить від статики. Росте лише на Небесних островах. Потрібна залізна кирка. Переплав у пічці.');
+            mk('storm_ingot', 'Громовий злиток', 3, 'Ресурс', 'Переплавлена грозова руда. Основа броні Громовиці та небесних клинків.');
+            mk('sky_shard', 'Небесний уламок', 3, 'Ресурс', 'Крихта небесного кристала. Падає з небесних мешканців і зберігається у скринях Цитаделі. З нього кують Грозовий маяк.');
+            mk('storm_core', 'Ядро Бурі', 4, 'Ресурс', 'Серце Володаря Бурі. Потрібне для небесної зброї та для виклику Гнилокорого Проглинача.');
+            mk('storm_lamp', 'Громова лампа', 2, 'Блок', 'Холодне блакитне світло. Ставиться на стіну чи стелю.');
+            mk('basalt', 'Базальт', 1, 'Блок', 'Темна вулканічна порода. Потрібна залізна кирка.');
+            mk('obsidian', 'Обсидіан', 3, 'Блок', 'Склоподібна лава, що застигла за тисячі років. Дуже міцна: ламається залізною чи кращою киркою.');
+            mk('magma_ore', 'Магмова руда', 3, 'Руда', 'Руда з вогняними жилами. Росте лише у Вулканічній безодні. Потрібна залізна кирка. Переплав у пічці.');
+            mk('magma_ingot', 'Магмовий злиток', 3, 'Ресурс', 'Переплавлена магмова руда. Основа броні Горна й вогняної зброї.');
+            mk('ember_core', 'Жарове ядро', 3, 'Ресурс', 'Згусток живого жару. Падає з мешканців безодні та лежить у скринях Горна. З нього кують Серце Магми.');
+            mk('magma_core', 'Ядро Магми', 4, 'Ресурс', 'Серце Володаря Магми. Потрібне для вогняної зброї та для виклику Гнилокорого Проглинача.');
+            mk('ember_lamp', 'Жарник', 2, 'Блок', 'Теплий вогняний світильник. Ставиться на стіну чи стелю.');
+            mk('lava', 'Лава', 3, 'Блок', 'Смертельно гаряча. Не бери в руки.');
+            mk('biome_compass', 'Компас сфер', 2, '🧭 Інструмент', 'Тримай в інвентарі: показує напрям і відстань до Небесної цитаделі та Вулканічного горна. Дається на 12 рівні.');
+            ITEM_METADATA.tempest_blade.stat = 'Шкода: 205 · Хвиля струму'; ITEM_METADATA.magma_cleaver.stat = 'Шкода: 255 · Хвиля вогню';
+        }
+        // ---------- плавка, крафт ----------
+        SMELT.storm = { ore: 'storm_ore', out: 'storm_ingot', n: 'Гроза', ic: 'storm_ingot' };
+        SMELT.magma = { ore: 'magma_ore', out: 'magma_ingot', n: 'Магма', ic: 'magma_ingot' };
+        V20_OREC.storm_ore = '#8f94ff'; V20_OREC.magma_ore = '#ff7a2a'; if (typeof TW_ORE !== 'undefined') { TW_ORE.storm_ore = 1; TW_ORE.magma_ore = 1; }
+        // на кожен вид блока: чи ставити й ламати — як і всі інші (BLOCKS.item)
+        Object.assign(SUMMON, {
+            storm_beacon: { name: 'Грозовий маяк', tier: 4, boss: 'tempest', desc: 'Кличе Володаря Бурі. Використовуй на вершині Небесної цитаделі. Рекомендовано: рівень 28+, 450+ HP, у компанії. Бій довгий і важкий.', need: 'Підніміться на острів Небесної цитаделі!' },
+            magma_heart: { name: 'Серце Магми', tier: 4, boss: 'magma', desc: 'Будить Володаря Магми. Використовуй у залі Горна у Вулканічній безодні. Рекомендовано: рівень 32+, 520+ HP, вогнестійка броня. Бій довгий і важкий.', need: 'Спустіться у Вулканічну безодню, до залу Горна!' }
+        });
+        ['storm_beacon', 'magma_heart'].forEach(id => { const m = SUMMON[id], T = RPG_TIERS[m.tier]; ITEM_METADATA[id] = { name: m.name, rarity: T.r, color: T.c, type: '⚠️ Призив боса', stat: 'Використати: ЛКМ (одноразово)', desc: m.desc }; });
+        [
+            { result: 'storm_lamp', count: 2, req: { storm_ingot: 1, torch: 2 }, lvl: 14 }, { result: 'ember_lamp', count: 2, req: { magma_ingot: 1, torch: 2 }, lvl: 18 },
+            { result: 'biome_compass', count: 1, req: { gold_ingot: 3, gel: 4, iron_ingot: 2 }, lvl: 8 },
+            { result: 'storm_beacon', count: 1, req: { sky_shard: 5, storm_ingot: 6, gold_ingot: 4 }, lvl: 18 },
+            { result: 'magma_heart', count: 1, req: { ember_core: 5, magma_ingot: 6, obsidian: 8 }, lvl: 22 }
+        ].forEach(r => recipes.push(r));
+        [[8, 3, 1, 'helmet'], [14, 4, 2, 'chestplate'], [10, 3, 1, 'leggings'], [7, 2, 1, 'boots']].forEach((q, i) => {
+            recipes.push({ result: 'tempest_' + ARMOR_PIECES[i], count: 1, req: { storm_ingot: q[0] + 2, sky_shard: q[1], gold_ingot: q[2] }, lvl: 22 });
+            recipes.push({ result: 'magma_' + ARMOR_PIECES[i], count: 1, req: { magma_ingot: q[0] + 4, ember_core: q[1], obsidian: q[2] * 3 }, lvl: 28 });
+        });
+        [['tempest_blade', 16, 3], ['tempest_bow', 14, 3], ['tempest_staff', 14, 3]].forEach(r => recipes.push({ result: r[0], count: 1, req: { storm_ingot: r[1], storm_core: 1, sky_shard: r[2] }, lvl: 24 }));
+        [['magma_cleaver', 18, 6], ['magma_arbalest', 16, 6], ['magma_staff', 16, 6]].forEach(r => recipes.push({ result: r[0], count: 1, req: { magma_ingot: r[1], magma_core: 1, obsidian: r[2] }, lvl: 30 }));
+        // Далекі боси тепер вимагають і небо, і безодню
+        { const R = recipes.find(r => r.result === 'rot_totem'); if (R) { R.req.storm_core = 1; R.req.magma_core = 1; } }
+        guide.adviceList.push('Над світом висять Небесні острови, а глибоко під землею лежить Вулканічна безодня. Компас сфер (дається на 12 рівні) покаже дорогу.', 'Лава вбиває миттєво. Броня Горна Безодні дає повний імунітет до неї.');
+
+        // ---------- лава: малювання та шкода ----------
+        drawBlockTile = (function (o) {
+            return function (bId, x, y, t) {
+                if (bId === 85) {
+                    const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE, up = y > 0 ? worldMap[y - 1][x] : 0, sp = spriteOf('lava'); if (!sp) return;
+                    const surf = up !== 85, wob = surf ? Math.sin(t * 2.2 + x * 0.8) * 2 + 3 : 0;
+                    ctx.drawImage(sp, px, py + wob, 32, 32 - wob);
+                    ctx.fillStyle = 'rgba(255,230,140,' + (0.2 + 0.18 * Math.sin(t * 3 + x * 1.7 + y * 2.3)) + ')'; ctx.fillRect(px + (((t * 10 + x * 13 + y * 7) % 26) | 0), py + wob + 6 + ((x * 5 + y * 3) % 14), 8, 2);
+                    if (surf) { ctx.fillStyle = 'rgba(255,240,170,0.7)'; ctx.fillRect(px, py + wob, 32, 2); if (((t * 6 + x * 3.1) % 7) < 0.06) createParticles(px + 16, py, '#ffb02a', 1, 1.2, 3, 26); }
+                    return;
+                }
+                if (bId === 84 || bId === 87 || bId === 86) {
+                    o.apply(this, arguments); const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE;
+                    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.14 + 0.1 * Math.sin(t * 3 + x * 2 + y); ctx.fillStyle = bId === 87 ? '#8fa8ff' : '#ff8a2a'; ctx.fillRect(px + 2, py + 2, 28, 28); ctx.restore(); return;
+                }
+                return o.apply(this, arguments);
+            };
+        })(drawBlockTile);
+        updateGame = (function (o) {
+            return function () {
+                o.apply(this, arguments); if (gameState !== 'PLAYING') return;
+                try {
+                    ZF.lavaT++;
+                    if (ZF.lavaT % 8 === 0) {
+                        const bx = Math.floor((player.x + 12) / 32), y1 = Math.floor((player.y + 40) / 32), y2 = Math.floor((player.y + 14) / 32);
+                        const inLava = [y1, y2].some(yy => worldMap[yy] && worldMap[yy][bx] === 85);
+                        if (inLava && !(RPG.st && RPG.st.lavaImm)) bHurt(Math.round(player.maxHealth * 0.045) + 6, 'Вас спалила лава', '🔥', { dot: 1, heat: 150, col: '#ffb02a', pc: '#ff7a2a' });
+                    }
+                } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+
+        // ---------- бонуси комплектів ----------
+        recalcStats = (function (o) {
+            return function () {
+                const r = o.apply(this, arguments); const st = RPG.st; if (!st || !RPG.set) return r;
+                if (RPG.set === 'tempest') { ['melee', 'ranged', 'magic', 'summon'].forEach(k => { st.mult[k] *= 1.12; }); st.speed = Math.min(1.6, st.speed * 1.12); player.speed = 4.8 * st.speed; st.stormRes = 0.35; st.windImm = 1; }
+                else if (RPG.set === 'magma') {
+                    ['melee', 'ranged', 'magic', 'summon'].forEach(k => { st.mult[k] *= 1.10; }); st.lavaImm = 1; st.fireRes = 0.45;
+                    const old = player.maxHealth; player.maxHealth += 70; if (old && RPG.ready) player.health += 70; if (player.health > player.maxHealth) player.health = player.maxHealth;
+                }
+                return r;
+            };
+        })(recalcStats);
+        try { recalcStats(); } catch (e) { }
+        window.__zf = ZF;
+        // ================= ☁🌋 v41.1: ГЕНЕРАЦІЯ — НЕБЕСНІ ОСТРОВИ ТА ВУЛКАНІЧНА БЕЗОДНЯ =================
+        const ZG = { cache: null };
+        function zgLoot(kind) {
+            const arr = new Array(16).fill(null), put = (id, c) => { const fr = []; for (let j = 0; j < 16; j++) if (!arr[j]) fr.push(j); if (!fr.length || !ITEM_METADATA[id]) return; arr[fr[Math.random() * fr.length | 0]] = { id, count: c }; };
+            const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1)), main = kind === 'vault' || kind === 'hall';
+            if (kind === 'vault' || kind === 'tower' || kind === 'isle') {
+                put('sky_shard', main ? R(3, 4) : kind === 'tower' ? R(2, 3) : R(1, 2)); put('storm_ore', main ? R(5, 9) : R(2, 5)); put('cloud_block', R(10, 24)); put('gold_ingot', R(2, main ? 8 : 5));
+                put('life_potion', R(2, 4)); put('mana_potion', R(1, 3)); if (Math.random() < (main ? 0.5 : 0.25)) put('storm_lamp', R(2, 4));
+                if (Math.random() < (kind === 'vault' ? 0.55 : 0.2)) put('cloud_boots', 1); if (Math.random() < (main ? 0.4 : 0.15)) put('cosmic_ingot', R(1, 2)); if (Math.random() < 0.35) put('time_essence', R(1, 2));
+            } else {
+                put('ember_core', main ? R(2, 3) : R(1, 2)); put('magma_ore', main ? R(5, 9) : R(2, 5)); put('obsidian', R(6, main ? 16 : 10)); put('gold_ingot', R(3, main ? 9 : 5));
+                put('life_potion', R(2, 4)); put('mana_potion', R(1, 3)); if (Math.random() < (main ? 0.5 : 0.25)) put('ember_lamp', R(2, 4));
+                if (Math.random() < (main ? 0.45 : 0.15)) put('cosmic_ingot', R(1, 3)); if (Math.random() < 0.3) put('ember', R(4, 10)); if (main && Math.random() < 0.3) put('forge_signet', 1);
+            }
+            return arr;
+        }
+        function zgRects(w, h) {
+            const out = [], add = (x, y, ww, hh, p) => { if (x === undefined || y === undefined || ww === undefined) return; out.push({ x0: x - (p || 3), y0: y - (p || 3), x1: x + ww + (p || 3), y1: y + (hh || 8) + (p || 3) }); };
+            const cw = currentWorld;
+            (cw.libs || []).forEach(q => add(q.x, q.y, q.w, q.h)); (cw.nec || []).forEach(q => add(q.x, q.y, q.w, q.h)); (cw.crypt || []).forEach(q => add(q.x, q.y, q.w, q.h)); (cw.ruins || []).forEach(q => add(q.x, q.y, q.w, q.h, 4));
+            (cw.ponds || []).forEach(q => add(q.x0, q.y, (q.x1 || q.x0) - q.x0, 8, 4));
+            try { const L = cw.v32 && cw.v32.lakes; if (Array.isArray(L)) L.forEach(q => { if (q && q.x0 !== undefined) add(q.x0, q.y0 !== undefined ? q.y0 : q.y, q.x1 - q.x0, (q.y1 || q.y + 10) - (q.y0 || q.y), 4); else if (q && q.x !== undefined) add(q.x, q.y, q.w || 20, q.h || 12, 4); }); } catch (e) { }
+            return out;
+        }
+        const zgHit = (R, x0, y0, x1, y1) => R.some(r => x0 < r.x1 && x1 > r.x0 && y0 < r.y1 && y1 > r.y0);
+
+        // ---------- Небесні острови ----------
+        function zgSky(w, h, rnd) {
+            const S = (x, y, id) => { if (x > 0 && x < w - 1 && y > 1 && y < h - 1) worldMap[y][x] = id; }, G = (x, y) => (x >= 0 && x < w && y >= 0 && y < h) ? worldMap[y][x] : 1;
+            const hw = Math.min(46, Math.floor(w * 0.07) + 18); let ty = 14;
+            const rects = zgRects(w, h), Z = { ch: [], isl: [], ty, hw, pad: [] };
+            // головний острів: подалі від країв
+            let cx = -1; for (let tries = 0; tries < 60; tries++) { const c = Math.floor(w * (0.3 + rnd() * 0.4)); if (!zgHit(rects, c - hw - 4, ty - 14, c + hw + 4, ty + 16)) { cx = c; break; } }
+            if (cx < 0) cx = Math.floor(w * (0.3 + rnd() * 0.4));
+            { let mn = 999; for (let x = Math.max(0, cx - hw - 10); x <= Math.min(w - 1, cx + hw + 10); x++) mn = Math.min(mn, surfaceHeights[x] != null ? surfaceHeights[x] : 40); ty = Math.max(9, Math.min(17, mn - 22)); Z.ty = ty; }
+            const dir = (cx > w / 2) ? -1 : 1; Z.cx = cx; Z.dir = dir;
+            const blob = (bx, by, bhw, dep, mat, flat) => {
+                const th = []; for (let dx = -bhw; dx <= bhw; dx++) {
+                    const u = dx / bhw, t = Math.max(1, Math.round(dep * Math.pow(Math.max(0, 1 - u * u), 0.75) * (0.82 + rnd() * 0.36))), top = by + (flat ? 0 : (rnd() < 0.2 ? -1 : 0));
+                    th[dx + bhw] = t; for (let k = 0; k < t; k++) S(bx + dx, top + k, mat);
+                    if (!flat && rnd() < 0.5) { const len = 1 + (rnd() * 3 | 0); for (let k = 0; k < len; k++) S(bx + dx, top + t + k, mat); }
+                }
+                return th;
+            };
+            const th = blob(cx, ty, hw, 13, 79, true);
+            for (let dx = -hw + 2; dx <= hw - 2; dx++) { if (rnd() < 0.45) { const bt = ty + th[dx + hw], len = 1 + (rnd() * 3 | 0); for (let k = 0; k < len; k++) S(cx + dx, bt + k, 79); } }
+            // верхній шар — небесна цегла на арені
+            for (let dx = -32; dx <= 32; dx++) { S(cx + dx, ty, 80); if (Math.abs(dx) < 30) S(cx + dx, ty + 1, 80); }
+            for (let dx = -hw; dx <= hw; dx++) for (let k = 0; k < 12; k++) { if (G(cx + dx, ty - 1 - k) !== 0) S(cx + dx, ty - 1 - k, 0); }
+            // руда в тілі острова
+            const ore = (bx, by, bhw, bth, n) => {
+                for (let i = 0; i < n; i++) {
+                    const dx = Math.floor((rnd() * 2 - 1) * (bhw - 3)), t = bth[dx + bhw] || 3; if (t < 4) continue; let x = bx + dx, y = by + 2 + Math.floor(rnd() * (t - 3)), k = 3 + (rnd() * 4 | 0), g = 0;
+                    while (k > 0 && g++ < 30) { if (G(x, y) === 79) { S(x, y, 81); k--; } x += (rnd() * 3 | 0) - 1; y += (rnd() * 3 | 0) - 1; }
+                }
+            };
+            ore(cx, ty, hw, th, 26);
+            // вежі
+            const tower = side => {
+                const tx = cx + side * 24, x0 = tx - 4, x1 = tx + 4, top = ty - 10;
+                for (let y = top; y < ty; y++) for (let x = x0; x <= x1; x++) { const wall = x === x0 || x === x1 || y === top || y === top + 1; S(x, y, wall ? 80 : 0); }
+                for (let x = x0; x <= x1; x += 2) S(x, top - 1, 80);
+                for (let y = ty - 5; y < ty; y++) S(side < 0 ? x1 : x0, y, 0); // двері до центру
+                S(tx, top + 4, 87); S(tx - 2, ty - 6, 87); S(tx + 2, ty - 6, 87);
+                for (let y = top + 2; y < ty - 1; y++) if (y % 4 === 0) { S(tx - 3, y, 80); S(tx - 2, y, 80); S(tx + 3, y, 80); S(tx + 2, y, 80); } // уступи
+                const ck = tx + ',' + (ty - 1); S(tx, ty - 1, 15); chestsData[ck] = zgLoot('tower'); currentWorld.dch[ck] = 5; Z.ch.push(ck);
+            };
+            tower(-1); tower(1);
+            // вівтар: піраміда й колони з лампами
+            for (let l = 0; l < 3; l++) for (let dx = -(5 - l * 2); dx <= 5 - l * 2; dx++) S(cx + dx, ty - 1 - l, 80);
+            S(cx, ty - 4, 87);
+            [-9, 9].forEach(dx => { for (let k = 1; k <= 6; k++) S(cx + dx, ty - k, 80); S(cx + dx, ty - 7, 87); });
+            // підземна сховищна зала
+            const vy0 = ty + 3, vy1 = ty + 7, vx0 = cx - 17, vx1 = cx + 17;
+            for (let y = vy0 - 1; y <= vy1 + 1; y++) for (let x = vx0 - 1; x <= vx1 + 1; x++) { const edge = y === vy0 - 1 || y === vy1 + 1 || x === vx0 - 1 || x === vx1 + 1; S(x, y, edge ? 80 : 0); }
+            // шахта до зали
+            const sx = cx + 12; for (let y = ty; y <= vy1; y++) { S(sx, y, 0); S(sx + 1, y, 0); S(sx + 2, y, 0); S(sx, y, 69); if (y > ty && y < vy0 && (y % 3 === 0)) { S(sx + 3, y, 80); } }
+            S(sx + 2, ty + 3, 87); S(sx + 2, vy0 + 1, 87);
+            for (let x = vx0 + 3; x <= vx1 - 3; x += 7) { S(x, vy0, 87); }
+            [-12, 0, 12].forEach((o, i) => { if (cx + o >= sx - 1 && cx + o <= sx + 4) o += 4; const x = cx + o, k = x + ',' + vy1; S(x, vy1, 15); chestsData[k] = zgLoot('vault'); currentWorld.dch[k] = 5; Z.ch.push(k); S(x - 1, vy1 - 1, 87); });
+            Z.vault = { x0: vx0, x1: vx1, y0: vy0, y1: vy1 };
+            // причал аеростата на землі (сходів більше немає — на острів потрібно летіти)
+            { const fx = Math.max(8, Math.min(w - 9, cx + dir * (hw + 10))); let fy = surfaceHeights[fx] != null ? surfaceHeights[fx] : 45;
+              for (let dx = -3; dx <= 3; dx++) { const gx = fx + dx, gy = surfaceHeights[gx] != null ? surfaceHeights[gx] : fy; for (let a = 1; a <= 9; a++) { const b = G(gx, gy - a); if (b !== 0 && b !== 5 && b !== 4 && b !== 14) S(gx, gy - a, 0); } }
+              for (let a = 1; a <= 6; a++) { S(fx - 2, fy - a, 80); S(fx + 2, fy - a, 80); } for (let a = -2; a <= 2; a++) S(fx + a, fy - 7, 80); S(fx - 2, fy - 8, 87); S(fx + 2, fy - 8, 87); Z.foot = { x: fx, y: fy }; }
+            // малі острови
+            const n = Math.max(4, Math.min(10, Math.round(w / 220))), isl = [{ x: cx, y: ty, hw }];
+            for (let t = 0; t < 80 && Z.isl.length < n; t++) {
+                const bhw = 7 + (rnd() * 8 | 0), bx = 12 + Math.floor(rnd() * (w - 24)), by = 7 + Math.floor(rnd() * 15);
+                if (Math.abs(bx - cx) < hw + bhw + 14) continue; if (isl.some(q => Math.abs(q.x - bx) < q.hw + bhw + 10 && Math.abs(q.y - by) < 10)) continue; if (zgHit(rects, bx - bhw, by - 8, bx + bhw, by + 8)) continue;
+                const dep = 3 + (rnd() * 3 | 0), tt = blob(bx, by, bhw, dep, 79, false); ore(bx, by, bhw, tt, 2 + (rnd() * 3 | 0));
+                if (rnd() < 0.55) { const lx = bx + Math.floor((rnd() * 2 - 1) * (bhw - 3)); for (let a = 1; a <= 2; a++) S(lx, by - a, 80); S(lx, by - 3, 87); }
+                if (rnd() < 0.4) { const kx = bx + Math.floor((rnd() * 2 - 1) * (bhw - 2)), ky = by - 1; if (G(kx, by) === 79 && G(kx, ky) === 0) { const k2 = kx + ',' + ky; S(kx, ky, 15); chestsData[k2] = zgLoot('isle'); currentWorld.dch[k2] = 5; Z.ch.push(k2); } }
+                const rec = { x: bx, y: by, hw: bhw }; isl.push(rec); Z.isl.push(rec);
+            }
+            // хмарні мости між сусідніми островами
+            const all = isl.slice(); all.forEach(a => {
+                let best = null, bd = 1e9; all.forEach(b => { if (b === a) return; const d = Math.abs(a.x - b.x) - a.hw - b.hw; if (d < bd && d > 3 && d < 70) { bd = d; best = b; } });
+                if (!best || bd > 60) return; const sgn = best.x > a.x ? 1 : -1, x0 = a.x + sgn * a.hw, x1 = best.x - sgn * best.hw, dy = best.y - a.y;
+                if (Math.abs(dy) * 2 > Math.abs(x1 - x0) + 4) return; const len = Math.abs(x1 - x0);
+                for (let i = 0; i <= len; i++) { const xx = x0 + sgn * i, yy = Math.round(a.y + dy * i / Math.max(1, len)); S(xx, yy, 79); S(xx, yy + 1, 79); for (let q = 1; q <= 4; q++) if (G(xx, yy - q) === 0) { } }
+            });
+            return Z;
+        }
+
+        // ---------- Вулканічна безодня ----------
+        function zgVol(w, h, rnd) {
+            const S = (x, y, id) => { if (x > 0 && x < w - 1 && y > 1 && y < h - 1) worldMap[y][x] = id; }, G = (x, y) => (x >= 0 && x < w && y >= 0 && y < h) ? worldMap[y][x] : 1;
+            const rects = zgRects(w, h), deep = rects.filter(r => r.y1 > h - 40);
+            let Wv = Math.max(150, Math.min(250, Math.round(w * 0.2))), x0 = -1;
+            for (const tryW of [Wv, 170, 140, 120]) {
+                const cand = []; for (let X = 24; X + tryW < w - 24; X += 6) if (!zgHit(deep, X - 4, h - 40, X + tryW + 4, h)) cand.push(X);
+                if (cand.length) { x0 = cand[Math.floor(rnd() * cand.length)]; Wv = tryW; break; }
+            }
+            if (x0 < 0) { x0 = Math.floor(w * 0.15 + rnd() * w * 0.5); Wv = Math.min(Wv, w - x0 - 24); }
+            const x1 = x0 + Wv, cc = Math.floor((x0 + x1) / 2), F0 = h - 9, CB = h - 32, V = { x0, x1, cc, F0, ch: [] };
+            const s1 = rnd() * 9, s2 = rnd() * 9, s3 = rnd() * 9, nz = (x, a) => Math.sin(x * 0.07 + s1 + a) * 1.8 + Math.sin(x * 0.17 + s2 + a) * 1.1 + Math.sin(x * 0.31 + s3 + a) * 0.6;
+            const ceil = [], floor = [];
+            for (let x = x0; x <= x1; x++) {
+                const e = Math.min(x - x0, x1 - x), f = Math.min(1, e / 16);
+                let c = Math.round(CB + nz(x, 0) * 1.4), fl = Math.abs(x - cc) < 54 ? F0 : Math.round(F0 + nz(x, 5) * 0.55);
+                c = Math.round(c + (1 - f) * (fl - c - 2)); ceil[x - x0] = c; floor[x - x0] = fl;
+            }
+            // порода навколо — базальт/обсидіан
+            for (let y = CB - 8; y < h - 1; y++) for (let x = x0 - 6; x <= x1 + 6; x++) {
+                const b = G(x, y); if (b !== 3) continue; const r = Math.sin(x * 0.21 + y * 0.33 + s1) + Math.sin(x * 0.13 - y * 0.27 + s2);
+                if (r > -0.3) S(x, y, (r > 1.55 ? 83 : 82));
+            }
+            // порожнина
+            for (let x = x0; x <= x1; x++) {
+                const c = ceil[x - x0], f = floor[x - x0];
+                for (let y = c; y < f; y++) S(x, y, 0);
+                for (let y = f; y <= f + 2; y++) { const b = G(x, y); if (b === 3 || b === 0 || b === 82) S(x, y, 82); }
+                for (let y = c - 3; y < c; y++) { const b = G(x, y); if (b === 3 || b === 1) S(x, y, rnd() < 0.3 ? 83 : 82); }
+            }
+            // бурульки й сталагміти з базальту
+            for (let x = x0 + 4; x < x1 - 4; x += 3 + (rnd() * 4 | 0)) {
+                if (Math.abs(x - cc) < 36) continue; const c = ceil[x - x0], f = floor[x - x0], L = 2 + (rnd() * 5 | 0); for (let k = 0; k < L; k++) S(x, c + k, 82);
+                if (rnd() < 0.6) { const x2 = x + (rnd() * 5 | 0) - 2, L2 = 1 + (rnd() * 3 | 0), f2 = floor[Math.max(0, Math.min(Wv, x2 - x0))]; for (let k = 1; k <= L2; k++) S(x2, f2 - k, 82); }
+            }
+            // озера лави
+            const lakes = []; const nl = 4 + Math.floor(Wv / 60);
+            for (let t = 0; t < 60 && lakes.length < nl; t++) {
+                const lw = 8 + (rnd() * 9 | 0), lx = x0 + 18 + Math.floor(rnd() * (Wv - 36 - lw)); if (Math.abs(lx + lw / 2 - cc) < 54 + lw / 2) continue; if (lakes.some(q => Math.abs(q.x - lx) < q.w + lw + 6)) continue;
+                lakes.push({ x: lx, w: lw });
+                for (let dx = 0; dx < lw; dx++) { const u = (dx + 0.5) / lw * 2 - 1, dep = Math.max(1, Math.round(3 * (1 - u * u) + 0.4)), f = floor[lx + dx - x0]; for (let k = 0; k < dep; k++) S(lx + dx, f + k, 85); S(lx + dx, f + dep, 83); }
+                S(lx - 1, floor[lx - 1 - x0], 83); S(lx + lw, floor[Math.min(Wv, lx + lw - x0)], 83);
+            }
+            V.lakes = lakes;
+            // жили магмової руди
+            const nv = Math.round(Wv / 5.5);
+            for (let i = 0; i < nv; i++) {
+                const x = x0 + 3 + Math.floor(rnd() * (Wv - 6)); let y;
+                if (rnd() < 0.55) y = ceil[x - x0] - 1 - (rnd() * 2 | 0); else if (rnd() < 0.5) y = floor[x - x0] + 1 + (rnd() * 3 | 0); else y = CB - 6 + Math.floor(rnd() * (h - CB));
+                let px = x, py = y, k = 3 + (rnd() * 4 | 0), g = 0; while (k > 0 && g++ < 40) { const b = G(px, py); if (b === 82 || b === 3 || b === 83) { S(px, py, 84); k--; } px += (rnd() * 3 | 0) - 1; py += (rnd() * 3 | 0) - 1; }
+            }
+            // лампи на стелі
+            for (let x = x0 + 12; x < x1 - 10; x += 14 + (rnd() * 6 | 0)) { if (Math.abs(x - cc) < 36) continue; S(x, ceil[x - x0], 86); }
+            // ---- Горно (зала боса) ----
+            const HX0 = cc - 31, HX1 = cc + 31, yT = F0 - 18, hall = { x0: HX0 + 2, x1: HX1 - 2, y0: F0 - 16, y1: F0 - 1 };
+            for (let x = HX0 - 14; x <= HX1 + 14; x++) for (let y = yT - 2; y < F0; y++) { const inside = x >= HX0 && x <= HX1 && y >= yT; if (!inside && y >= ceil[Math.max(0, Math.min(Wv, x - x0))]) S(x, y, 0); }
+            for (let x = HX0 - 14; x <= HX1 + 14; x++) { S(x, F0, 82); S(x, F0 + 1, 82); S(x, F0 + 2, 82); for (let y = F0 - 1; y > F0 - 6; y--) if (G(x, y) === 85) S(x, y, 0); }
+            for (let y = yT; y <= F0 - 1; y++) for (let x = HX0; x <= HX1; x++) {
+                const wall = x <= HX0 + 1 || x >= HX1 - 1 || y <= yT + 1; S(x, y, wall ? ((y === yT || x === HX0 || x === HX1) ? 83 : 82) : 0);
+            }
+            for (let x = HX0; x <= HX1; x++) { S(x, F0, 83); S(x, yT - 1, 83); }
+            for (let y = F0 - 6; y <= F0 - 1; y++) { for (let k = 0; k < 2; k++) { S(HX0 + k, y, 0); S(HX1 - k, y, 0); } } // входи
+            for (let y = F0 - 4; y > yT + 2; y -= 5) { S(HX0 + 2, y, 86); S(HX1 - 2, y, 86); }
+            for (let x = HX0 + 6; x <= HX1 - 6; x += 6) S(x, yT + 4, 86);
+            [-12, -3, 3, 12].forEach(o => S(cc + o, F0 - 1, 86));
+            // колони
+            [-15, 15].forEach(o => { for (let y = yT + 2; y <= yT + 8; y++) { S(cc + o, y, 83); S(cc + o + 1, y, 83); } S(cc + o, yT + 9, 86); S(cc + o + 1, yT + 9, 86); });
+            // ями з лавою в залі
+            [-9, 7].forEach(o => { for (let dx = 0; dx < 3; dx++) { S(cc + o + dx, F0, 85); S(cc + o + dx, F0 + 1, 85); S(cc + o + dx, F0 + 2, 83); } S(cc + o - 1, F0, 83); S(cc + o + 3, F0, 83); });
+            // балкони зі скринями
+            [-1, 1].forEach(sd => {
+                for (let st = 0; st < 5; st++) for (let k = 0; k < 2; k++) for (let y = F0 - 1; y >= F0 - 1 - st; y--) S(cc + sd * (14 + 2 * st + k), y, 83);
+                for (let k = 24; k <= 28; k++) for (let y = F0 - 1; y >= F0 - 5; y--) S(cc + sd * k, y, 83);
+                const chx = cc + sd * 26, chy = F0 - 6, kk = chx + ',' + chy; S(chx, chy, 15); chestsData[kk] = zgLoot('hall'); currentWorld.dch[kk] = 5; V.ch.push(kk); S(cc + sd * 24, F0 - 6, 86); S(cc + sd * 28, F0 - 6, 86);
+            });
+            // побічні скарбниці
+            let placed = 0; for (let t = 0; t < 80 && placed < 4; t++) {
+                const x = x0 + 20 + Math.floor(rnd() * (Wv - 40)); if (Math.abs(x - cc) < 50) continue; if (V.lakes.some(q => x > q.x - 3 && x < q.x + q.w + 3)) continue;
+                const f = floor[x - x0]; if (G(x, f - 1) !== 0 || G(x, f - 2) !== 0) continue; S(x, f, 83); S(x - 1, f, 83); S(x + 1, f, 83); S(x, f - 1, 15); const k = x + ',' + (f - 1); chestsData[k] = zgLoot('side'); currentWorld.dch[k] = 5; V.ch.push(k); S(x - 2, f - 1, 86); S(x + 2, f - 1, 86); placed++;
+            }
+            V.hall = hall;
+            // ---- вулкан на поверхні + шахта ----
+            let vx = -1; const sr = rects.filter(r => r.y0 < 75);
+            for (let t = 0; t < 120 && vx < 0; t++) {
+                const c = x0 + 20 + Math.floor(rnd() * (Wv - 40)); if (Math.abs(c - cc) < 38 || V.lakes.some(q => c > q.x - 6 && c < q.x + q.w + 6)) continue; let ok = true, mn = 999, mxs = 0; for (let x = c - 24; x <= c + 24; x++) { const s = surfaceHeights[x]; if (s == null) { ok = false; break; } mn = Math.min(mn, s); mxs = Math.max(mxs, s); }
+                if (!ok || mxs - mn > 12) continue; if (zgHit(sr, c - 25, mn - 24, c + 25, mxs + 4)) continue; let wet = false; for (let x = c - 24; x <= c + 24 && !wet; x++) { const s = surfaceHeights[x]; for (let y = s - 3; y < s + 2; y++) if (BLOCKS[G(x, y)] && BLOCKS[G(x, y)].liquid) wet = true; }
+                if (wet) continue; vx = c;
+            }
+            if (vx < 0) vx = x0 + 22;
+            let B = 999; for (let x = vx - 22; x <= vx + 22; x++) B = Math.min(B, surfaceHeights[x] != null ? surfaceHeights[x] : 45);
+            for (let dx = -22; dx <= 22; dx++) {
+                const x = vx + dx, s = surfaceHeights[x] != null ? surfaceHeights[x] : B, hh = Math.round(15 * Math.pow(Math.max(0, 1 - Math.abs(dx) / 22), 1.1) + (rnd() < 0.3 ? 1 : 0)), top = B - hh;
+                for (let y = B - 22; y < top; y++) { const b = G(x, y); if (b === 4 || b === 5 || b === 14 || b === 24) S(x, y, 0); }
+                for (let y = top; y < s + 1; y++) S(x, y, y < top + 2 && rnd() < 0.25 ? 83 : 82);
+            }
+            const crater = B - 14; for (let dx = -4; dx <= 4; dx++) for (let y = crater; y <= B; y++) { if (Math.abs(dx) <= 3 || y < B - 2) S(vx + dx, y, 0); }
+            for (let dx = -6; dx <= 6; dx++) { S(vx + dx, crater - 1, 0); }
+            // шахта: від кратера вниз до порожнини
+            const cl = ceil[Math.max(0, Math.min(Wv, vx - x0))], cell = cl; let ly = B - 14;
+            for (let y = ly; y <= cell + 1; y++) for (let dx = -3; dx <= 3; dx++) { const b = G(vx + dx, y); if (!(BLOCKS[b] && BLOCKS[b].liquid && b !== 13)) S(vx + dx, y, 0); }
+            { const fl = floor[Math.max(0, Math.min(Wv, vx - 3 - x0))]; for (let y = ly; y < fl; y++) S(vx - 3, y, 69); }
+            for (let y = ly; y <= cell + 1; y++) { S(vx - 4, y, G(vx - 4, y) === 0 ? 82 : G(vx - 4, y)); S(vx + 4, y, G(vx + 4, y) === 0 ? 82 : G(vx + 4, y)); }
+            for (let y = ly + 6, i = 0; y < cell; y += 7, i++) { const sd = i % 2 ? 1 : -1; for (let dx = 0; dx < 3; dx++) S(vx + (sd > 0 ? 3 - dx : -2 + dx), y, 83); S(vx + (sd > 0 ? 3 : -1), y - 1, 86); }
+            // гирло шахти в порожнину: підлога внизу
+            for (let dx = -5; dx <= 5; dx++) { const f = floor[Math.max(0, Math.min(Wv, vx + dx - x0))]; for (let y = cell + 2; y < f; y++) if (Math.abs(dx) <= 3) S(vx + dx, y, 0); }
+            V.shaft = { x: vx, y0: ly, y1: cell + 1 }; V.volc = { x: vx, top: B - 15, base: B }; V.mark = { x: vx, y: B - 16 };
+            return V;
+        }
+
+        function zgGen(w, h) {
+            const cw = currentWorld; cw.dch = cw.dch || {};
+            const rnd = vzRng(vzHash((cw.name || 'w') + 'zf') + 7);
+            let sky = null, vol = null;
+            try { sky = zgSky(w, h, rnd); } catch (e) { console.error('zgSky', e); }
+            try { vol = zgVol(w, h, rnd); } catch (e) { console.error('zgVol', e); }
+            cw.zf = { sky, vol, v: 1 }; ZG.cache = null;
+        }
+        const zfW = () => (currentWorld && currentWorld.zf) || null;
+        generateLibraries = (function (o) { return function (w, h) { o(w, h); try { zgGen(w, h); } catch (e) { console.error('zgGen', e); currentWorld.zf = currentWorld.zf || { v: 1 }; } }; })(generateLibraries);
+        loadWorld = (function (o) { return function (i) { o(i); try { if (currentWorld && currentWorld.zf === undefined && worldMap && worldMap.length && !v17Client()) { zgGen(currentWorld.width, currentWorld.height); } } catch (e) { console.error('zgRetro', e); currentWorld.zf = currentWorld.zf || { v: 1 }; } }; })(loadWorld);
+        window.__zg = ZG;
+        // ================= ☁🌋 v41.1: МОБИ НЕБЕСНИХ ОСТРОВІВ ТА ВУЛКАНІЧНОЇ БЕЗОДНІ =================
+        const ZM = {
+            harpy: { n: 'Громова гарпія', w: 36, h: 28, hp: 150, dmg: 20, xp: 52, col: '#8fb4ff', sight: 800, cause: 'Вас розірвала громова гарпія', fly: 1 },
+            wisp: { n: 'Грозова іскра', w: 26, h: 26, hp: 105, dmg: 15, xp: 46, col: '#ffe98a', sight: 720, cause: 'Вас вразив розряд грозової іскри', fly: 1 },
+            ashfiend: { n: 'Попелястий біс', w: 26, h: 46, hp: 230, dmg: 22, xp: 72, col: '#ff7a2a', sight: 780, cause: 'Вас спалив попелястий біс' },
+            cinder: { n: 'Жаровий велет', w: 46, h: 60, hp: 560, dmg: 34, xp: 124, col: '#d8421a', sight: 640, heavy: 1, cause: 'Вас розчавив жаровий велет' }
+        };
+        for (const k in ZM) { Z1_MOBS[k] = ZM[k]; XP_BASE[k] = ZM[k].xp; V18DMG[k] = ZM[k].dmg; if (!ZM[k].fly) V376_NAV.add(k); if (typeof V373_MOBN !== 'undefined') V373_MOBN[k] = ZM[k].n; }
+        const zmGlow = (c, x, y, r, col, a) => { try { glowC(x, y, r, col, a); } catch (e) { } };
+        // ---------- малювання ----------
+        function zmDrawHarpy(c, m, face) {
+            const t = performance.now() / 1000, id = (m.mid || 0) + m.x * 0.01, fl = Math.sin(t * 15 + id), dv = (m._dv || 0) > 0, tel = (m.cast || 0) > 0;
+            c.scale(face, 1); if (dv) c.rotate(0.55);
+            if (dv || tel) zmGlow(c, 0, 0, 30, '#9fc4ff', tel ? 0.7 : 0.5);
+            for (const s of [-1, 1]) {
+                c.save(); c.scale(1, 1); c.translate(-1, -3); c.rotate((-0.5 + fl * 0.75) * (s < 0 ? 1 : 0.8) * (s < 0 ? 1 : -1) * (s < 0 ? 1 : 1)); c.scale(1, s < 0 ? 1 : 0.8);
+                const g = c.createLinearGradient(0, 0, -30, -14); g.addColorStop(0, '#d8e6ff'); g.addColorStop(1, '#5a6ad8'); c.fillStyle = g;
+                c.beginPath(); c.moveTo(0, 0); c.lineTo(-10, -16); c.lineTo(-17, -13); c.lineTo(-24, -17); c.lineTo(-27, -8); c.lineTo(-20, -3); c.lineTo(-12, 4); c.closePath(); c.fill();
+                c.strokeStyle = '#2a2a8a'; c.lineWidth = 1; c.stroke(); c.strokeStyle = 'rgba(40,40,140,.55)'; c.beginPath(); c.moveTo(-3, -2); c.lineTo(-22, -11); c.moveTo(-3, 0); c.lineTo(-18, -5); c.stroke(); c.restore();
+            }
+            c.fillStyle = '#e8ecff'; c.beginPath(); c.ellipse(0, 1, 9, 7, 0, 0, 7); c.fill(); c.fillStyle = '#9aa8e8'; c.beginPath(); c.ellipse(1, 4, 6, 3.4, 0, 0, 7); c.fill();
+            c.fillStyle = '#f4f6ff'; c.beginPath(); c.arc(8, -3, 5.4, 0, 7); c.fill(); c.fillStyle = '#ffcf3a'; c.beginPath(); c.moveTo(12, -4); c.lineTo(19, -1); c.lineTo(12, 0); c.closePath(); c.fill();
+            c.fillStyle = tel ? '#ffffff' : '#ff4a4a'; c.fillRect(7, -5, 2.4, 2.4); c.fillStyle = '#5a6ad8'; c.beginPath(); c.moveTo(5, -8); c.lineTo(3, -13); c.lineTo(8, -9); c.closePath(); c.fill();
+            c.strokeStyle = '#ffcf3a'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-2, 7); c.lineTo(-4, 12); c.moveTo(3, 7); c.lineTo(4, 12); c.stroke();
+        }
+        function zmDrawWisp(c, m) {
+            const t = performance.now() / 1000, id = (m.mid || 0) + m.x * 0.01, tel = (m.cast || 0) > 0, p = 1 + Math.sin(t * 6 + id) * 0.08;
+            zmGlow(c, 0, 0, 30 + (tel ? 14 : 0), '#ffe98a', tel ? 0.9 : 0.5);
+            c.save(); c.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < 5; i++) { const a = t * 3.2 + i * 1.256 + id, r = 12 + Math.sin(t * 4 + i) * 3; c.strokeStyle = 'rgba(190,210,255,.8)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(Math.cos(a) * 5, Math.sin(a) * 5); c.lineTo(Math.cos(a + 0.4) * r * 0.7 + (Math.sin(t * 40 + i) * 2), Math.sin(a + 0.4) * r * 0.7); c.lineTo(Math.cos(a) * r, Math.sin(a) * r); c.stroke(); }
+            c.restore();
+            const g = c.createRadialGradient(0, 0, 1, 0, 0, 10 * p); g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, '#ffe98a'); g.addColorStop(1, '#6a7cff'); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 10 * p, 0, 7); c.fill();
+            c.fillStyle = '#12104a'; c.fillRect(-4, -2, 2.4, 3.4); c.fillRect(2, -2, 2.4, 3.4);
+        }
+        function zmDrawAsh(c, m, face) {
+            const t = performance.now() / 1000, mv = Math.abs(m.vx) > 0.2, ph = m.x * 0.16, sw = mv ? Math.sin(ph) : 0, tel = (m.cast || 0) > 0, bob = mv ? -Math.abs(Math.sin(ph)) * 1.2 : Math.sin(t * 1.6 + m.x) * 0.6, pul = 0.6 + 0.4 * Math.sin(t * 5 + m.x);
+            c.scale(face, 1); zmGlow(c, 0, -2, 34, '#ff7a2a', 0.25 + (tel ? 0.35 : 0));
+            for (const s of [-1, 1]) { c.save(); c.translate(s * 4.5, 8); c.rotate(sw * 0.55 * s); c.fillStyle = s > 0 ? '#3a2a30' : '#2c2026'; c.fillRect(-3.2, 0, 6.4, 14); c.fillStyle = '#ff7a2a'; c.fillRect(-1, 3, 2, 6); c.restore(); }
+            c.translate(0, bob);
+            c.fillStyle = '#34262c'; c.fillRect(-9, -13, 18, 21); c.fillStyle = '#4a3840'; c.fillRect(-9, -13, 18, 3);
+            c.strokeStyle = 'rgba(255,140,50,' + (0.6 + 0.4 * pul) + ')'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6, -9); c.lineTo(-1, -3); c.lineTo(-4, 4); c.moveTo(5, -10); c.lineTo(2, -2); c.lineTo(6, 5); c.stroke();
+            c.save(); c.translate(7, -8); c.rotate(tel ? -2.1 : 0.5 + sw * 0.3); c.fillStyle = '#34262c'; c.fillRect(-2.4, 0, 5, 14); c.fillStyle = '#ff9a3a'; c.beginPath(); c.arc(0, 15, tel ? 6.5 : 3.4, 0, 7); c.fill(); if (tel) zmGlow(c, 0, 15, 20, '#ffb02a', 0.9); c.restore();
+            c.save(); c.translate(-7, -8); c.rotate(-0.4 - sw * 0.3); c.fillStyle = '#2c2026'; c.fillRect(-2.4, 0, 5, 13); c.restore();
+            c.fillStyle = '#2c2026'; c.fillRect(-7, -25, 14, 13); c.fillStyle = '#ff5a1a'; c.beginPath(); c.moveTo(-6, -25); c.lineTo(-9, -33); c.lineTo(-3, -26); c.closePath(); c.fill(); c.beginPath(); c.moveTo(6, -25); c.lineTo(9, -33); c.lineTo(3, -26); c.closePath(); c.fill();
+            for (let i = 0; i < 3; i++) { c.fillStyle = 'rgba(255,' + (150 + i * 30) + ',60,.9)'; c.beginPath(); c.moveTo(-5 + i * 5, -25); c.lineTo(-3 + i * 5, -31 - Math.sin(t * 9 + i) * 3); c.lineTo(-1 + i * 5, -25); c.closePath(); c.fill(); }
+            c.fillStyle = tel ? '#ffffff' : '#ffd24a'; c.fillRect(-4, -21, 3, 3); c.fillRect(2, -21, 3, 3);
+        }
+        function zmDrawCinder(c, m, face) {
+            const t = performance.now() / 1000, mv = Math.abs(m.vx) > 0.2, ph = m.x * 0.1, sw = mv ? Math.sin(ph) : 0, tel = (m.cast || 0) > 0, pul = 0.55 + 0.45 * Math.sin(t * 3.4 + m.x * 0.1);
+            c.scale(face, 1); zmGlow(c, 0, 0, 52, '#ff5a14', 0.22 + 0.15 * pul + (tel ? 0.3 : 0));
+            for (const s of [-1, 1]) { c.save(); c.translate(s * 9, 10); c.rotate(sw * 0.35 * s); c.fillStyle = s > 0 ? '#3d3640' : '#2e2830'; c.fillRect(-6, 0, 12, 20); c.fillStyle = '#1c181e'; c.fillRect(-7, 16, 14, 5); c.restore(); }
+            const tl = tel ? -Math.min(1, (m.cast || 0) / 24) : 0;
+            c.fillStyle = '#3d3640'; c.beginPath(); c.moveTo(-16, -20); c.lineTo(16, -20); c.lineTo(20, 8); c.lineTo(-20, 8); c.closePath(); c.fill(); c.fillStyle = '#4e4650'; c.fillRect(-16, -20, 32, 4);
+            c.strokeStyle = 'rgba(255,110,30,' + (0.55 + 0.45 * pul) + ')'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-10, -14); c.lineTo(-3, -4); c.lineTo(-8, 5); c.moveTo(9, -15); c.lineTo(4, -6); c.lineTo(11, 4); c.moveTo(-1, -17); c.lineTo(2, -9); c.stroke();
+            for (const s of [-1, 1]) { c.save(); c.translate(s * 19, -15); c.rotate(s * (0.3 + sw * 0.2) + (s > 0 ? tl * 2.4 : 0)); c.fillStyle = '#3d3640'; c.fillRect(-5, 0, 10, 20); c.fillStyle = '#2a2430'; c.beginPath(); c.arc(0, 23, 8, 0, 7); c.fill(); c.fillStyle = 'rgba(255,100,30,' + (0.6 + 0.4 * pul) + ')'; c.beginPath(); c.arc(0, 23, 3.4, 0, 7); c.fill(); c.restore(); }
+            c.fillStyle = '#2e2830'; c.fillRect(-9, -33, 18, 14); c.fillStyle = '#4e4650'; c.fillRect(-9, -33, 18, 3); c.fillStyle = tel ? '#ffffff' : '#ff8a1f'; c.fillRect(-5, -28, 3.4, 3.4); c.fillRect(2, -28, 3.4, 3.4);
+            c.fillStyle = '#ff5a14'; c.beginPath(); c.moveTo(-8, -33); c.lineTo(-11, -41); c.lineTo(-3, -34); c.closePath(); c.fill(); c.beginPath(); c.moveTo(8, -33); c.lineTo(11, -41); c.lineTo(3, -34); c.closePath(); c.fill();
+        }
+        Object.assign(V377_DRAW, { harpy: zmDrawHarpy, wisp: zmDrawWisp, ashfiend: zmDrawAsh, cinder: zmDrawCinder });
+        // ---------- ШІ ----------
+        function zmSteer(m, pDist) {
+            const D = ZM[m.type], cx = m.x + m.width / 2, cy = m.y + m.height / 2, T = v17T(cx, cy), dxT = T.x - cx, dyT = T.y - cy, adT = Math.hypot(dxT, dyT), dir = dxT >= 0 ? 1 : -1;
+            m._alert = Math.max(0, (m._alert || 0) - 1); m._aggro = Math.max(0, (m._aggro || 0) - 1); m._lc = Math.max(-1, (m._lc || 0) - 1); m._hold = Math.max(0, (m._hold || 0) - 1);
+            if (adT < D.sight && Math.abs(dyT) < 620) { if (m._aggro < 5) { for (const q of mobs) if (q !== m && ZM[q.type] && !q.ghost && Math.abs(q.x - cx) < 560 && Math.abs(q.y - cy) < 420) q._alert = Math.max(q._alert || 0, 240); } m._aggro = 420; }
+            const chase = (m._aggro > 0 || m._alert > 0) && adT < 1800, dm = D.dmg * rpgMobDmg() * z1Dm(m);
+            if (m.type === 'harpy') {
+                m._ph = (m._ph || 0) + 1; const id = (m.mid || 0) * 1.7 + (m._ph0 = m._ph0 || Math.random() * 6); m.cast = Math.max(0, (m.cast || 0) - 1);
+                if (m._fvx === undefined) { m._fvx = 0; m._fvy = 0; }
+                if (!chase) { m._fvx = Math.sin(m._ph * 0.017 + id) * 1.1; m._fvy = Math.sin(m._ph * 0.04 + id) * 0.7; }
+                else if ((m._dv || 0) > 0) { m._dv--; m._fvx = m._dx * 8.4; m._fvy = m._dy * 8.4; if (m._dv === 0) { m._lc = 70 + (Math.random() * 60 | 0); m._up = 50; } }
+                else if (m.cast > 0) { m._fvx *= 0.5; m._fvy *= 0.5; if (m.cast === 1) { const d = Math.max(1, adT); m._dx = dxT / d; m._dy = dyT / d; m._dv = 26; try { v20Tone('sawtooth', 1400, 600, 0.16, 0.05); } catch (e) { } } }
+                else if ((m._up || 0) > 0) { m._up--; m._fvx = z1Cl(m._fvx - dir * 0.1, -3, 3); m._fvy = -2.4; }
+                else {
+                    const tx = T.x + Math.sin(m._ph * 0.03 + id) * 260, ty = T.y - 150 + Math.cos(m._ph * 0.045 + id) * 34;
+                    m._fvx = z1Cl(m._fvx + z1Cl((tx - cx) * 0.01, -0.28, 0.28), -3.6, 3.6); m._fvy = z1Cl(m._fvy + z1Cl((ty - cy) * 0.012, -0.28, 0.28), -3, 3);
+                    if (m._lc <= 0 && adT < 520 && adT > 120 && dyT > -40 && v364LOS(cx, cy, T.x, T.y)) { m.cast = 22; createParticles(cx, cy, '#9fc4ff', 6, 1.6, 3, 16); }
+                }
+                if ((m._ph & 15) === 0) { if (Math.hypot(m.x - (m._sx || 0), m.y - (m._sy || 0)) < 5 && chase) { m._fvx = -m._fvx * 0.8 + (Math.random() - 0.5) * 3; m._fvy = -2 - Math.random() * 2; m._dv = 0; } m._sx = m.x; m._sy = m.y; }
+                m.vx = m._fvx; m.vy = m._fvy; return;
+            }
+            if (m.type === 'wisp') {
+                m._ph = (m._ph || 0) + 1; const id = (m.mid || 0) * 1.3 + (m._ph0 = m._ph0 || Math.random() * 6); m.cast = Math.max(0, (m.cast || 0) - 1);
+                if (m._fvx === undefined) { m._fvx = 0; m._fvy = 0; }
+                if (!chase) { m._fvx = Math.sin(m._ph * 0.02 + id) * 0.8; m._fvy = Math.cos(m._ph * 0.03 + id) * 0.7; }
+                else {
+                    const want = 300, tx = T.x - dir * want + Math.sin(m._ph * 0.025 + id) * 80, ty = T.y - 130 + Math.sin(m._ph * 0.05 + id) * 40;
+                    m._fvx = z1Cl(m._fvx + z1Cl((tx - cx) * 0.008, -0.2, 0.2), -2.6, 2.6); m._fvy = z1Cl(m._fvy + z1Cl((ty - cy) * 0.01, -0.2, 0.2), -2.2, 2.2);
+                    if (m.cast === 1) { z1Push({ k: 'z1ring', x: m._tx, y: m._ty - 120, life: 10, R: 36, col: '#ffe98a', w: 3 }, false); try { v20Tone('square', 1800, 300, 0.12, 0.06); } catch (e) { } }
+                    if (m._lc <= 0 && adT < 560 && v364LOS(cx, cy, T.x, T.y)) { m.cast = 40; m._lc = 120 + (Math.random() * 60 | 0); m._tx = T.x + (T.vx || 0) * 16; m._ty = T.y + 20; z1Fire({ x: m._tx, y: m._ty, r: 66, d: dm * 1.9, c: D.cause, col: '#ffe98a', life: 40 }); createParticles(cx, cy, '#ffe98a', 8, 2, 3, 18); }
+                }
+                m.vx = m._fvx; m.vy = m._fvy; return;
+            }
+            if (m.type === 'ashfiend') {
+                if (m.cast > 0) { m.cast--; m.vx *= 0.5; if (m.cast === 14) { for (let i = 1; i <= 3; i++) z1Fire({ x: cx + dir * (60 + i * 70), y: m.y + m.height - 6, r: 52, d: dm * 1.5, c: D.cause, col: '#ff8a2a', life: 14 + i * 9 }); try { v20Tone('sawtooth', 300, 120, 0.25, 0.07); } catch (e) { } } return; }
+                if (!chase) { v377Wander(m, 0.5); return; }
+                m.vx = m._hold > 0 ? 0 : (adT < 260 ? -dir * 0.9 : dir * 1.25);
+                if (m.onGround && adT > 130 && adT < 560 && Math.abs(dyT) < 90 && m._lc <= 0 && v364LOS(cx, cy, T.x, T.y)) { m.cast = 32; m._lc = 100 + (Math.random() * 50 | 0); createParticles(cx, cy - 8, '#ffb02a', 8, 2, 3, 20); }
+                v377Hop(m, dir, dyT); return;
+            }
+            if (m.type === 'cinder') {
+                if (m.cast > 0) { m.cast--; m.vx = 0; if (m.cast === 1) { shake = Math.max(shake, 4); try { v20Tone('sine', 90, 36, 0.4, 0.14); } catch (e) { } } return; }
+                if (!chase) { v377Wander(m, 0.3); return; }
+                m.vx = m._hold > 0 ? 0 : dir * (adT < 200 ? 0.9 : 0.8);
+                if (m.onGround && adT < 190 && Math.abs(dyT) < 70 && m._lc <= 0) { m.cast = 34; m._lc = 110 + (Math.random() * 60 | 0); z1Fire({ x: cx + dir * 52, y: m.y + m.height, r: 124, d: dm * 1.9, c: D.cause, col: '#ff5a1a', life: 34 }); }
+                v377Hop(m, dir, dyT); return;
+            }
+        }
+        v375Steer = (function (o) { return function (m, pDist) { if (ZM[m.type]) return zmSteer(m, pDist); return o.apply(this, arguments); }; })(v375Steer);
+        // ---------- лут ----------
+        v18Loot = (function (o) {
+            return function (m) {
+                o.apply(this, arguments);
+                try {
+                    if (!m || !ZM[m.type]) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 3, d = (id, n) => { if (ITEM_METADATA[id]) v20Drop(id, n, cx, cy, (Math.random() - 0.5) * 4); }, r = Math.random.bind(Math);
+                    if (m.type === 'harpy') { if (r() < 0.14) d('sky_shard', 1); if (r() < 0.4) d('gold_coin', 2 + (r() * 4 | 0)); if (r() < 0.3) d('leather', 1 + (r() * 2 | 0)); if (r() < 0.06) d('life_potion', 1); }
+                    else if (m.type === 'wisp') { if (r() < 0.2) d('sky_shard', 1); if (r() < 0.45) d('gold_coin', 2 + (r() * 4 | 0)); if (r() < 0.1) d('mana_potion', 1); if (r() < 0.05) d('storm_ore', 1 + (r() * 2 | 0)); }
+                    else if (m.type === 'ashfiend') { if (r() < 0.26) d('ember_core', 1); d('ember', 1 + (r() * 3 | 0)); d('gold_coin', 4 + (r() * 6 | 0)); if (r() < 0.08) d('life_potion', 1); if (r() < 0.12) d('obsidian', 1 + (r() * 2 | 0)); }
+                    else if (m.type === 'cinder') { if (r() < 0.6) d('ember_core', 1 + (r() < 0.3 ? 1 : 0)); if (r() < 0.5) d('magma_ore', 1 + (r() * 3 | 0)); if (r() < 0.5) d('obsidian', 1 + (r() * 3 | 0)); d('gold_coin', 8 + (r() * 10 | 0)); if (r() < 0.2) d('life_potion', 1); }
+                    createParticles(cx, cy, ZM[m.type].col, 14, 3, 3, 28);
+                } catch (e) { rpgErr(e); }
+            };
+        })(v18Loot);
+        // ---------- іконки й бестіарій ----------
+        function zmIcon(type) {
+            const cv = document.createElement('canvas'); cv.width = 88; cv.height = 88; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+            try {
+                if (type === 'harpy') { c.translate(44, 46); c.scale(1.9, 1.9); zmDrawHarpy(c, { x: 0, mid: 1, cast: 0 }, 1); } else if (type === 'wisp') { c.translate(44, 44); c.scale(2.3, 2.3); zmDrawWisp(c, { x: 0, mid: 1, cast: 0 }); }
+                else if (type === 'ashfiend') { c.translate(42, 58); c.scale(1.3, 1.3); zmDrawAsh(c, { x: 0, vx: 0, cast: 0 }, 1); } else { c.translate(44, 54); c.scale(1.05, 1.05); zmDrawCinder(c, { x: 0, vx: 0, cast: 0 }, 1); }
+            } catch (e) { } return cv.toDataURL();
+        }
+        v18MobIcon = (function (o) { return function (type) { if (ZM[type]) return zmIcon(type); return o(type); }; })(v18MobIcon);
+        V28_MOBS.push(['harpy', 'Громова гарпія', '❤ 150', 'Небесні острови. Кружляє над головою, а за мить пікірує грозовим стрілом. Після ривка відлітає вгору — вдаряй у цей момент. Дає небесні уламки.']);
+        V28_MOBS.push(['wisp', 'Грозова іскра', '❤ 105', 'Небесні острови. Тримається на відстані й позначає твоє місце: за мить туди б’є блискавка. Просто рухайся! Дає небесні уламки.']);
+        V28_MOBS.push(['ashfiend', 'Попелястий біс', '❤ 230', 'Вулканічна безодня. Жбурляє вогняну доріжку по землі: перестрибуй вогонь. Дає жарові ядра.']);
+        V28_MOBS.push(['cinder', 'Жаровий велет', '❤ 560', 'Вулканічна безодня. Повільний, але кожен його удар кулаком б’є широкою ударною хвилею — відійди або стрибни. Дає жарові ядра, магмову руду й обсидіан.']);
+        // ---------- спавн ----------
+        function zmSpawnOne(tp, type) {
+            const D = ZM[type], hp = Math.round(D.hp * rpgMobHp()); let x0, y0;
+            if (D.fly) {
+                let spot = null;
+                for (let a = 0; a < 12 && !spot; a++) {
+                    const sx = tp.x + (Math.random() < 0.5 ? -1 : 1) * (380 + Math.random() * 480), sy = tp.y + (Math.random() - 0.5) * 380, bx = Math.floor(sx / 32), by = Math.floor(sy / 32);
+                    if (bx < 3 || bx >= currentWorld.width - 3 || by < 3 || by >= 33) continue; let ok = true; for (let i = -1; i <= 1 && ok; i++) for (let j = -1; j <= 1 && ok; j++) if (isSolid(bx + i, by + j)) ok = false; if (ok) spot = { sx, sy };
+                }
+                if (!spot) return null; x0 = spot.sx - D.w / 2; y0 = spot.sy - D.h / 2;
+            } else {
+                const f = z1Floor(tp, 340, 860); if (!f) return null; x0 = f.sx - D.w / 2; y0 = f.fy * 32 - D.h - 0.5;
+                const L = Math.floor(x0 / 32), R = Math.floor((x0 + D.w - 0.01) / 32), T = Math.floor(y0 / 32); for (let cx = L; cx <= R; cx++) for (let cy = T; cy < f.fy; cy++) if (isSolid(cx, cy)) return null;
+                if (worldMap[f.fy] && worldMap[f.fy][Math.floor(f.sx / 32)] === 85) return null;
+            }
+            const m = { type, x: x0, y: y0, vx: 0, vy: 0, hp, maxHp: hp, width: D.w, height: D.h, frame: Math.random() * 6, onGround: !D.fly, _alert: 180 }; mobs.push(m); return m;
+        }
+        function zmSpawnTick() {
+            if (v17Client() || mobs.length >= 40) return; const Z = zfW(); if (!Z) return;
+            const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }], H = currentWorld.height;
+            for (const p of pl) {
+                const bx = Math.max(0, Math.min(surfaceHeights.length - 1, Math.floor(p.x / 32))), py = p.y / 32, sf = surfaceHeights[bx] || 40;
+                if (Z.sky && py < 31 && py < sf - 8 && Math.abs(bx - Z.sky.cx) < 360) {
+                    let near = 0; for (const m of mobs) if ((m.type === 'harpy' || m.type === 'wisp') && Math.abs(m.x - p.x) < 1400 && Math.abs(m.y - p.y) < 900) near++;
+                    if (near < Math.min(7, 3 + Math.floor(RPG.level / 9)) && Math.random() < 0.009) { const t = Math.random() < 0.58 ? 'harpy' : 'wisp'; const f = zmSpawnOne(p, t); if (f && t === 'harpy' && Math.random() < 0.35) zmSpawnOne(p, 'harpy'); }
+                }
+                if (Z.vol && bx >= Z.vol.x0 - 8 && bx <= Z.vol.x1 + 8 && py > H - 36) {
+                    let near = 0; for (const m of mobs) if ((m.type === 'ashfiend' || m.type === 'cinder') && Math.abs(m.x - p.x) < 1400 && Math.abs(m.y - p.y) < 900) near++;
+                    if (near < Math.min(6, 2 + Math.floor(RPG.level / 10)) && Math.random() < 0.008) { zmSpawnOne(p, Math.random() < 0.7 ? 'ashfiend' : 'cinder'); }
+                }
+            }
+        }
+        updateGame = (function (o) { return function () { o.apply(this, arguments); if (gameState !== 'PLAYING') return; try { zmSpawnTick(); } catch (e) { rpgErr(e); } }; })(updateGame);
+        window.__zm = { ZM, zmSpawnOne };
+        // ================= ☁🌋 v41.1: БОСИ — ВОЛОДАР БУРІ І ВОЛОДАР МАГМИ =================
+        Object.assign(XBOSS, {
+            tempest: { name: '⛈ Володар Бурі', hp: 180000, w: 104, h: 84, contact: 52, c2: 80, color: '#8fa8ff', bar: 'linear-gradient(90deg,#14124a,#4a56d8,#ffe98a)', xp: 'tempest', def: [30, 44], fixed: 1 },
+            magma: { name: '🌋 Володар Магми', hp: 260000, w: 128, h: 156, contact: 82, c2: 122, color: '#ff7a2a', bar: 'linear-gradient(90deg,#2a0a02,#d8321a,#ffd24a)', xp: 'magma', def: [48, 66], fixed: 1 }
+        });
+        Object.assign(XP_BASE, { tempest: 5200, magma: 9000 });
+        const ZEP = { tlock: 1, tbolt: 1, sorb: 1, sdrop: 1, lwave: 1, mball: 1, mpool: 1, mvent: 1, mgeyser: 1, mmeteor: 1 };
+        Object.assign(EP2, ZEP);
+        const zcl = (v, a, b) => Math.max(a, Math.min(b, v));
+        function zis(type) {
+            if (!audioCtx || audioVolume <= 0) return; try {
+                const r = 0.95 + Math.random() * 0.1;
+                if (type === 'thunder') { noiseHit(0.8, 0.5, 'lowpass', 2600, 110, 0.8, { rev: 1 }); tone('sine', 75 * r, 28, 0.6, 0.5); }
+                else if (type === 'zap') { tone('sawtooth', 1500 * r, 200, 0.18, 0.12, { lp: 3000 }); noiseHit(0.14, 0.3, 'highpass', 3000, 1000, 1); }
+                else if (type === 'charge') { tone('sawtooth', 180, 900, 0.55, 0.1, { lp: 2000, rev: 1 }); tone('sine', 90, 240, 0.55, 0.14); }
+                else if (type === 'lava') { noiseHit(0.55, 0.4, 'lowpass', 900, 100, 0.9, { rev: 1 }); tone('sine', 60, 34, 0.5, 0.5); }
+                else if (type === 'fire') { noiseHit(0.3, 0.35, 'bandpass', 700, 1800, 1.2); tone('sawtooth', 180, 420, 0.3, 0.1, { lp: 1200 }); }
+                else if (type === 'stomp') { tone('sine', 70 * r, 26, 0.45, 0.65); noiseHit(0.45, 0.5, 'lowpass', 800, 80, 0.8, { rev: 1 }); }
+                else if (type === 'sting') { [392, 523, 659, 784, 1046].forEach((f, i) => tone('triangle', f, f * 1.01, 0.7, 0.14, { delay: i * 0.11, rev: 1 })); tone('sine', 98, 98, 1.2, 0.3); }
+            } catch (e) { }
+        }
+        const zRes = (d, k) => Math.max(1, Math.round(d * (1 - ((RPG.st && RPG.st[k]) || 0))));
+        const zeCopy = (e, k) => { const r = (RPG.st && RPG.st[k]) || 0; return r ? Object.assign({}, e, { dmg: Math.max(1, Math.round(e.dmg * (1 - r))) }) : e; };
+        function zfFlash(a) { let el = document.getElementById('zf-flash'); if (!el) { el = document.createElement('div'); el.id = 'zf-flash'; el.style.cssText = 'position:fixed;inset:0;z-index:40;pointer-events:none;background:#dfe8ff;opacity:0;transition:opacity .35s'; document.body.appendChild(el); } el.style.transition = 'none'; el.style.opacity = a; void el.offsetWidth; el.style.transition = 'opacity .45s'; el.style.opacity = 0; }
+
+        // ---------- Володар Бурі ----------
+        BOSS2.tempest = {
+            init(b) { b.st = 'idle'; b.stT = 90; b.face = 1; b.hw = 0; b.vuln = 0; b.p2i = 0; b.dv = 0; b.tx = 0; b.ty = 0; b.arm = 0; b.last = ''; b.dvx = 0; b.dvy = 0; },
+            upd(b, px, py) {
+                const cx = b.x + b.w / 2, cy = b.y + b.h / 2, dir = px > cx ? 1 : -1, p2 = b.phase === 2, d = Math.hypot(px - cx, py - cy); b.stT--; if (b.vuln > 0) b.vuln--; if (b.arm > 0) b.arm--; if (b.st !== 'dive') b.face = dir;
+                const fly = (hx, hy, acc, mx) => { b.vx += zcl((hx - cx) * 0.0045, -acc, acc); b.vy += zcl((hy - cy) * 0.006, -acc, acc); b.vx *= 0.965; b.vy *= 0.965; const sp = Math.hypot(b.vx, b.vy); if (sp > mx) { b.vx *= mx / sp; b.vy *= mx / sp; } };
+                const lock = (x, life, dmg) => ep({ k: 'tlock', x, y: mxGround(x, py - 80), life, dmg: dmg || 112, r: 38 });
+                if (p2 && !b.p2i) { b.p2i = 1; b.st = 'ring'; b.stT = 100; b.hw++; }
+                if (b.st === 'idle') {
+                    fly(px + Math.sin(b.t * 0.013) * 340, Math.max(90, py - 240 + Math.sin(b.t * 0.021) * 46), 0.24, p2 ? 4.8 : 3.8);
+                    if (d > 950 && b.stT % 36 === 0) lock(px, 50, 105);
+                    if (b.stT <= 0) {
+                        const W = p2 ? [['bolts', 25], ['orbs', 15], ['dive', 20], ['gale', 10], ['rain', 15], ['ring', 15]] : [['bolts', 35], ['orbs', 30], ['dive', 25], ['gale', 10]];
+                        let pick = b.last; for (let g = 0; g < 3 && pick === b.last; g++) { let r = Math.random() * W.reduce((s, q) => s + q[1], 0); for (const q of W) { r -= q[1]; if (r <= 0) { pick = q[0]; break; } } }
+                        b.st = pick; b.last = pick; b.stT = { bolts: 130, orbs: 150, dive: 96, gale: 120, rain: 170, ring: 100 }[pick];
+                        if (pick === 'dive') { b.tx = px; b.ty = py; zis('charge'); } else if (pick === 'gale') zis('charge');
+                    }
+                } else if (b.st === 'bolts') {
+                    fly(px - dir * 120, Math.max(90, py - 260), 0.12, 2.4);
+                    const volley = () => { const n = p2 ? 5 : 3, xs = [px]; for (let k = 0; k < 40 && xs.length < n; k++) { const x = px + rpgRnd(-460, 460); if (xs.every(q => Math.abs(q - x) > 120)) xs.push(x); } xs.forEach((x, i) => lock(x, 54 + i * 5)); zis('charge'); b.hw++; b.arm = 14; };
+                    if (b.stT === 104) volley(); if (p2 && b.stT === 56) volley();
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 40 : 62; }
+                } else if (b.st === 'orbs') {
+                    fly(px - dir * 260, Math.max(90, py - 200), 0.1, 2);
+                    const n = p2 ? 5 : 3, start = 118, gap = p2 ? 12 : 16;
+                    if (b.stT <= start && b.stT > start - n * gap && (start - b.stT) % gap === 0) { const a = Math.atan2(py - cy, px - cx) + rpgRnd(-0.12, 0.12); ep({ k: 'sorb', x: cx + dir * 30, y: cy, vx: Math.cos(a) * 4.2, vy: Math.sin(a) * 4.2, life: 300, dmg: 54, r: 11, hom: 1, tr: p2 ? 0.04 : 0.028 }); zis('zap'); b.arm = 10; }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 36 : 60; }
+                } else if (b.st === 'dive') {
+                    if (b.stT > 56) fly(b.tx - dir * 60, Math.max(90, b.ty - 340), 0.2, 3);
+                    else if (b.stT === 56) { const a = Math.atan2(b.ty - cy, b.tx - cx), sp = p2 ? 15 : 13; b.dvx = Math.cos(a) * sp; b.dvy = Math.sin(a) * sp; b.dv = 24; b.face = b.dvx >= 0 ? 1 : -1; zis('thunder'); b.hw++; }
+                    else if (b.dv > 0) { b.dv--; b.vx = b.dvx; b.vy = b.dvy; if (b.dv === 0) { b.vx *= 0.25; b.vy *= 0.25; ep({ k: 'shock', x: cx, y: cy, life: 26, dmg: 72, r: 20 }); b.vuln = 70; b.hw++; } }
+                    else { b.vx *= 0.93; b.vy *= 0.93; }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = 34; }
+                } else if (b.st === 'gale') {
+                    fly(px - dir * 200, Math.max(90, py - 200), 0.08, 1.6);
+                    if (b.stT % 24 === 0 && b.stT > 20) lock(px + rpgRnd(-60, 60), 46, 105);
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = 50; }
+                } else if (b.st === 'rain') {
+                    fly(px, Math.max(90, py - 330), 0.2, 5);
+                    if (b.stT < 150 && b.stT > 20 && b.stT % 4 === 0) ep({ k: 'sdrop', x: px + rpgRnd(-460, 460), y: b.y + b.h, vx: 0, vy: 10.5, life: 90, dmg: 40, r: 9 });
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = 44; }
+                } else if (b.st === 'ring') {
+                    fly(px, Math.max(100, py - 200), 0.15, 2.4);
+                    if (b.stT === 60) { const n = 16, gap = Math.floor(Math.random() * n), a0 = Math.random() * 6.283; for (let i = 0; i < n; i++) { if (i === gap || i === (gap + 1) % n) continue; const a = a0 + i / n * 6.283; ep({ k: 'sorb', x: cx, y: cy, vx: Math.cos(a) * 3.7, vy: Math.sin(a) * 3.7, life: 230, dmg: 46, r: 11, hom: 0 }); } zis('thunder'); b.hw++; b.arm = 16; }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = 46; }
+                }
+                b.x += b.vx; b.y += b.vy; b.y = Math.max(40, b.y); b.x = zcl(b.x, 64, currentWorld.width * 32 - 64 - b.w);
+                if (d > 1500) { b.x = px - b.w / 2 - dir * 380; b.y = Math.max(90, py - 300); b.vx = 0; b.vy = 0; }
+            },
+            local(b) {
+                const px = player.x + 12, py = player.y + 22, cx = b.x + b.w / 2, cy = b.y + b.h / 2, p2 = b.phase === 2;
+                if (p2 && !MXB.seen[b.id + 'p']) { MXB.seen[b.id + 'p'] = 1; floatingTexts.push({ x: b.x - 40, y: b.y - 70, text: '⛈ ГРОЗОВИЙ ШТОРМ', color: '#b6c6ff', life: 150 }); zfFlash(0.5); zis('thunder'); }
+                mxStrike(b, 'hw', () => { createParticles(cx, cy, '#cfd8ff', 14, 5, 4, 26); rpgFx.push({ k: 'boom', x: cx, y: cy, r: 80, t: 0, life: 14, col: '#9fb4ff' }); });
+                if (b.st === 'gale' && !(RPG.st && RPG.st.windImm)) { const dd = Math.hypot(cx - px, cy - py); if (dd < 1100 && dd > 60) { player.pullX = (player.pullX || 0) + (cx > px ? 1 : -1) * 0.95; } }
+                if (b.st === 'gale' && MXB.t % 2 === 0) createParticles(px + rpgRnd(-300, 300), py + rpgRnd(-120, 80), '#dfe8ff', 1, 3, 3, 16);
+                if (p2 && MXB.t % 20 === 0 && Math.hypot(px - cx, py - cy) < 180) bHurt(zRes(9, 'stormRes'), 'Вас розрядила аура Володаря Бурі', '⚡', { dot: 1, col: '#9fb4ff', pc: '#9fb4ff' });
+                if (MXB.t % 5 === 0) createParticles(cx + rpgRnd(-60, 60), cy + rpgRnd(-30, 40), p2 ? '#b388ff' : '#9fb4ff', 1, 1, 3, 22);
+                if (MXB.t % 90 === 0) createParticles(cx + rpgRnd(-120, 120), cy + 60, '#8fa8ff', 3, 0.4, 2, 40);
+            },
+            loot(b, drop) { drop('storm_core', 3 + (Math.random() < 0.35 ? 1 : 0)); drop('sky_shard', 6 + (Math.random() * 3 | 0)); drop('storm_ingot', 8 + (Math.random() * 5 | 0)); if (Math.random() < 0.55) drop('storm_eye', 1); if (Math.random() < 0.2) drop('cloud_boots', 1); drop('life_potion', 5); drop('gold_ingot', 8); drop('cosmic_ingot', 3); }
+        };
+        // ---------- Володар Магми ----------
+        BOSS2.magma = {
+            init(b) { b.st = 'idle'; b.stT = 100; b.face = 1; b.hw = 0; b.hwk = ''; b.vuln = 0; b.p2i = 0; b.cd = 1; b.arm = 0; b.last = ''; },
+            upd(b, px, py) {
+                const cx = b.x + b.w / 2, dir = px > cx ? 1 : -1, p2 = b.phase === 2, dx = Math.abs(px - cx); b.stT--; if (b.vuln > 0) b.vuln--; if (b.arm > 0) b.arm--;
+                if (b.st !== 'charge' && b.st !== 'slam') b.face = dir;
+                const marks = (n, life, dmg, noSpawn) => { const xs = [px]; for (let k = 0; k < 40 && xs.length < n; k++) { const x = px + rpgRnd(-440, 440); if (xs.every(q => Math.abs(q - x) > 110)) xs.push(x); } xs.forEach((x, i) => ep({ k: 'mvent', x, y: mxGround(x, py - 80), life: life + i * 4, dmg, r: 34, noSpawn })); };
+                if (p2 && !b.p2i) { b.p2i = 1; b.st = 'meteors'; b.stT = 170; b.hw++; b.hwk = 'roar'; }
+                if (b.vuln > 0) { b.vx *= 0.6; b.stT++; bxPhys(b); return; }
+                if (b.st === 'idle') {
+                    b.vx = dx > 160 ? dir * (p2 ? 2.5 : 1.9) : dir * 0.4;
+                    if (b.stT <= 0) {
+                        const near = dx < 280, W = near ? [['smash', 38], ['slam', 20], ['eruption', 22], ['fireballs', 12], ['charge', 8]] : [['fireballs', 28], ['charge', 28], ['slam', 24], ['eruption', 20]]; if (p2) W.push(['meteors', 18]);
+                        let pick = b.last; for (let g = 0; g < 3 && pick === b.last; g++) { let r = Math.random() * W.reduce((s, q) => s + q[1], 0); for (const q of W) { r -= q[1]; if (r <= 0) { pick = q[0]; break; } } }
+                        b.st = pick; b.last = pick; b.stT = { smash: 46, slam: 62, eruption: 110, fireballs: 104, charge: 96, meteors: 170 }[pick]; b.face = dir; if (pick === 'charge') zis('charge');
+                    }
+                } else if (b.st === 'smash') {
+                    b.vx *= 0.7; if (b.stT === 24) { b.hw++; b.hwk = 'smash'; b.hx = cx + b.face * 96; b.hy = b.y + b.h; ep({ k: 'lwave', x: cx + b.face * 70, y: b.y + b.h, vx: 7.4 * b.face, life: 80, dmg: 88, r: 14 }); ep({ k: 'lwave', x: cx - b.face * 70, y: b.y + b.h, vx: -7.4 * b.face, life: 80, dmg: 88, r: 14 }); zis('stomp'); }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 34 : 56; }
+                } else if (b.st === 'slam') {
+                    if (b.stT === 34 && b.onG) { b.vy = -16; b.vx = dir * Math.min(9, 2 + dx / 55); b.onG = false; b.landed = 0; b.face = dir; bossSound('dash'); } else if (b.stT > 34) b.vx *= 0.8;
+                    if (b.onG && b.landed > 3 && b.stT < 34) { b.landed = 0; b.hw++; b.hwk = 'land'; b.hx = cx; b.hy = b.y + b.h; const sp = p2 ? 8.4 : 7.4; ep({ k: 'lwave', x: cx + 60, y: b.y + b.h, vx: sp, life: 90, dmg: 92, r: 14 }); ep({ k: 'lwave', x: cx - 60, y: b.y + b.h, vx: -sp, life: 90, dmg: 92, r: 14 }); if (p2) marks(2, 50, 125); b.st = 'idle'; b.stT = p2 ? 30 : 46; b.vuln = p2 ? 48 : 64; zis('stomp'); }
+                    if (b.stT < -50) { b.st = 'idle'; b.stT = 40; }
+                } else if (b.st === 'fireballs') {
+                    b.vx *= 0.8; const n = p2 ? 5 : 3, start = 82, gap = p2 ? 8 : 12;
+                    if (b.stT <= start && b.stT > start - n * gap && (start - b.stT) % gap === 0) { const sx = cx + b.face * 44, sy = b.y + 34, tx = px + rpgRnd(-90, 90), T = 44, g = 0.26; ep({ k: 'mball', x: sx, y: sy, vx: (tx - sx) / T, vy: (py - sy - 0.5 * g * T * T) / T, g, life: T + 80, dmg: 84, r: 12 }); zis('fire'); b.arm = 9; }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 36 : 58; }
+                } else if (b.st === 'eruption') {
+                    b.vx *= 0.8; if (b.stT === 90) { marks(p2 ? 5 : 3, 56, 125); zis('lava'); }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 34 : 56; }
+                } else if (b.st === 'charge') {
+                    if (b.stT > 56) { b.vx *= 0.5; b.cd = dir; } else if (b.stT === 56) { b.vx = b.cd * (p2 ? 11.5 : 10); b.face = b.cd; bossSound('dash'); } else if (b.stT > 0 && b.stT % 6 === 0 && b.onG) ep({ k: 'mpool', x: cx, y: b.y + b.h, life: 150, dmg: 15, r: 44 });
+                    if (b.stT <= 0) { b.vx *= 0.3; b.st = 'idle'; b.stT = 44; b.vuln = 56; }
+                } else if (b.st === 'meteors') {
+                    b.vx *= 0.8; const n = p2 ? 7 : 5;
+                    if (b.stT <= 140 && b.stT > 140 - n * 18 && (140 - b.stT) % 18 === 0) { const tx = px + rpgRnd(-300, 300), gy = mxGround(tx, py - 60), sx = tx - dir * rpgRnd(80, 160), sy = gy - 760; ep({ k: 'mvent', x: tx, y: gy, life: 46, dmg: 0, r: 60, noSpawn: 1 }); ep({ k: 'mmeteor', x: sx, y: sy, vx: (tx - sx) / 46, vy: (gy - sy) / 46, ty: gy, life: 70, dmg: 98, r: 16 }); }
+                    if (b.stT <= 0) { b.st = 'idle'; b.stT = 50; }
+                }
+                const hit = bxPhys(b);
+                if (b.st === 'charge' && b.stT < 56 && hit) { b.st = 'idle'; b.stT = 40; b.vuln = 96; b.vx = 0; b.hw++; b.hwk = 'bonk'; zis('stomp'); }
+                if (Math.abs(b.vx) < 0.05 && b.st === 'idle') b.stuck++; else b.stuck = Math.max(0, b.stuck - 2); bossStuck(b);
+            },
+            local(b) {
+                const px = player.x + 12, py = player.y + 22, p2 = b.phase === 2, cx = b.x + b.w / 2;
+                if (p2 && !MXB.seen[b.id + 'p']) { MXB.seen[b.id + 'p'] = 1; floatingTexts.push({ x: b.x - 40, y: b.y - 70, text: '🌋 РОЗПЛАВЛЕНИЙ ГНІВ', color: '#ffb02a', life: 150 }); shake = Math.max(shake, 16); zis('lava'); }
+                mxStrike(b, 'hw', () => {
+                    if (b.hwk === 'land') { shake = Math.max(shake, 10); createParticles(b.hx, b.hy, '#ff8a2a', 26, 6, 5, 36); rpgFx.push({ k: 'boom', x: b.hx, y: b.hy, r: 150, t: 0, life: 16, col: '#ff7a2a' }); if (Math.abs(px - b.hx) < 160 && py > b.hy - 100) bHurt(zRes(96, 'fireRes'), 'Вас розчавив Володар Магми', '🌋', { heat: 90 }); }
+                    else if (b.hwk === 'smash') { shake = Math.max(shake, 8); createParticles(b.hx, b.hy, '#ffb02a', 18, 5, 4, 30); rpgFx.push({ k: 'boom', x: b.hx, y: b.hy, r: 110, t: 0, life: 14, col: '#ff8a2a' }); if (Math.abs(px - b.hx) < 120 && Math.abs(py - b.hy) < 90) bHurt(zRes(104, 'fireRes'), 'Вас розтрощив кулак Володаря Магми', '🌋', { heat: 70 }); }
+                    else if (b.hwk === 'bonk') { shake = Math.max(shake, 12); floatingTexts.push({ x: b.x, y: b.y - 40, text: '💥 ОГЛУШЕНИЙ!', color: '#ffd24a', life: 60 }); createParticles(cx, b.y + 40, '#ffd24a', 24, 6, 5, 32); }
+                });
+                if (p2 && MXB.t % 20 === 0 && Math.hypot(px - cx, py - (b.y + b.h / 2)) < 230) bHurt(zRes(9, 'fireRes'), 'Вас спалила аура Володаря Магми', '🔥', { dot: 1, heat: 90, col: '#ff9a3a', pc: '#ff7a2a' });
+                if (MXB.t % 4 === 0) createParticles(cx + rpgRnd(-b.w * 0.5, b.w * 0.5), b.y + rpgRnd(20, b.h), p2 ? '#ffb02a' : '#ff7a2a', 1, 0.9, 3, 30);
+                if (b.vuln > 0 && MXB.t % 3 === 0) createParticles(cx + rpgRnd(-30, 30), b.y + 60, '#ffe58a', 1, 2, 3, 22);
+            },
+            loot(b, drop) { drop('magma_core', 3 + (Math.random() < 0.35 ? 1 : 0)); drop('ember_core', 6 + (Math.random() * 3 | 0)); drop('magma_ingot', 10 + (Math.random() * 5 | 0)); drop('obsidian', 10); if (Math.random() < 0.55) drop('volcano_core', 1); if (Math.random() < 0.2) drop('forge_signet', 1); drop('life_potion', 5); drop('gold_ingot', 10); drop('cosmic_ingot', 4); }
+        };
+        bossReduce = (function (o) { return function (b, dmg, opt) { let r = o.apply(this, arguments); if ((b.k === 'tempest' || b.k === 'magma') && b.vuln > 0) r = Math.round(r * 1.3); return r; }; })(bossReduce);
+
+        // ---------- снаряди ----------
+        function zepUpd(e) {
+            const px = player.x + 12, py = player.y + 22, host = isHostSim(); e.t++; let dead = e.t > e.life; const near = (r, h) => Math.abs(px - e.x) < r + 12 && Math.abs(py - e.y) < (h || r) + 22;
+            const k = e.k;
+            if (k === 'tlock') { if (e.t % 14 === 0) bossSound('warn'); if (e.t >= e.life - 1) { dead = true; if (host) ep({ k: 'tbolt', x: e.x, y: e.y, life: 24, dmg: e.dmg, r: 38 }); } }
+            else if (k === 'tbolt') {
+                if (e.t === 1) { shake = Math.max(shake, 8); zis('thunder'); createParticles(e.x, e.y, '#cfd8ff', 16, 6, 4, 26); rpgFx.push({ k: 'boom', x: e.x, y: e.y, r: 70, t: 0, life: 12, col: '#9fb4ff' }); if (Math.abs(px - e.x) < 700) zfFlash(0.3); }
+                if (e.t > 2 && e.t < 14 && Math.abs(px - e.x) < e.r + 12 && py > e.y - 580 && py < e.y + 30) epHit(zeCopy(e, 'stormRes'), 'Вас вразила блискавка Володаря Бурі', '⚡', { icd: 30, stun: 18, pc: '#9fb4ff', col: '#cfd8ff' });
+            }
+            else if (k === 'sorb') {
+                if (host && e.hom) { const T = mpBossTarget(e.x, e.y), a = Math.atan2(T.y - e.y, T.x - e.x), ca = Math.atan2(e.vy, e.vx); let da = a - ca; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283; const na = ca + zcl(da, -(e.tr || 0.03), e.tr || 0.03), sp = 4.6; e.vx = Math.cos(na) * sp; e.vy = Math.sin(na) * sp; }
+                e.x += e.vx; e.y += e.vy; if (e.t % 2 === 0) createParticles(e.x, e.y, '#9fb4ff', 1, 0.6, 3, 16);
+                if (isSolid(Math.floor(e.x / 32), Math.floor(e.y / 32))) { dead = true; createParticles(e.x, e.y, '#9fb4ff', 8, 3, 3, 20); }
+                else if (Math.hypot(px - e.x, py - e.y) < e.r + 16 && epHit(zeCopy(e, 'stormRes'), 'Вас вразила кулька грому', '⚡', { pc: '#9fb4ff', col: '#cfd8ff' })) { dead = true; createParticles(e.x, e.y, '#cfd8ff', 10, 4, 3, 22); }
+            }
+            else if (k === 'sdrop') {
+                e.y += e.vy; if (e.t % 2 === 0) createParticles(e.x, e.y - 14, '#bcd0ff', 1, 0.3, 3, 12);
+                if (isSolid(Math.floor(e.x / 32), Math.floor(e.y / 32))) { dead = true; createParticles(e.x, e.y, '#9fb4ff', 6, 3, 3, 18); }
+                else if (Math.hypot(px - e.x, py - e.y) < e.r + 16 && epHit(zeCopy(e, 'stormRes'), 'Вас пронизав розряд грози', '⚡', { icd: 20, pc: '#9fb4ff' })) dead = true;
+            }
+            else if (k === 'lwave') {
+                e.x += e.vx; const gx = Math.floor(e.x / 32), gy = Math.floor((e.y - 4) / 32);
+                if (isSolid(gx, gy)) { e.y -= 32; if (isSolid(gx, Math.floor((e.y - 4) / 32))) dead = true; } else if (!isSolid(gx, gy + 1)) { e.y += 32; if (!isSolid(gx, Math.floor((e.y + 4) / 32))) dead = true; }
+                if (e.t % 2 === 0) createParticles(e.x, e.y - 8, '#ff8a2a', 1, 1.6, 4, 22);
+                if (!dead && Math.abs(px - e.x) < 24 && player.y + 44 > e.y - 36 && player.y + 44 < e.y + 22) epHit(zeCopy(e, 'fireRes'), 'Вас збила хвиля магми', '🌋', { icd: 30, heat: 80, pc: '#ff7a2a' });
+            }
+            else if (k === 'mball') {
+                e.vy += e.g || 0.26; e.x += e.vx; e.y += e.vy; if (e.t % 2 === 0) { createParticles(e.x, e.y, '#ffb02a', 1, 1, 4, 18); createParticles(e.x, e.y, '#7a2a10', 1, 0.5, 4, 22); }
+                const hitP = Math.hypot(px - e.x, py - e.y) < e.r + 18;
+                if (hitP || isSolid(Math.floor(e.x / 32), Math.floor(e.y / 32)) || e.t >= e.life) { dead = true; boomAt(e.x, e.y, 62, '#ff7a2a'); if (Math.hypot(px - e.x, py - e.y) < 72) epHit(zeCopy(e, 'fireRes'), 'Вас розірвала вогненна куля', '🔥', { heat: 90, pc: '#ffb347' }); if (host) ep({ k: 'mpool', x: e.x, y: mxGround(e.x, e.y - 20), life: 150, dmg: 14, r: 46 }); }
+            }
+            else if (k === 'mpool') {
+                if (e.t % 3 === 0) createParticles(e.x + rpgRnd(-e.r, e.r), e.y - 4, e.t % 2 ? '#ffb02a' : '#ff6a1a', 1, 0.8, 3, 20);
+                if (e.t % 18 === 0 && Math.abs(px - e.x) < e.r + 10 && Math.abs(py - e.y) < 44 && !(RPG.st && RPG.st.lavaImm)) bHurt(zRes(e.dmg, 'fireRes'), 'Вас спалила калюжа магми', '🔥', { dot: 1, heat: 100, col: '#ffb02a', pc: '#ff7a2a' });
+            }
+            else if (k === 'mvent') { if (e.t % 14 === 0) bossSound('warn'); if (e.t >= e.life - 1) { dead = true; if (host && !e.noSpawn) ep({ k: 'mgeyser', x: e.x, y: e.y, life: 28, dmg: e.dmg, r: 36 }); } }
+            else if (k === 'mgeyser') {
+                if (e.t === 2) { shake = Math.max(shake, 7); zis('lava'); createParticles(e.x, e.y, '#ffb02a', 22, 5, 4, 34); }
+                if (e.t % 2 === 0) createParticles(e.x + rpgRnd(-20, 20), e.y - rpgRnd(0, 280), '#ff9a3a', 1, 1.2, 4, 24);
+                if (e.t > 4 && e.t < 22 && Math.abs(px - e.x) < e.r + 12 && py < e.y + 18 && py > e.y - 330) epHit(zeCopy(e, 'fireRes'), 'Вас підкинув гейзер магми', '🌋', { icd: 30, heat: 120, pc: '#ff7a2a' });
+            }
+            else if (k === 'mmeteor') {
+                e.x += e.vx; e.y += e.vy; if (e.t % 1 === 0) createParticles(e.x - e.vx * 2, e.y - e.vy * 2, e.t % 2 ? '#ffb02a' : '#ff5a14', 1, 1, 5, 22);
+                if (e.y >= e.ty || isSolid(Math.floor(e.x / 32), Math.floor(e.y / 32)) || e.t >= e.life) { dead = true; boomAt(e.x, e.y, 80, '#ff5a14'); rpgFx.push({ k: 'boom', x: e.x, y: e.y, r: 110, t: 0, life: 18, col: '#ffb02a' }); if (Math.hypot(px - e.x, py - e.y) < 86) epHit(zeCopy(e, 'fireRes'), 'Вас розчавив метеорит', '☄', { heat: 100, pc: '#ff7a2a' }); if (host) ep({ k: 'mpool', x: e.x, y: mxGround(e.x, e.y - 20), life: 130, dmg: 14, r: 50 }); }
+            }
+            return !dead;
+        }
+        updEP2 = (function (o) { return function (e) { if (ZEP[e.k]) return zepUpd(e); return o.apply(this, arguments); }; })(updEP2);
+
+        // ---------- малювання снарядів ----------
+        function zepDraw(e, t) {
+            const k = e.k; ctx.save();
+            if (k === 'tlock') { const p = e.t / e.life, R = (e.r || 38) * (1.15 - 0.15 * p); ctx.translate(e.x, e.y); ctx.globalCompositeOperation = 'lighter'; const a = 0.4 + 0.5 * Math.abs(Math.sin(e.t * 0.4)); ctx.strokeStyle = 'rgba(170,190,255,' + a + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.28, 0, 0, 7); ctx.stroke(); ctx.strokeStyle = 'rgba(255,240,160,' + a * 0.8 + ')'; ctx.beginPath(); ctx.ellipse(0, 0, R * p, R * p * 0.28, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(150,170,255,' + 0.12 * (1 - p) + ')'; ctx.fillRect(-R, -560, R * 2, 560); }
+            else if (k === 'tbolt') {
+                const f = e.t < 14 ? 1 : Math.max(0, 1 - (e.t - 14) / 10); ctx.globalCompositeOperation = 'lighter'; const segs = 14; let seed = e.u + Math.floor(e.t / 2);
+                const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+                const pts = []; for (let i = 0; i <= segs; i++) pts.push([e.x + (i === 0 || i === segs ? 0 : (rnd() - 0.5) * 46), e.y - 600 + i * 600 / segs]);
+                for (const [w, c] of [[16, 'rgba(100,130,255,' + 0.3 * f + ')'], [7, 'rgba(180,200,255,' + 0.7 * f + ')'], [2.5, 'rgba(255,255,255,' + f + ')']]) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); }
+                glowC(e.x, e.y, 70, '#9fb4ff', 0.7 * f);
+            }
+            else if (k === 'sorb') { glowC(e.x, e.y, 32, '#8fa8ff', 0.7); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(e.x, e.y, 5 + Math.sin(e.t * 0.7), 0, 7); ctx.fill(); ctx.strokeStyle = '#9fb4ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, 10, 0, 7); ctx.stroke(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(220,230,255,.8)'; ctx.lineWidth = 1.4; for (let i = 0; i < 3; i++) { const a = e.t * 0.3 + i * 2.1; ctx.beginPath(); ctx.moveTo(e.x + Math.cos(a) * 6, e.y + Math.sin(a) * 6); ctx.lineTo(e.x + Math.cos(a + 0.5) * 15, e.y + Math.sin(a + 0.5) * 15); ctx.stroke(); } }
+            else if (k === 'sdrop') { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(e.x, e.y - 38, e.x, e.y); g.addColorStop(0, 'rgba(120,150,255,0)'); g.addColorStop(1, 'rgba(230,240,255,.95)'); ctx.strokeStyle = g; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(e.x, e.y - 38); ctx.lineTo(e.x, e.y); ctx.stroke(); glowC(e.x, e.y, 20, '#9fb4ff', 0.6); }
+            else if (k === 'lwave') { ctx.translate(e.x, e.y); const fl = Math.sin(e.t * 0.8); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, 0, 0, -44); g.addColorStop(0, 'rgba(255,200,80,.95)'); g.addColorStop(0.6, 'rgba(255,90,20,.7)'); g.addColorStop(1, 'rgba(120,20,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-18, 2); ctx.quadraticCurveTo(-10, -38 - fl * 6, -2, -22); ctx.quadraticCurveTo(4, -48 + fl * 5, 10, -18); ctx.quadraticCurveTo(14, -30, 18, 2); ctx.closePath(); ctx.fill(); glowC(0, -14, 38, '#ff7a2a', 0.5); }
+            else if (k === 'mball') { glowC(e.x, e.y, 36, '#ff7a2a', 0.8); ctx.fillStyle = '#3a1208'; ctx.beginPath(); ctx.arc(e.x, e.y, 11, 0, 7); ctx.fill(); ctx.fillStyle = '#ff7a2a'; ctx.beginPath(); ctx.arc(e.x, e.y, 8 + Math.sin(e.t * 0.6), 0, 7); ctx.fill(); ctx.fillStyle = '#ffe58a'; ctx.beginPath(); ctx.arc(e.x - 2, e.y - 2, 4, 0, 7); ctx.fill(); }
+            else if (k === 'mpool') { const f = Math.min(1, e.t / 10) * (e.t > e.life - 24 ? (e.life - e.t) / 24 : 1); ctx.translate(e.x, e.y); ctx.globalCompositeOperation = 'lighter'; glowC(0, -6, e.r * 1.2, '#ff6a1a', 0.35 * f); for (let i = -3; i <= 3; i++) { const h = (14 + (i % 2 ? 6 : 0) + Math.sin(e.t * 0.5 + i * 1.7) * 6) * f; const g = ctx.createLinearGradient(0, 0, 0, -h); g.addColorStop(0, 'rgba(255,210,80,.9)'); g.addColorStop(1, 'rgba(255,70,10,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(i * e.r / 3.4 - 8, 2); ctx.quadraticCurveTo(i * e.r / 3.4, -h, i * e.r / 3.4 + 8, 2); ctx.closePath(); ctx.fill(); } }
+            else if (k === 'mvent') { const p = e.t / e.life, R = (e.r || 34) * (1.15 - 0.15 * p); ctx.translate(e.x, e.y); ctx.globalCompositeOperation = 'lighter'; const a = 0.4 + 0.5 * Math.abs(Math.sin(e.t * 0.4)); ctx.strokeStyle = 'rgba(255,120,30,' + a + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.28, 0, 0, 7); ctx.stroke(); ctx.strokeStyle = 'rgba(255,230,120,' + a * 0.8 + ')'; ctx.beginPath(); ctx.ellipse(0, 0, R * p, R * p * 0.28, 0, 0, 7); ctx.stroke(); ctx.fillStyle = 'rgba(255,90,20,' + 0.16 * p + ')'; ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.28, 0, 0, 7); ctx.fill(); }
+            else if (k === 'mgeyser') { const g = Math.min(1, e.t / 5), r = e.t > 20 ? Math.max(0, 1 - (e.t - 20) / 8) : 1, H = 320 * g * r; ctx.translate(e.x, e.y); ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createLinearGradient(0, 0, 0, -H); gr.addColorStop(0, 'rgba(255,230,120,.95)'); gr.addColorStop(0.5, 'rgba(255,110,20,.7)'); gr.addColorStop(1, 'rgba(160,30,0,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(-34, 4); ctx.quadraticCurveTo(-22 + Math.sin(e.t) * 4, -H * 0.5, -10, -H); ctx.lineTo(10, -H); ctx.quadraticCurveTo(22 - Math.sin(e.t) * 4, -H * 0.5, 34, 4); ctx.closePath(); ctx.fill(); glowC(0, -H * 0.3, 80, '#ff7a2a', 0.5 * r); }
+            else if (k === 'mmeteor') { const a = Math.atan2(e.vy, e.vx); ctx.translate(e.x, e.y); ctx.rotate(a); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, 0, -130, 0); g.addColorStop(0, 'rgba(255,200,80,.9)'); g.addColorStop(0.5, 'rgba(255,80,20,.5)'); g.addColorStop(1, 'rgba(120,20,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-130, 0); ctx.lineTo(0, 12); ctx.closePath(); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#2a1410'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.fill(); ctx.fillStyle = '#ff7a2a'; ctx.beginPath(); ctx.arc(4, -2, 8, 0, 7); ctx.fill(); glowC(0, 0, 44, '#ff7a2a', 0.7); }
+            ctx.restore();
+        }
+        drawBoss2EP = (function (o) { return function (t) { o.apply(this, arguments); for (const e of rpgEP) if (ZEP[e.k]) zepDraw(e, t); }; })(drawBoss2EP);
+
+        // ---------- малювання босів ----------
+        function zdPuff(x, y, r, c1, c2) { const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+        function zdTempest(b, t) {
+            const cx = b.x + b.w / 2, cy = b.y + b.h / 2, p2 = b.phase === 2, face = b.face || 1, bob = Math.sin(t * 2.2) * 4, st = b.st, vul = b.vuln > 0;
+            const c1 = p2 ? '#7a58d8' : '#4a56d8', c0 = p2 ? '#1c0a4a' : '#14124a';
+            if (st === 'dive' && b.stT > 56) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.setLineDash([10, 8]); ctx.strokeStyle = 'rgba(255,240,160,' + (0.35 + 0.35 * Math.abs(Math.sin(t * 14))) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(b.tx, b.ty); ctx.stroke(); ctx.restore(); }
+            ctx.save(); ctx.translate(cx, cy + bob);
+            glowC(0, 0, 160 + Math.sin(t * 3) * 10, p2 ? '#8a5cff' : '#5a76ff', p2 ? 0.34 : 0.24);
+            if (st === 'gale') { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(200,215,255,.45)'; ctx.lineWidth = 3; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(0, 0, 70 + i * 26 + (t * 60 % 26), t * 3 + i, t * 3 + i + 2.2); ctx.stroke(); } ctx.restore(); }
+            ctx.scale(face, 1);
+            const wing = Math.sin(t * 3.2) * 0.2 + (st === 'dive' ? -0.45 : 0);
+            for (const s of [-1, 1]) {
+                ctx.save(); ctx.translate(-10, -6); ctx.rotate((s < 0 ? -0.5 : -0.2) + wing * (s < 0 ? 1 : 0.7)); ctx.scale(1, s < 0 ? 1 : 0.8);
+                const g = ctx.createLinearGradient(0, 0, -110, -50); g.addColorStop(0, c1); g.addColorStop(1, c0); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 4); ctx.quadraticCurveTo(-40, -70, -112, -46); ctx.quadraticCurveTo(-84, -30, -98, -12); ctx.quadraticCurveTo(-60, -10, -66, 12); ctx.quadraticCurveTo(-30, 8, 0, 12); ctx.closePath(); ctx.fill();
+                ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(190,210,255,' + (0.35 + 0.35 * Math.abs(Math.sin(t * 9 + s))) + ')'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-40, -22); ctx.lineTo(-34, -16); ctx.lineTo(-76, -30); ctx.stroke(); ctx.restore();
+            }
+            for (let i = 0; i < 4; i++) zdPuff(-48 + i * 14 + Math.sin(t * 2 + i) * 3, 34 + Math.abs(i - 1.5) * 6 + Math.sin(t * 2.4 + i * 2) * 3, 16 - i * 1.5, '#3a3a9a', c0);
+            zdPuff(-26, 8, 30, c1, c0); zdPuff(26, 10, 28, c1, c0); zdPuff(0, 0, 42, '#7a8aff', c0); zdPuff(-14, -22, 22, '#5a6af0', c0); zdPuff(18, -20, 20, '#5a6af0', c0);
+            ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(200,215,255,' + (0.3 + 0.5 * Math.abs(Math.sin(t * 7))) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-22, 8); ctx.lineTo(-10, 18); ctx.lineTo(-16, 22); ctx.lineTo(-2, 34); ctx.moveTo(24, 0); ctx.lineTo(14, 12); ctx.lineTo(20, 14); ctx.lineTo(10, 26); ctx.stroke(); ctx.globalCompositeOperation = 'source-over';
+            // голова
+            zdPuff(14, -10, 22, '#aab6ff', '#3a3a9a');
+            ctx.fillStyle = vul ? '#ffffff' : '#fff2a8'; ctx.beginPath(); ctx.moveTo(8, -16); ctx.lineTo(22, -12); ctx.lineTo(10, -8); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(-2, -14); ctx.lineTo(4, -17); ctx.lineTo(2, -9); ctx.closePath(); ctx.fill(); glowC(14, -12, 22, '#ffe98a', 0.7);
+            ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,240,160,' + (0.6 + 0.4 * Math.sin(t * 20)) + ')'; ctx.lineWidth = 2.6; for (let i = 0; i < 3; i++) { const bx = 4 + i * 8, h = 14 + (i === 1 ? 8 : 0) + Math.sin(t * 17 + i) * 3; ctx.beginPath(); ctx.moveTo(bx, -30); ctx.lineTo(bx - 3, -30 - h * 0.4); ctx.lineTo(bx + 3, -30 - h * 0.6); ctx.lineTo(bx, -30 - h); ctx.stroke(); } ctx.globalCompositeOperation = 'source-over';
+            if (st === 'orbs' || b.arm > 0) { const r = 8 + (st === 'orbs' ? (1 - Math.max(0, b.stT - 20) / 130) * 8 : 6); glowC(48, -4, 36, '#9fb4ff', 0.8); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(48, -4, r, 0, 7); ctx.fill(); ctx.strokeStyle = '#8fa8ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(48, -4, r + 4, 0, 7); ctx.stroke(); }
+            for (let i = 0; i < 3; i++) { const a = t * 1.5 + i * 2.094; glowC(Math.cos(a) * 74, Math.sin(a) * 34, 16, '#9fb4ff', 0.6); ctx.fillStyle = '#e8eeff'; ctx.beginPath(); ctx.arc(Math.cos(a) * 74, Math.sin(a) * 34, 4, 0, 7); ctx.fill(); }
+            if (vul) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.12 * Math.sin(t * 20)) + ')'; ctx.beginPath(); ctx.arc(0, 0, 56, 0, 7); ctx.fill(); }
+            if (b.flash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, b.flash / 10) + ')'; ctx.beginPath(); ctx.arc(0, 0, 60, 0, 7); ctx.fill(); }
+            ctx.restore();
+        }
+        function zdMagma(b, t) {
+            const cx = b.x + b.w / 2, by = b.y + b.h, p2 = b.phase === 2, face = b.face || 1, mv = Math.abs(b.vx) > 0.3 && b.onG, sw = mv ? Math.sin(t * 5) : 0, st = b.st, vul = b.vuln > 0, pul = 0.6 + 0.4 * Math.sin(t * (p2 ? 6 : 4));
+            const lav = p2 ? '#ffd24a' : '#ff7a2a', kneel = vul ? 22 : 0 + (st === 'slam' && b.stT > 34 ? 14 : 0);
+            ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(cx, by, 78, 9, 0, 0, 7); ctx.fill();
+            glowC(cx, by - 70, 150 + (p2 ? 30 : 0), '#ff5a14', 0.18 + (p2 ? 0.14 : 0));
+            ctx.save(); ctx.translate(cx, by + kneel * 0.4); ctx.scale(face, 1);
+            const arm = st === 'smash' ? (b.stT > 24 ? -(1 - (b.stT - 24) / 22) * 2.5 : -2.5 + (24 - b.stT) / 24 * 3.4) : (st === 'fireballs' || b.arm > 0 ? -1.4 : (st === 'eruption' || st === 'meteors' ? -2.2 + Math.sin(t * 8) * 0.2 : 0.2 + sw * 0.3));
+            const plate = (x, y, w, h, c1, c2) => { const g = ctx.createLinearGradient(x, y, x + w, y + h); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = '#0c0608'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4); ctx.fillStyle = g; ctx.fillRect(x, y, w, h); };
+            // ноги
+            for (const s of [-1, 1]) { ctx.save(); ctx.translate(s * 30, -50 + kneel); ctx.rotate(s * sw * 0.2); plate(-16, 0, 32, 52 - kneel * 0.5, '#4a4452', '#1c181e'); ctx.fillStyle = 'rgba(255,110,30,' + (0.5 + 0.4 * pul) + ')'; ctx.fillRect(-3, 8, 6, 30); plate(-20, 44 - kneel * 0.5, 40, 10, '#2a2430', '#100c12'); ctx.restore(); }
+            // руки
+            for (const s of [-1, 1]) {
+                ctx.save(); ctx.translate(s * 66, -118 + kneel); ctx.rotate((s < 0 ? -arm : arm) * 0.6 + (s < 0 ? 0.15 : -0.15)); plate(-13, 0, 26, 56, '#4a4452', '#1c181e'); ctx.fillStyle = 'rgba(255,110,30,' + (0.5 + 0.4 * pul) + ')'; ctx.fillRect(-2, 6, 4, 38);
+                ctx.save(); ctx.translate(0, 62); plate(-19, -8, 38, 34, '#3a3440', '#14101a'); ctx.fillStyle = 'rgba(255,110,30,' + (0.6 + 0.4 * pul) + ')'; ctx.beginPath(); ctx.arc(0, 8, 8, 0, 7); ctx.fill();
+                if (st === 'fireballs' && b.arm > 0) glowC(0, 12, 44, '#ffb02a', 0.9); ctx.restore(); ctx.restore();
+            }
+            // тулуб
+            ctx.fillStyle = '#0c0608'; ctx.beginPath(); ctx.moveTo(-52, -52 + kneel); ctx.lineTo(-64, -130 + kneel); ctx.quadraticCurveTo(0, -156 + kneel, 64, -130 + kneel); ctx.lineTo(52, -52 + kneel); ctx.closePath(); ctx.fill();
+            const tg = ctx.createLinearGradient(-54, 0, 54, 0); tg.addColorStop(0, '#5a5262'); tg.addColorStop(0.5, '#34303c'); tg.addColorStop(1, '#16121a'); ctx.fillStyle = tg; ctx.beginPath(); ctx.moveTo(-48, -54 + kneel); ctx.lineTo(-60, -128 + kneel); ctx.quadraticCurveTo(0, -150 + kneel, 60, -128 + kneel); ctx.lineTo(48, -54 + kneel); ctx.closePath(); ctx.fill();
+            ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = lav; ctx.globalAlpha = 0.4 + 0.45 * pul; ctx.lineWidth = 3.4; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(-38 + i * 19, -58 + kneel); ctx.lineTo(-44 + i * 19 + 8, -82 + kneel); ctx.lineTo(-34 + i * 19, -100 + kneel); ctx.lineTo(-40 + i * 19 + 6, -124 + kneel); ctx.stroke(); }
+            ctx.globalAlpha = 1; glowC(0, -92 + kneel, 40 + (p2 ? 14 : 0) + (vul ? 26 : 0), lav, 0.3 * pul + (vul ? 0.4 : 0)); ctx.globalCompositeOperation = 'source-over';
+            // ядро
+            ctx.fillStyle = '#100608'; ctx.beginPath(); ctx.ellipse(0, -92 + kneel, 16, 20, 0, 0, 7); ctx.fill(); ctx.fillStyle = vul ? '#ffffff' : lav; ctx.globalAlpha = 0.7 + 0.3 * pul; ctx.beginPath(); ctx.ellipse(0, -92 + kneel, vul ? 12 : 8, vul ? 16 : 12, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+            // плечі-шипи
+            ctx.fillStyle = '#2a2430'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(s * 50, -126 + kneel); ctx.lineTo(s * 84, -158 + kneel); ctx.lineTo(s * 70, -118 + kneel); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(s * 36, -134 + kneel); ctx.lineTo(s * 52, -170 + kneel); ctx.lineTo(s * 24, -140 + kneel); ctx.closePath(); ctx.fill(); }
+            // голова
+            ctx.save(); ctx.translate(8, -150 + kneel); plate(-20, -24, 40, 34, '#4a4452', '#1c181e'); ctx.fillStyle = '#2a2430'; ctx.beginPath(); ctx.moveTo(-18, -24); ctx.lineTo(-26, -50); ctx.lineTo(-8, -26); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(18, -24); ctx.lineTo(26, -50); ctx.lineTo(8, -26); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = vul ? '#ffffff' : '#ffe58a'; ctx.fillRect(-12, -14, 9, 6); ctx.fillRect(4, -14, 9, 6); glowC(0, -10, 28, lav, 0.7); ctx.fillStyle = '#100608'; ctx.fillRect(-10, 0, 22, 7); ctx.fillStyle = lav; ctx.globalAlpha = 0.5 + 0.4 * pul; ctx.fillRect(-8, 2, 18, 3); ctx.globalAlpha = 1; ctx.restore();
+            if (b.flash > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.4, b.flash / 12) + ')'; ctx.fillRect(-70, -170, 140, 170); }
+            ctx.restore();
+        }
+        drawBoss2 = (function (o) { return function (b, t) { if (b.k === 'tempest') return zdTempest(b, t); if (b.k === 'magma') return zdMagma(b, t); return o.apply(this, arguments); }; })(drawBoss2);
+
+        // ---------- виклик ----------
+        spawnXBoss = (function (o) { return function (kind) { const n0 = rpgBosses.length, r = o.apply(this, arguments); if (kind === 'tempest' && rpgBosses.length > n0) { const b = rpgBosses[rpgBosses.length - 1], R = BXR || player; b.x = R.x + 12 - b.w / 2; b.y = Math.max(90, R.y - 300); b.vx = 0; b.vy = 0; } return r; }; })(spawnXBoss);
+        function zfSummon(it) {
+            const S = SUMMON[it.id], Z = zfW(), H = currentWorld.height, col = Math.floor((player.x + 12) / 32), row = (player.y + 22) / 32; const fail = txt => { floatingTexts.push({ x: player.x - 70, y: player.y - 34, text: txt, color: '#e67e22', life: 100 }); bossSound('warn'); return true; };
+            if (rpgBosses.length || boss || libBoss) { floatingTexts.push({ x: player.x - 40, y: player.y - 30, text: 'Бій уже триває!', color: '#e67e22', life: 50 }); return true; }
+            if (S.boss === 'tempest') { if (!Z || !Z.sky) return fail('На цьому світі немає Небесної цитаделі.'); if (row > Z.sky.ty + 4 || Math.abs(col - Z.sky.cx) > Z.sky.hw + 10) return fail('Підніміться на острів Небесної цитаделі!'); }
+            else { if (!Z || !Z.vol) return fail('На цьому світі немає Вулканічної безодні.'); if (col < Z.vol.x0 || col > Z.vol.x1 || row < H - 34) return fail('Спустіться у Вулканічну безодню, до залу Горна!'); }
+            it.count--; if (it.count <= 0) inventory[selectedHotbarSlot] = null; updateInventoryUI(); spawnXBoss(S.boss); return true;
+        }
+        useSummon = (function (o) { return function (it) { if (it && (it.id === 'storm_beacon' || it.id === 'magma_heart')) return zfSummon(it); return o.apply(this, arguments); }; })(useSummon);
+        bossDie = (function (o) {
+            return function (b) {
+                const r = o.apply(this, arguments);
+                try { if (b && (b.k === 'tempest' || b.k === 'magma')) { zis('sting'); const Z = zfW(); if (Z && !v17Client()) { Z.kills = Z.kills || {}; Z.kills[b.k] = (Z.kills[b.k] || 0) + 1; } try { v26Banner(b.k === 'tempest' ? '⛈ Буря вщухла' : '🌋 Горно охололо', 'Ядро впало на землю — забирай здобич'); } catch (e) { } zfFlash(0.4); } } catch (e) { rpgErr(e); }
+                return r;
+            };
+        })(bossDie);
+        window.__zi = { zepUpd, zis };
+
+        // ---------- v41.2: міцніші боси — удари сильніші, а під кінець бою — лють ----------
+        {
+            const ZK_EP = /^(tlock|tbolt|sorb|sdrop|lwave|mball|mpool|mvent|mgeyser|mmeteor)$/;
+            ep = (function (o) { return function (e) { try { if (e && e.dmg && ZK_EP.test(e.k)) e.dmg = Math.round(e.dmg * 1.18); } catch (x) { } return o.apply(this, arguments); }; })(ep);
+            ['tempest', 'magma'].forEach(k => {
+                const u = BOSS2[k].upd;
+                BOSS2[k].upd = function (b, px, py) {
+                    const r = b.hp / b.maxHp;
+                    if (r < 0.25) {
+                        if (!b.enr) { b.enr = 1; try { zis('charge'); zfFlash(0.5); shake = Math.max(shake, 14); v26Banner(b.k === 'tempest' ? '⛈ ЛЮТЬ БУРІ' : '🌋 ЛЮТЬ ГОРНА', 'Атаки частішають, вікна для ударів коротшають!'); } catch (x) { } }
+                        if (b.stT > 0) b.stT -= 0.45; if (b.vuln > 0) b.vuln -= 0.4;
+                    } else if (r < 0.6 && b.stT > 0) b.stT -= 0.15;
+                    return u.apply(this, arguments);
+                };
+            });
+        }
+        // ================= ☁🌋 v41.1: МУЗИКА БОСІВ І БІОМІВ, КОМПАС, ГАЙД =================
+        {
+            const mot = [0, -1, -1, 2, -1, -1, 4, -1, 2, -1, -1, 0, -1, 3, -1, -1], mot2 = [0, 2, -1, 4, 2, -1, 5, -1, 4, 2, -1, 0, 3, -1, 5, 6];
+            Object.assign(MODES, {
+                sky: {
+                    bpm: 68, sub: 2, root: 62, prog: [[0, 4, 7], [2, 6, 9], [-1, 4, 7], [4, 7, 11]], bassOff: [0, 2, -1, 4], arp: 0.7, mel: 0.34, scale: [0, 2, 4, 7, 9], pad: 0.055, lp: 4600, wave: 'triangle',
+                    xtra(M, t, sd, perBar) { const s = mStep % perBar; if (s % 4 === 2 && Math.random() < 0.35) { const n = M.scale[Math.random() * M.scale.length | 0] + 24; mNote('sine', M.root + n, t, sd * 3, 0.045, { at: 0.02, rel: 0.9, rev: 1 }); } }
+                },
+                abyss: {
+                    bpm: 52, sub: 2, root: 43, prog: [[0, 3, 7], [-2, 3, 5], [1, 5, 8], [-4, 0, 3]], bassOff: [0, -2, 1, -4], arp: 0.1, mel: 0.12, scale: [0, 1, 3, 6, 7], pad: 0.07, lp: 1100, wave: 'sawtooth',
+                    xtra(M, t, sd, perBar) { const s = mStep % perBar; if (s === 0 || s === 3) mDrum('kick', t, 0.2); if (s === 0 && Math.random() < 0.5) mNote('sawtooth', M.root - 12 + M.prog[Math.floor(mStep / perBar) % 4][0], t, sd * 6, 0.05, { lp: 260, at: 0.4, rel: 1.2, rev: 0.5 }); }
+                },
+                bossS: {
+                    bpm: 148, sub: 4, root: 62, prog: [[0, 3, 7], [-4, 0, 3], [-2, 2, 5], [-5, -1, 2]], bassOff: [0, -4, -2, -5], arp: 0.85, mel: 0, scale: [0, 3, 5, 7, 10], pad: 0.05, lp: 3600, wave: 'sawtooth', drums: 1,
+                    xtra(M, t, sd, perBar) {
+                        const s = mStep % perBar, ch = M.prog[Math.floor(mStep / perBar) % 4], idx = mot[s % 16]; if (idx >= 0) mNote('sawtooth', M.root + ch[idx % 3] + 12 * (1 + Math.floor(idx / 3)) + 12, t, sd * 1.9, 0.05, { lp: 2800, at: 0.008, rev: 0.5, det: 6 });
+                        if (Math.random() < 0.05) mNote('square', M.root + M.scale[Math.random() * 5 | 0] + 36, t, sd * 0.7, 0.022, { lp: 4200 });
+                    }
+                },
+                bossS2: {
+                    bpm: 164, sub: 4, root: 62, prog: [[0, 3, 7], [-4, 0, 3], [-2, 2, 5], [-5, -1, 2]], bassOff: [0, -4, -2, -5], arp: 0.95, mel: 0, scale: [0, 3, 5, 7, 10], pad: 0.055, lp: 4000, wave: 'sawtooth', drums: 1,
+                    xtra(M, t, sd, perBar) {
+                        const s = mStep % perBar, ch = M.prog[Math.floor(mStep / perBar) % 4], idx = mot2[s % 16]; if (idx >= 0) mNote('sawtooth', M.root + ch[idx % 3] + 12 * (1 + Math.floor(idx / 3)) + 12, t, sd * 1.7, 0.058, { lp: 3200, at: 0.006, rev: 0.4, det: 8 });
+                        if (s % 2 === 0) mNote('square', M.root + ch[0] - 24, t, sd * 0.9, 0.05, { lp: 700, rev: 0 }); if (s % 4 === 2) mDrum('hat', t, 0.07);
+                        if (Math.random() < 0.09) mNote('square', M.root + M.scale[Math.random() * 5 | 0] + 36, t, sd * 0.6, 0.026, { lp: 4600 });
+                    }
+                },
+                bossM: {
+                    bpm: 106, sub: 4, root: 50, prog: [[0, 3, 7], [1, 5, 8], [0, 3, 7], [-2, 2, 5]], bassOff: [0, 1, 0, -2], arp: 0.45, mel: 0, scale: [0, 1, 3, 5, 7, 8], pad: 0.055, lp: 1900, wave: 'sawtooth', drums: 1,
+                    xtra(M, t, sd, perBar) {
+                        const s = mStep % perBar, ch = M.prog[Math.floor(mStep / perBar) % 4];
+                        if (s === 0) ch.forEach(n => mNote('sawtooth', M.root + n, t, sd * 3.2, 0.05, { lp: 1300, at: 0.02, rev: 0.4, det: 5 }));
+                        if (s === 0 || s === 10) mNote('sawtooth', M.root + ch[0] - 24, t, sd * 2.4, 0.1, { lp: 480, at: 0.01, rev: 0.1 });
+                        if (s === 6 || s === 7 || s === 14) mDrum('kick', t, 0.55); if (s === 8) mDrum('snare', t, 0.2);
+                    }
+                },
+                bossM2: {
+                    bpm: 120, sub: 4, root: 50, prog: [[0, 3, 7], [1, 5, 8], [0, 3, 7], [-2, 2, 5]], bassOff: [0, 1, 0, -2], arp: 0.65, mel: 0, scale: [0, 1, 3, 5, 7, 8], pad: 0.06, lp: 2300, wave: 'sawtooth', drums: 1,
+                    xtra(M, t, sd, perBar) {
+                        const s = mStep % perBar, ch = M.prog[Math.floor(mStep / perBar) % 4];
+                        if (s === 0 || s === 8) ch.forEach(n => mNote('sawtooth', M.root + n + 12, t, sd * 3.4, 0.05, { lp: 1900, at: 0.015, rev: 0.4, det: 6 }));
+                        if (s % 4 === 0) mNote('sawtooth', M.root + ch[0] - 24, t, sd * 1.8, 0.1, { lp: 560, at: 0.01, rev: 0.1 });
+                        if (s === 6 || s === 7 || s === 14 || s === 15) mDrum('kick', t, 0.6); if (s === 4 || s === 12) mDrum('snare', t, 0.2);
+                        if (s % 2 === 1 && Math.random() < 0.4) mNote('square', M.root + M.scale[Math.random() * 6 | 0] + 24, t, sd * 0.7, 0.03, { lp: 3000 });
+                    }
+                }
+            });
+            musicStep = (function (o) { return function (M, t, sd, perBar) { o.apply(this, arguments); if (M && M.xtra) { try { M.xtra(M, t, sd, perBar); } catch (e) { } } }; })(musicStep);
+            musicPick = (function (o) {
+                return function () {
+                    try {
+                        if (gameState === 'PLAYING' && currentWorld && worldMap && worldMap.length) {
+                            const b = rpgBosses.find(q => q.k === 'tempest' || q.k === 'magma');
+                            if (b && b.hp > 0) return (b.k === 'tempest' ? 'bossS' : 'bossM') + (b.phase === 2 ? '2' : '');
+                            const Z = currentWorld.zf; if (Z && !(boss || libBoss || rpgBosses.length)) {
+                                const col = Math.floor((player.x + 12) / 32), row = player.y / 32, sf = (surfaceHeights && surfaceHeights[col] != null) ? surfaceHeights[col] : 40;
+                                if (Z.sky && row < 31 && row < sf - 8 && Math.abs(col - Z.sky.cx) < 360) return 'sky';
+                                if (Z.vol && col >= Z.vol.x0 - 4 && col <= Z.vol.x1 + 4 && row > currentWorld.height - 34) return 'abyss';
+                            }
+                        }
+                    } catch (e) { }
+                    return o.apply(this, arguments);
+                };
+            })(musicPick);
+        }
+
+        // ---------- компас сфер ----------
+        {
+            const el = document.createElement('div'); el.id = 'zf-hud';
+            el.style.cssText = 'position:fixed;left:16px;bottom:84px;z-index:55;display:none;flex-direction:column;gap:3px;pointer-events:none;font:700 12px "Segoe UI",sans-serif;color:#fff;text-shadow:0 1px 2px #000';
+            document.body.appendChild(el);
+            const has = () => inventory.some(it => it && it.id === 'biome_compass');
+            const row = (ic, nm, tx, ty, col) => {
+                const px = player.x + 12, py = player.y + 22, dx = tx * 32 - px, dy = ty * 32 - py, d = Math.round(Math.hypot(dx, dy) / 32);
+                const ar = Math.abs(dx) < 90 ? (dy < 0 ? '▲' : '▼') : (dx < 0 ? '◀' : '▶'); return `<span style="background:${col};padding:3px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.25)">${ic} ${nm} ${ar} ${d} м${Math.abs(dx) < 90 && dy < 0 ? ' · вгору' : ''}${Math.abs(dx) < 90 && dy > 0 ? ' · вниз' : ''}</span>`;
+            };
+            updateGame = (function (o) {
+                return function () {
+                    o.apply(this, arguments); if (gameState !== 'PLAYING') return;
+                    try {
+                        ZF.hudT++; const Z = zfW();
+                        if (ZF.hudT % 10 === 0) {
+                            const on = Z && has(); if (!on) { if (el.style.display !== 'none') el.style.display = 'none'; }
+                            else { let h = ''; if (Z.sky) h += row('☁', 'Небесна цитадель', Z.sky.cx, Z.sky.ty, 'rgba(60,80,160,.85)'); if (Z.vol) h += row('🌋', 'Горно безодні', Z.vol.cc, Z.vol.F0, 'rgba(150,50,20,.85)'); if (el._h !== h) { el._h = h; el.innerHTML = h; } el.style.display = 'flex'; }
+                        }
+                        if (ZF.hudT % 60 === 0 && Z && RPG.level >= 12 && !Z.cg && !v17Client()) {
+                            Z.cg = 1; giveItem('biome_compass', 1); try { v26Banner('🧭 Компас сфер', 'Він покаже Небесну цитадель і Горно безодні. Ідіть по зброю!'); } catch (e) { }
+                        }
+                    } catch (e) { rpgErr(e); }
+                };
+            })(updateGame);
+        }
+
+        // ---------- гайд ----------
+        {
+            const i = GUIDE_PAGES.findIndex(p => p.id === 'boss2');
+            GUIDE_PAGES.splice(i < 0 ? GUIDE_PAGES.length : i + 1, 0, {
+                id: 'zfb', icon: '☁', title: 'Небо та Безодня', html: () => `
+              <p>Два нові простори світу. Щоб дійти до наймогутнішого спорядження й викликати <b>Гнилокорого Проглинача</b>, доведеться побувати в обох: його Тотем гнилі тепер вимагає <b>Ядро Бурі</b> і <b>Ядро Магми</b>.</p>
+              <h3 style="margin:14px 0 6px;color:#ffd36b">☁ Небесні острови</h3>
+              <p>Над світом висять хмарні острови. На головному стоїть <b>Небесна цитадель</b> із вежами та підземною залою зі скринями. Від острова до землі веде <b>хмарні сходи</b> з аркою на початку. Рекомендовано 20+ рівень. Тут мешкають <b>громові гарпії</b> та <b>грозові іскри</b>; з них і зі скринь падають <b>небесні уламки</b>. Грозову руду добувай залізною киркою, переплав у пічці на <b>Громовий злиток</b>.</p>
+              <div class="g-recs g-wide">${gic('storm_ore', 40)}${gic('storm_ingot', 40)}${gic('sky_shard', 40)}${gic('storm_beacon', 40)}${gic('storm_core', 40)}</div>
+              <p><b>Грозовий маяк</b>: 5 небесних уламків, 6 громових злитків, 4 золотих злитки (рівень 18). Використовуй на вершині цитаделі. <b>Володар Бурі</b>: блискавки з попередженням, самонавідні кулі, ривок, вихор, дощ грому й кільце куль із проходом. Після ривка він відкритий: <b>+30% шкоди</b>. У другій фазі шторм сильнішає.</p>
+              <h3 style="margin:14px 0 6px;color:#ffd36b">🌋 Вулканічна безодня</h3>
+              <p>Над землею височить <b>вулкан</b>. Спустись по драбині в кратері, глибоко під землею лежить печера з <b>озерами лави</b> й залом <b>Горна</b>. Лава вбиває за кілька секунд, <b>броня Горна дає повний імунітет</b>. Тут живуть <b>попелясті біси</b> та <b>жарові велети</b>: вони дають <b>жарові ядра</b>. Магмову руду переплав на <b>Магмовий злиток</b>.</p>
+              <div class="g-recs g-wide">${gic('magma_ore', 40)}${gic('magma_ingot', 40)}${gic('ember_core', 40)}${gic('obsidian', 40)}${gic('magma_heart', 40)}${gic('magma_core', 40)}</div>
+              <p><b>Серце Магми</b>: 5 жарових ядер, 6 магмових злитків, 8 обсидіану (рівень 22). Використовуй у залі Горна. <b>Володар Магми</b>: ударні хвилі по землі (перестрибуй), вогняні кулі з калюжами, гейзери з попередженням, ривок і метеорити. Після стрибка й ривка він <b>оглушений</b>: бий у цей момент. Якщо він врізається в стіну, оглушення довше.</p>
+              <h3 style="margin:14px 0 6px;color:#ffd36b">⚔ Спорядження</h3>
+              <p>Громовиця: броня (рівень 22), Клинок Грому, Лук Громової Хмари, Посох Громовиці (рівень 24, потрібне Ядро Бурі). Горно Безодні: броня (рівень 28), Тесак Горна, Арбалет Розлому, Посох Розлому (рівень 30, потрібне Ядро Магми). З босів також падають аксесуари <b>Око Бурі</b> та <b>Серце Вулкана</b>.</p>
+              <div class="g-tip">💡 На 12 рівні ти отримаєш <b>Компас сфер</b>: тримай в інвентарі — він покаже напрям і відстань до обох місць. Володар Бурі рекомендований для 24+ рівня й 380+ HP, Володар Магми для 28+ рівня й 450+ HP.</div>` });
+        }
+        guide.adviceList.push('Після ривка Володар Бурі відкритий, а Володар Магми оглушений після стрибка чи удару в стіну: у ці миті шкода по ньому на 30% більша.');
+        // ================= 🎈 v41.2: АЕРОСТАТ — єдиний шлях до небесних островів =================
+        const ZK = { rem: {}, pas: '', ls: -1, lp: '', CAP: 4, on: false, fuel: 0, cd: 0, sick: 0, ground: 0, t: 0, warn: 0, LINE: 27, FUEL: 3600 };
+        {
+            const S = itemSprites;
+            const F = (cx, col, l) => { cx.fillStyle = col; l.forEach(r => cx.fillRect(r[0], r[1], r[2], r[3])); };
+            const P = (cx, pts, col, st) => { cx.beginPath(); pts.forEach((p, i) => i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1])); cx.closePath(); cx.fillStyle = col; cx.fill(); if (st) { cx.strokeStyle = st; cx.lineWidth = 1.5; cx.stroke(); } };
+            const C = (cx, x, y, r, f, s, lw) => { cx.beginPath(); cx.arc(x, y, r, 0, 7); if (f) { cx.fillStyle = f; cx.fill(); } if (s) { cx.strokeStyle = s; cx.lineWidth = lw || 1.5; cx.stroke(); } };
+            S.aero_gondola = generateSprite(cx => {
+                P(cx, [[5, 14], [27, 14], [24, 28], [8, 28]], '#a8742e', '#4a2c0e'); F(cx, '#c99444', [[7, 17, 18, 2], [8, 22, 16, 2]]); F(cx, '#6e4416', [[10, 14, 1, 14], [16, 14, 1, 14], [22, 14, 1, 14]]);
+                cx.strokeStyle = '#3a2410'; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(6, 14); cx.lineTo(10, 4); cx.moveTo(26, 14); cx.lineTo(22, 4); cx.stroke(); F(cx, '#d9d2c0', [[9, 3, 14, 2]]);
+            });
+            S.aero_envelope = generateSprite(cx => {
+                const g = cx.createRadialGradient(13, 10, 2, 16, 14, 14); g.addColorStop(0, '#ff9a8a'); g.addColorStop(1, '#b8281c'); cx.beginPath(); cx.ellipse(16, 14, 12, 13, 0, 0, 7); cx.fillStyle = g; cx.fill(); cx.strokeStyle = '#4a0c08'; cx.lineWidth = 1.5; cx.stroke();
+                cx.save(); cx.beginPath(); cx.ellipse(16, 14, 12, 13, 0, 0, 7); cx.clip(); F(cx, '#f4ead0', [[10, 0, 4, 30], [18, 0, 4, 30]]); cx.restore(); P(cx, [[12, 26], [20, 26], [18, 31], [14, 31]], '#6e4416', '#2a1606');
+            });
+            S.lev_core = generateSprite(cx => {
+                const g = cx.createRadialGradient(16, 16, 1, 16, 16, 12); g.addColorStop(0, '#ffffff'); g.addColorStop(0.4, '#8fe0ff'); g.addColorStop(1, '#2a6ad8'); C(cx, 16, 16, 11, g, '#10285a', 2);
+                cx.strokeStyle = '#d8f4ff'; cx.lineWidth = 1.5; cx.beginPath(); cx.ellipse(16, 16, 14, 5, 0.6, 0, 7); cx.stroke(); cx.beginPath(); cx.ellipse(16, 16, 14, 5, -0.6, 0, 7); cx.stroke();
+            });
+            S.aero_prop = generateSprite(cx => {
+                C(cx, 16, 16, 4, '#9aa3b8', '#262b3a', 1.5); P(cx, [[16, 16], [10, 3], [16, 4]], '#cfd6e6', '#262b3a'); P(cx, [[16, 16], [22, 29], [16, 28]], '#cfd6e6', '#262b3a'); P(cx, [[16, 16], [3, 22], [4, 16]], '#aeb6ca', '#262b3a'); P(cx, [[16, 16], [29, 10], [28, 16]], '#aeb6ca', '#262b3a'); F(cx, '#ffd04a', [[15, 15, 2, 2]]);
+            });
+            S.gas_canister = generateSprite(cx => {
+                P(cx, [[9, 8], [23, 8], [24, 27], [8, 27]], '#6fd0ff', '#14407a'); F(cx, '#e8fbff', [[11, 10, 3, 15]]); F(cx, '#2a6ad8', [[8, 14, 16, 3]]); F(cx, '#8a95a8', [[13, 3, 6, 5]]); F(cx, '#c8d0e0', [[14, 2, 4, 2]]);
+            });
+            S.aerostat = generateSprite(cx => {
+                const g = cx.createRadialGradient(12, 8, 2, 16, 11, 12); g.addColorStop(0, '#ff9a8a'); g.addColorStop(1, '#b8281c'); cx.beginPath(); cx.ellipse(16, 11, 10, 11, 0, 0, 7); cx.fillStyle = g; cx.fill(); cx.strokeStyle = '#4a0c08'; cx.lineWidth = 1.5; cx.stroke();
+                cx.save(); cx.beginPath(); cx.ellipse(16, 11, 10, 11, 0, 0, 7); cx.clip(); F(cx, '#f4ead0', [[11, 0, 3, 24], [18, 0, 3, 24]]); cx.restore();
+                cx.strokeStyle = '#3a2410'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(10, 21); cx.lineTo(12, 25); cx.moveTo(22, 21); cx.lineTo(20, 25); cx.stroke(); P(cx, [[10, 25], [22, 25], [21, 31], [11, 31]], '#a8742e', '#4a2c0e'); F(cx, '#6e4416', [[16, 25, 1, 6]]);
+            });
+        }
+        {
+            const T = i => RPG_TIERS[i], mk = (id, name, ti, type, desc, stat) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, desc }; if (stat) ITEM_METADATA[id].stat = stat; };
+            mk('aero_gondola', 'Гондола аеростата', 2, 'Компонент аеростата', 'Плетений кошик із залізним каркасом. Перша частина повітряної кулі.');
+            mk('aero_envelope', 'Оболонка аеростата', 2, 'Компонент аеростата', 'Величезний купол зі слизу, павутиння й світних лілій. Тримає газ.');
+            mk('lev_core', 'Левітаційне ядро', 3, 'Компонент аеростата', 'Кристал, що прагне вгору. Його не втримає жодна земля.');
+            mk('aero_prop', 'Повітряний гвинт', 3, 'Компонент аеростата', 'Космічні лопаті на рунному валу. Дають кулі швидкість.');
+            mk('gas_canister', 'Балон левітаційного газу', 2, 'Паливо', 'Одного балона вистачає приблизно на 1 хвилину польоту. Бери з запасом: газ закінчиться — і ти впадеш.', 'Паливо для Аеростата');
+            mk('aerostat', 'Аеростат', 4, '🎈 Транспорт', 'Повітряна куля. ЛКМ — злетіти / приземлитися. Пробіл або W — вгору, S — вниз, A/D — вперед. Без неї над горами «розріджене повітря» завдає шкоди. Потрібні балони газу.', 'Єдиний шлях до небесних островів');
+            [
+                { result: 'aero_gondola', count: 1, req: { iron_ingot: 14, gold_ingot: 6, wood: 24 }, lvl: 12 },
+                { result: 'aero_envelope', count: 1, req: { ru_web: 30, gel: 24, glow_lily: 6 }, lvl: 12 },
+                { result: 'lev_core', count: 1, req: { golem_core: 2, crystal_ingot: 6, elf_dust: 8 }, lvl: 14 },
+                { result: 'aero_prop', count: 1, req: { cosmic_ingot: 4, rune_core: 1, iron_ingot: 10 }, lvl: 16 },
+                { result: 'aerostat', count: 1, req: { aero_gondola: 1, aero_envelope: 1, lev_core: 1, aero_prop: 1, lake_pearl: 2, gold_ingot: 10 }, lvl: 18 },
+                { result: 'gas_canister', count: 2, req: { gel: 6, glow_lily: 2, elf_dust: 3 }, lvl: 12 }
+            ].forEach(r => recipes.push(r));
+        }
+
+        // ---------- де ми ----------
+        function zkSafe() { // чи у «небесній атмосфері» острова
+            const Z = zfW(); if (!Z || !Z.sky) return false; const col = (player.x + 12) / 32, row = (player.y + 22) / 32, S = Z.sky;
+            const L = [{ x: S.cx, y: S.ty, hw: S.hw }].concat(S.isl || []);
+            return L.some(q => Math.abs(col - q.x) <= q.hw + 6 && row >= q.y - 16 && row <= q.y + 22);
+        }
+        function zkMsg(t, col) { try { floatingTexts.push({ x: player.x - 50, y: player.y - 40, text: t, color: col || '#8fd0ff', life: 70 }); } catch (e) { } }
+        function zkCans() { let n = 0; for (const it of inventory) if (it && it.id === 'gas_canister') n += it.count; return n; }
+        function zkToggle() {
+            if (ZK.cd > 0) return true; ZK.cd = 25; if (ZK.pas) zkLeave(true);
+            if (ZK.on) { ZK.on = false; zkMsg('🎈 Приземлення', '#cfe8ff'); return true; }
+            if (ZK.fuel <= 0) { if (zkCans() > 0) { consumeItemCount('gas_canister', 1); ZK.fuel = ZK.FUEL; updateInventoryUI(); } else { zkMsg('Немає газу! Потрібен балон левітаційного газу.', '#ff9a6a'); return true; } }
+            ZK.on = true; ZK.ground = 0; ZK.sick = 0; player.vy = -3; player.onGround = false; zkMsg('🎈 Злітаємо! Пробіл — вгору, S — вниз', '#8fe0ff'); try { playSound && playSound('jump'); } catch (e) { }
+            return true;
+        }
+        rpgAttack = (function (o) { return function () { const it = inventory[selectedHotbarSlot]; if (it && it.id === 'aerostat' && gameState === 'PLAYING') return zkToggle(); return o.apply(this, arguments); }; })(rpgAttack);
+
+
+        // ---------- мультиплеєр: спільна куля ----------
+        const zkMP = () => typeof MP !== 'undefined' && MP && MP.sh && MP.players;
+        const zkFresh = r => r && performance.now() - (r.at || 0) < 4500;
+        function zkSend() { try { if (zkMP()) mpSend({ t: 'x_aero', on: ZK.on ? 1 : 0, pas: ZK.pas || '', f: ZK.fuel > 0 ? Math.round(ZK.fuel / ZK.FUEL * 100) : 0 }); } catch (e) { } }
+        function zkPilots() { // живі кулі інших гравців
+            const a = []; if (!zkMP()) return a;
+            for (const id in ZK.rem) { const r = ZK.rem[id], p = MP.players[id]; if (r && r.on && zkFresh(r) && p && !p.dead && !(p.hide && !p.seen)) a.push({ id, p, r }); } return a;
+        }
+        function zkSeats(pid) { let n = 1; for (const id in ZK.rem) { const r = ZK.rem[id]; if (r && r.pas === pid && zkFresh(r) && MP.players[id]) n++; } return n + (ZK.pas === pid ? 1 : 0); }
+        function zkNear() { // куля поруч, куди можна сісти
+            if (ZK.on || ZK.pas || gameState !== 'PLAYING') return null; const px = player.x + 12, py = player.y + 30; let best = null, bd = 1e9;
+            for (const q of zkPilots()) { const dx = q.p.x + 12 - px, dy = q.p.y + 30 - py, d = Math.hypot(dx, dy * 0.7); if (Math.abs(dx) < 120 && Math.abs(dy) < 150 && d < bd) { bd = d; best = q; } }
+            return best;
+        }
+        function zkBoard() {
+            const q = zkNear(); if (!q) return false; if (zkSeats(q.id) >= ZK.CAP) { zkMsg('Кошик повний (' + ZK.CAP + '/' + ZK.CAP + ')', '#ff9a6a'); return true; }
+            ZK.pas = q.id; ZK.cd = 25; try { player.vy = 0; player.vx = 0; } catch (e) { } zkMsg('🎈 Ви в кулі ' + (q.p.name || 'друга'), '#8fe0ff'); zkSend(); return true;
+        }
+        function zkLeave(quiet) { if (!ZK.pas) return; ZK.pas = ''; if (!quiet) zkMsg('Вийшли з кулі', '#cfe8ff'); try { player.vy = 0; } catch (e) { } zkSend(); }
+        function zkSlot(pid) { const ids = [pid]; for (const id in ZK.rem) { const r = ZK.rem[id]; if (r && r.pas === pid && zkFresh(r)) ids.push(id); } if (ZK.pas === pid) ids.push(MP.id); ids.sort(); const i = ids.indexOf(MP.id); return [-15, 15, 0, -30][Math.max(0, i) % 4]; }
+        window.addEventListener('keydown', e => { if (e.code !== 'KeyH' || e.repeat || gameState !== 'PLAYING' || (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return; if (ZK.pas) zkLeave(); else zkBoard(); });
+        mpOnMsg = (function (o) { return function (m) { if (m && m.t === 'x_aero') { const r = ZK.rem[m.id] || (ZK.rem[m.id] = {}); r.on = m.on ? 1 : 0; r.pas = m.pas || ''; r.fuel = m.f; r.at = performance.now(); return; } return o.apply(this, arguments); }; })(mpOnMsg);
+
+        // ---------- HUD ----------
+        const zkHud = document.createElement('div'); zkHud.id = 'zk-hud';
+        zkHud.style.cssText = 'position:fixed;left:16px;bottom:150px;z-index:56;display:none;pointer-events:none;font:700 12px "Segoe UI",sans-serif;color:#fff;text-shadow:0 1px 2px #000;min-width:190px';
+        document.body.appendChild(zkHud);
+        const zkVig = document.createElement('div'); zkVig.id = 'zk-vig';
+        zkVig.style.cssText = 'position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(ellipse at center,rgba(120,150,255,0) 40%,rgba(40,50,120,.75) 100%)';
+        document.body.appendChild(zkVig);
+
+        v19Vx = (function (o) { return function (d, sp) { return o.call(this, d, ZK.on ? sp * 1.55 : sp); }; })(v19Vx);
+        // ---------- фізика польоту + розріджене повітря ----------
+        updateGame = (function (o) {
+            return function () {
+                const fly = ZK.on && gameState === 'PLAYING';
+                if (fly) {
+                    try {
+                        const up = keys['Space'] || keys['KeyW'] || keys['ArrowUp'], dn = keys['KeyS'] || keys['ArrowDown'];
+                        const want = up ? -3.4 : dn ? 3.6 : Math.sin(ZK.t * 0.05) * 0.25, cur = player.vy + (player.gravity || 0.5) * 0 ;
+                        const nv = cur + Math.max(-0.35, Math.min(0.35, want - cur)); player.vy = nv - (player.gravity || 0.5);
+                    } catch (e) { }
+                }
+                const seat = () => { if (!ZK.pas) return; const p = zkMP() && MP.players[ZK.pas], r = ZK.rem[ZK.pas]; if (!p || !r || !r.on || !zkFresh(r) || p.dead || ZK.on) { zkLeave(true); zkMsg('Політ завершено', '#cfe8ff'); return; } player.x = p.x + zkSlot(ZK.pas); player.y = p.y; player.vx = 0; player.vy = 0; player.onGround = true; player.facing = p.f || player.facing; };
+                if (ZK.pas && gameState === 'PLAYING') { try { seat(); } catch (e) { } }
+                o.apply(this, arguments);
+                if (ZK.pas && gameState === 'PLAYING') { try { seat(); } catch (e) { } }
+                if (gameState !== 'PLAYING') { ZK.pas = ''; ZK.on = false; zkVig.style.opacity = 0; zkHud.style.display = 'none'; return; }
+                try {
+                    ZK.t++; if (ZK.cd > 0) ZK.cd--;
+                    if (player.health <= 0) ZK.on = false;
+                    if (ZK.on) {
+                        if (player.onGround) { if (++ZK.ground > 70) { ZK.on = false; zkMsg('⚓ Причалили', '#cfe8ff'); } } else ZK.ground = 0;
+                        if (!player.onGround) {
+                            ZK.fuel--; if (ZK.fuel <= 0) { if (zkCans() > 0) { consumeItemCount('gas_canister', 1); ZK.fuel = ZK.FUEL; updateInventoryUI(); zkMsg('🔥 Новий балон', '#9fe8ff'); } else { ZK.on = false; ZK.fuel = 0; zkMsg('⚠ ГАЗ ЗАКІНЧИВСЯ!', '#ff6a4a'); try { floatingTexts.push({ x: player.x - 40, y: player.y - 60, text: 'Падіння!', color: '#ff4a3a', life: 70 }); } catch (e) { } } }
+                        }
+                        if (ZK.t % 4 === 0) createParticles(player.x + 12 - player.facing * 22, player.y + 34, '#dfe8ff', 1, 1, 2, 14);
+                    }
+                    // розріджене повітря
+                    const row = (player.y + 22) / 32, high = row < ZK.LINE && !zkSafe() && !ZK.on && !ZK.pas && !(RPG.st && RPG.st.altImm);
+                    if (high) { ZK.sick++; if (ZK.sick % 24 === 12) bHurt(Math.round(player.maxHealth * 0.035) + 2, 'Розріджене повітря', '🌬', { dot: 1, col: '#aab8ff', pc: '#aab8ff' }); if (ZK.sick === 1 || ZK.sick % 300 === 0) { try { homeToast('🌬 Розріджене повітря! Тут не можна дихати. Потрібен Аеростат.'); } catch (e) { } } }
+                    else ZK.sick = Math.max(0, ZK.sick - 3);
+                    zkVig.style.opacity = high ? Math.min(1, 0.35 + ZK.sick / 120) : 0;
+                    { const st = ZK.on ? 1 : 0; if (st !== ZK.ls || ZK.pas !== ZK.lp || ZK.t % 90 === 0) { ZK.ls = st; ZK.lp = ZK.pas; zkSend(); } }
+                    // HUD
+                    if (ZK.t % 6 === 0) {
+                        let h = ''; const nr = zkNear();
+                        if (ZK.on) {
+                            const pct = Math.max(0, Math.min(100, Math.round(ZK.fuel / ZK.FUEL * 100))), low = pct < 20 && zkCans() === 0;
+                            h = `<div style="background:rgba(30,40,90,.88);border:1px solid rgba(255,255,255,.3);border-radius:9px;padding:5px 10px">🎈 Аеростат · Газ ${pct}% · балонів: ${zkCans()}<div style="height:6px;border-radius:3px;background:#0b1130;margin-top:4px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:${low ? '#ff5a3a' : '#6fd0ff'}"></i></div>${low ? '<div style="color:#ff8a6a;margin-top:3px">⚠ Газ закінчується!</div>' : ''}<div style="opacity:.75;font-weight:400;margin-top:3px">Пробіл/W вгору · S вниз · A/D · ЛКМ — приземлитись</div></div>`;
+                        } else if (ZK.pas) { const p = MP.players[ZK.pas]; h = `<div style="background:rgba(30,40,90,.88);border:1px solid rgba(255,255,255,.3);border-radius:9px;padding:5px 10px">🎈 Ви пасажир кулі ${p ? p.name : ''}<div style="opacity:.75;font-weight:400;margin-top:3px">H — вийти</div></div>`; } else if (nr) h = `<div style="background:rgba(30,90,60,.9);border:1px solid #8fffb0;border-radius:9px;padding:5px 10px">🎈 H — сісти в кулю ${nr.p.name || ''} (${zkSeats(nr.id)}/${ZK.CAP})</div>`; else if (high) h = `<div style="background:rgba(60,40,110,.9);border:1px solid #aab8ff;border-radius:9px;padding:5px 10px;color:#dfe4ff">🌬 Розріджене повітря! Спускайтесь вниз</div>`;
+                        if (zkHud._h !== h) { zkHud._h = h; zkHud.innerHTML = h; zkHud.style.display = h ? 'block' : 'none'; }
+                    }
+                    // підказка про Аеростат
+                    const Z = zfW(); if (Z && Z.sky && !Z.ag && ZK.t % 60 === 0 && RPG.level >= 14 && !v17Client()) { Z.ag = 1; try { v26Banner('🎈 Небесні острови', 'Пішки туди не дістатися: потрібен Аеростат. Рецепт — у верстаті.'); } catch (e) { } }
+                } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+
+        // ---------- малювання кулі ----------
+        function zkDraw(px, fy, face, t, fl) {
+                try {
+                    const bob = Math.sin(t * 2.2) * 2, ex = px - face * 4, ey = fy - 112 + bob;
+                    ctx.save();
+                    // стропи
+                    ctx.strokeStyle = '#4a3016'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ex - 22, ey + 34); ctx.lineTo(px - 17, fy - 10); ctx.moveTo(ex + 22, ey + 34); ctx.lineTo(px + 17, fy - 10); ctx.moveTo(ex - 8, ey + 44); ctx.lineTo(px - 6, fy - 10); ctx.moveTo(ex + 8, ey + 44); ctx.lineTo(px + 6, fy - 10); ctx.stroke();
+                    // полум'я пальника
+                    const fg = ctx.createRadialGradient(ex, ey + 50, 1, ex, ey + 50, 26); fg.addColorStop(0, 'rgba(255,220,140,.8)'); fg.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = fg; ctx.fillRect(ex - 28, ey + 24, 56, 52);
+                    // оболонка
+                    const g = ctx.createRadialGradient(ex - 12, ey - 14, 4, ex, ey, 52); g.addColorStop(0, '#ff9a8a'); g.addColorStop(0.6, '#d03a2a'); g.addColorStop(1, '#8a1a12');
+                    ctx.beginPath(); ctx.ellipse(ex, ey, 36, 44, 0, 0, 7); ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#3a0a06'; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.save(); ctx.beginPath(); ctx.ellipse(ex, ey, 36, 44, 0, 0, 7); ctx.clip(); ctx.fillStyle = 'rgba(248,238,208,.92)';
+                    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.ellipse(ex + i * 22, ey, 7 + (i ? 3 : 8), 46, 0, 0, 7); ctx.fill(); }
+                    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.ellipse(ex - 14, ey - 18, 10, 18, -0.5, 0, 7); ctx.fill(); ctx.restore();
+                    // горловина
+                    ctx.fillStyle = '#6e4416'; ctx.fillRect(ex - 8, ey + 40, 16, 6);
+                    // кошик (передня стінка)
+                    ctx.fillStyle = '#a8742e'; ctx.beginPath(); ctx.moveTo(px - 20, fy - 12); ctx.lineTo(px + 20, fy - 12); ctx.lineTo(px + 16, fy + 8); ctx.lineTo(px - 16, fy + 8); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#4a2c0e'; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = '#c99444'; ctx.fillRect(px - 18, fy - 6, 36, 3); ctx.fillRect(px - 16, fy + 1, 32, 3); ctx.fillStyle = '#e8dcc0'; ctx.fillRect(px - 21, fy - 14, 42, 3);
+                    // гвинт
+                    const bx = px - face * 26, by = fy - 2, ang = t * 30; ctx.translate(bx, by); ctx.fillStyle = '#9aa3b8'; ctx.fillRect(-3, -2, 6, 4); ctx.rotate(ang); ctx.fillStyle = 'rgba(220,230,250,.8)'; ctx.fillRect(-1.5, -12, 3, 24); ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 7); ctx.fill();
+                    ctx.restore();
+                    if (fl) { ctx.save(); ctx.fillStyle = '#ff5a3a'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 12); ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('⛽', px, ey - 52); ctx.restore(); }
+                                } catch (e) { }
+        }
+        drawBossesAll = (function (o) {
+            return function (t) {
+                o.apply(this, arguments);
+                try {
+                    if (zkMP()) for (const q of zkPilots()) zkDraw(q.p.x + 12, q.p.y + 44, q.p.f || 1, t, q.r.fuel < 17);
+                    if (ZK.on && gameState === 'PLAYING') zkDraw(player.x + 12, player.y + 44, player.facing, t, ZK.fuel < 600);
+                } catch (e) { }
+            };
+        })(drawBossesAll);
+
+        // ---------- гайд ----------
+        try {
+            const pg = GUIDE_PAGES.find(p => p.id === 'zfb');
+            if (pg) {
+                const oh = pg.html; pg.html = () => oh().replace(/<h3[^>]*>☁ Небесні острови<\/h3>/, m => `<h3 style="margin:14px 0 6px;color:#ffd36b">🎈 Аеростат — шлях у небо</h3>
+              <p>Пішки до островів не дійти: <b>вище гір повітря розріджене</b> (шкода від задухи й затемнення екрана), будувати сходи вгору марно. Небесна цитадель доступна лише на <b>Аеростаті</b>.</p>
+              <p><b>Компоненти</b> (кожен — із різних частин світу):<br>• <b>Гондола</b> — залізо, золото, дерево.<br>• <b>Оболонка</b> — павутиння (печери й павуки), гель (слизи), світні лілії (озера).<br>• <b>Левітаційне ядро</b> — ядра големів, кришталеві злитки, ельфійський пил (кришталеві печери).<br>• <b>Повітряний гвинт</b> — космічні злитки та Рунне ядро (вартові).<br>• А ще 2 перлини озера (скрині на дні озер) і 10 золота.</p>
+              <p><b>Газ:</b> Балон левітаційного газу (гель, лілії, ельфійський пил) дає ≈1 хв польоту. Без газу куля падає — бери запас! Керування: ЛКМ з Аеростатом у руках — злетіти/приземлитись, Пробіл або W — вгору, S — вниз.</p>
+              ` + m);
+            }
+        } catch (e) { }
+        window.__zk = { ZK, zkSafe, zkToggle };
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['41.3', 'Спільна куля і міцніші боси', 'new'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '41.3': [
+                ['#8fffb0', '🎈 Куля для всіх', 'У мультиплеєрі в кулі можуть летіти <b>до 4 гравців</b>. Підійди до кулі друга й натисни <b>H</b> — ти сядеш пасажиром (власний Аеростат не потрібен). Пілот керує польотом і витрачає газ, пасажири їдуть із ним і захищені від розрідженого повітря. <b>H</b> ще раз — вийти.'],
+                ['#ff7a6a', '⛈ Міцніші Небесний і Вулканічний боси', 'Володар Бурі та Володар Магми мають <b>у 2,5 раза більше здоров’я</b>, міцнішу броню й сильніші удари. Коли лишається менше 25% здоров’я, вони <b>скаженіють</b>: атакують частіше, а вікна для ваших ударів коротшають. Беріть друзів, зілля й найкраще спорядження.']
+            ],
+            '41.2': [
+                ['#ff7a6a', '🎈 Аеростат', 'Небесні острови більше <b>не мають сходів</b>. Щоб дістатися туди, збудуй <b>Аеростат</b>: гондола, оболонка, левітаційне ядро й повітряний гвинт + 2 перлини озера. Компоненти збираються з різних частин світу: печер, озер, павуків, големів і вартових.'],
+                ['#8fd0ff', '⛽ Газ і керування', '<b>Балон левітаційного газу</b> дає близько хвилини польоту. ЛКМ з Аеростатом — злетіти чи приземлитись, <b>Пробіл/W</b> вгору, <b>S</b> вниз. Закінчився газ у повітрі — падіння!'],
+                ['#aab8ff', '🌬 Розріджене повітря', 'Вище за гірські вершини немає чим дихати: екран темнішає, а здоров’я тане. Без Аеростата на висоті не вижити, а побудувати «сходи» до неба не вийде. На самих островах повітря нормальне.']
+            ],
+            '41.1': [
+                ['#8fb4ff', '☁ Небесні острови', 'Високо над землею плавають <b>острови з Небесною цитаделлю</b>: вежі, підземна сховиша, скрині й руда бурі. Шлях вказує <b>Компас сфер</b> (дарується на 12 рівні). Тут літають гарпії та вогники-блискавки.'],
+                ['#ff7a3a', '🌋 Горно безодні', 'Глибоко під землею — <b>лавова печера з Горном</b>: базальт, обсидіан, лавові озера, скрині на балконах. Земля пече — шукай броню Горна, щоб ходити по лаві. Тут бродять попелясті біси та жарники.'],
+                ['#c06aff', '⚡ Два нові боси', '<b>Володар Бурі</b> (літає, блискавки, вихор, злива) і <b>Володар Магми</b> (удари, метеори, виверження). Після важких атак вони відкриваються — бий у цей момент! Для виклику: Маяк бурі / Серце магми. Під час бою грає <b>своя музика</b>, у другій фазі — швидша.'],
+                ['#ffd04a', '🛠 Нова екіпіровка', 'З босів падають ядра: з них куються <b>зброя й броня Громовиці та Горна</b>, а також аксесуари Око бурі, Ядро вулкана й Хмарні черевики. Ядра Бурі й Магми потрібні для Тотема перевтілення.']
+            ],
+            '41.0': [
+                ['#c06aff', '✦ Перевтілення', 'На <b>40 рівні</b> у вкладці навичок з’являється кнопка «Перевтілитися». Рівень і навики скидаються, спорядження лишається, а ти назавжди отримуєш <b>+3% шкоди, +3% здоров’я і +25% досвіду</b> за ранг, ★ Зірки для 6 талантів і додаткові очки навичок. До 10 рангів.'],
+                ['#ff8a5a', '⚠ Ціна сили', 'Кожен ранг робить <b>ворогів і босів міцнішими на 25%</b> і прирівнює їх до рівня на 6 вище. Біля рівня з’являється значок ✦. Таланти: Сила предків, Загартування, Мудрість, Резонанс, Фортуна, Живучість (до 5 рівнів кожен). Прогрес зберігається зі світом.']
+            ],
             '40.4': [
                 ['#ff5a4a', '⚖ Темп бою', 'Раніше звичайні вороги помирали за долю секунди на будь-якому рівні. Тепер вони <b>значно міцніші</b> (здоров’я росте разом з твоїм рівнем), а <b>боси майже вдвічі витриваліші</b>. Звичайний бій триває кілька секунд: потрібні тактика, ухиляння, зілля й вдала зброя. Досвід за вбивство лишився тим самим, тож прокачування стало повільнішим. Орда й «Падіння зорі» підлаштовані, щоб не стати занадто важкими.']
             ],
