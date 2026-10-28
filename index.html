@@ -11302,7 +11302,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '40.0', GAME_VER_NAME = 'Нова бойовка';
+        const GAME_VER = '40.1', GAME_VER_NAME = 'Адаптація';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27627,8 +27627,9 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 opt = opt || {}; const ob = t && t.o;
                 if (ob && ob._z1) { if (ob._z1.ar) dmg = Math.max(1, Math.round(dmg * (1 - ob._z1.ar))); if (ob._z1.heavy && opt.kb !== undefined) opt = Object.assign({}, opt, { kb: opt.kb * 0.35 }); }
                 if (ob && Z1_MOBS[ob.type] && Z1_MOBS[ob.type].heavy && opt.kb !== undefined) opt = Object.assign({}, opt, { kb: opt.kb * 0.4 });
+                const d0 = dmg; try { dmg = z1AdIn(t, dmg, opt); } catch (e) { }
                 const r = o.call(this, t, dmg, opt);
-                if (r) { try { z1HitFx(t, dmg, opt); } catch (e) { rpgErr(e); } }
+                if (r) { try { z1HitFx(t, dmg, opt); z1AdLearn(t, d0, opt); } catch (e) { rpgErr(e); } }
                 return r;
             };
         })(rpgHit);
@@ -27697,7 +27698,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             { n: 'Загартований', col: '#6fb8ff', hp: 1.7, dm: 1.2, sp: 1.08, xp: 1, coin: 2 },
             { n: 'Лютий', col: '#ff5a4a', hp: 2.3, dm: 1.5, sp: 1.14, xp: 2, coin: 4 },
             { n: 'Мутант', col: '#c06aff', hp: 3.4, dm: 1.9, sp: 1.2, xp: 3, coin: 7 }];
-        const Z1_AFF = { vamp: { n: 'Кровопивця', ic: '🩸' }, fast: { n: 'Швидкий', ic: '⚡' }, boom: { n: 'Вибуховий', ic: '💥' }, psn: { n: 'Отруйний', ic: '☠' }, arm: { n: 'Броньований', ic: '🛡' } };
+        const Z1_AFF = { vamp: { n: 'Кровопивця', ic: '🩸' }, fast: { n: 'Швидкий', ic: '⚡' }, boom: { n: 'Вибуховий', ic: '💥' }, psn: { n: 'Отруйний', ic: '☠' }, arm: { n: 'Кам’яний', ic: '🪨' } };
         const Z1_AFFK = Object.keys(Z1_AFF);
         const Z1_OK = new Set(['zombie', 'slime', 'scarab', 'mummy', 'wight', 'bandit', 'savage', 'boar', 'snake', 'cavebat', 'deadminer', 'stalker', 'magmaslime']);
         function z1Roll(m) {
@@ -27707,7 +27708,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const tier = r < p3 ? 3 : r < p3 + p2 ? 2 : r < p3 + p2 + p1 ? 1 : 0; if (!tier) return 0;
             const T = Z1_TIER[tier], aff = []; const nA = tier === 3 ? 2 : tier === 2 ? 1 : 0;
             while (aff.length < nA) { const a = Z1_AFFK[Math.random() * Z1_AFFK.length | 0]; if (!aff.includes(a)) aff.push(a); }
-            return { tier, aff, dm: T.dm, sp: T.sp * (aff.includes('fast') ? 1.25 : 1), ar: aff.includes('arm') ? 0.35 : 0, heavy: tier === 3 ? 1 : 0, en: 0, hpm: T.hp };
+            return { tier, aff, dm: T.dm, sp: T.sp * (aff.includes('fast') ? 1.25 : 1), ar: aff.includes('arm') ? 0.25 : 0, heavy: tier === 3 ? 1 : 0, en: 0, hpm: T.hp };
         }
         function z1Apply(m, z) { m._z1 = z; const r = m.hp / (m.maxHp || m.hp || 1); m.maxHp = Math.round(m.maxHp * z.hpm); m.hp = Math.round(m.maxHp * Math.min(1, r)); }
         const z1Dm = m => (m && m._z1) ? m._z1.dm * (m._z1.en ? 1.25 : 1) : 1;
@@ -27740,7 +27741,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 try {
                     if (m && m.t === 'x_z1' && !MP.host) { // синхронізація еліт: [mid, tier, aff, en, dm, sp, ar, heavy]
                         const have = {}; for (const a of m.m) have[a[0]] = a;
-                        for (const q of mobs) if (q.ghost) { const a = have[q.mid]; if (a) q._z1 = { tier: a[1], aff: a[2], en: a[3], dm: a[4], sp: a[5], ar: a[6], heavy: a[7] }; else q._z1 = null; }
+                        for (const q of mobs) if (q.ghost) { const a = have[q.mid]; if (a) { q._z1 = a[1] ? { tier: a[1], aff: a[2], en: a[3], dm: a[4], sp: a[5], ar: a[6], heavy: a[7] } : 0; q._ad = a[8] || 0; } else { q._z1 = null; q._ad = 0; } }
+                        if (m.s) Z1A.S = m.s;
                         return;
                     }
                     if (m && m.t === 'x_z1x' && !MP.host) {
@@ -27791,7 +27793,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const host = !v17Client(), tNow = Z1.f;
             for (const m of mobs) {
                 if (m.ghost || m.hp <= 0) continue;
-                if (m._z1 === undefined && host) { const z = z1Roll(m); if (z) z1Apply(m, z); else m._z1 = 0; }
+                if (m._z1 === undefined && host) { const z = z1Roll(m); if (z) z1Apply(m, z); else m._z1 = 0; try { m._ad = z1RollAd(m); } catch (e) { m._ad = 0; } if (m._ad) { m.maxHp = Math.round(m.maxHp * 1.12); m.hp = Math.min(m.maxHp, Math.round(m.hp * 1.12)); } }
                 const z = m._z1; if (!z) continue;
                 if (!z.en && z.tier >= 2 && m.hp < m.maxHp * 0.5) { z.en = 1; z.sp *= 1.3; z1Push({ k: 'z1ring', x: m.x + m.width / 2, y: m.y + m.height / 2, life: 20, R: 70, col: '#ff3a3a', w: 5 }, false); z1Net({ k: 'pulse', x: Math.round(m.x + m.width / 2), y: Math.round(m.y + m.height / 2), col: '#ff3a3a', R: 70 }); z1Burst(m.x + m.width / 2, m.y + m.height / 2, '#ff3a3a', 14, 4, 3, 30, 0.04); }
                 if (z.sp > 1 && Math.abs(m.vx) > 0.2 && !(m.frz > 0)) { const dx = m.vx * (z.sp - 1), ax = Math.floor((m.x + (dx > 0 ? m.width + dx : dx)) / 32), fy = Math.floor((m.y + m.height * 0.5) / 32); if (!isSolid(ax, fy) && !isSolid(ax, fy - 1)) m.x += dx; }
@@ -27803,12 +27805,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     }
                 }
             }
-            if (MP && MP.host && tNow % 20 === 0) { const arr = []; for (const m of mobs) if (m._z1 && m.mid) arr.push([m.mid, m._z1.tier, m._z1.aff, m._z1.en, m._z1.dm, m._z1.sp, m._z1.ar, m._z1.heavy]); if (arr.length || Z1.hadEl) { Z1.hadEl = arr.length > 0; try { mpSend({ t: 'x_z1', m: arr }); } catch (e) { } } }
+            if (MP && MP.host && tNow % 20 === 0) { const arr = []; for (const m of mobs) if ((m._z1 || m._ad) && m.mid) { const z = m._z1; arr.push([m.mid, z ? z.tier : 0, z ? z.aff : [], z ? z.en : 0, z ? z.dm : 1, z ? z.sp : 1, z ? z.ar : 0, z ? z.heavy : 0, m._ad || 0]); } const sv = z1AdSnap(); if (arr.length || Z1.hadEl || sv) { Z1.hadEl = arr.length > 0; try { mpSend({ t: 'x_z1', m: arr, s: sv }); } catch (e) { } } }
         }
         updateGame = (function (o) { return function () { o.apply(this, arguments); if (gameState !== 'PLAYING') return; try { z1MobTick(); z1AreaTick(); } catch (e) { rpgErr(e); } }; })(updateGame);
         // ---------- оверлей еліт у світі ----------
         function z1MobOver(c, m, face) {
-            const z = m._z1; if (!z) return; const T = Z1_TIER[z.tier]; if (!T) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, t = performance.now() / 1000;
+            try { z1AdOver(c, m, face); } catch (e) { } const z = m._z1; if (!z) return; const T = Z1_TIER[z.tier]; if (!T) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, t = performance.now() / 1000;
             c.save();
             glowC(cx, cy, Math.max(m.width, m.height) * (0.9 + 0.15 * Math.sin(t * 4 + m.x)), z.en ? '#ff2a2a' : T.col, z.en ? 0.38 : 0.26);
             if (z.tier === 3) { c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba('#c06aff', 0.5); c.lineWidth = 1.6; c.beginPath(); c.arc(cx, cy, m.height * 0.62, t * 2, t * 2 + 4.2); c.stroke(); c.beginPath(); c.arc(cx, cy, m.height * 0.62, t * 2 + 3.14, t * 2 + 3.14 + 2.2); c.stroke(); }
@@ -27816,7 +27818,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const w = Math.max(44, m.width + 16), x0 = cx - w / 2, y0 = m.y - 20, pct = Math.max(0, Math.min(1, m.hp / (m.maxHp || 1)));
             c.fillStyle = 'rgba(0,0,0,0.65)'; c.fillRect(x0 - 1, y0 - 1, w + 2, 6); c.fillStyle = z.en ? '#ff3a3a' : T.col; c.fillRect(x0, y0, w * pct, 4);
             c.font = '700 10px "Segoe UI",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.85)';
-            const nm = (V373_MOBN[m.type] || (Z1_MOBS[m.type] && Z1_MOBS[m.type].n) || ''), txt = T.n + ' ' + nm + ' ' + z.aff.map(a => Z1_AFF[a] ? Z1_AFF[a].ic : '').join('');
+            const nm = (V373_MOBN[m.type] || (Z1_MOBS[m.type] && Z1_MOBS[m.type].n) || ''), txt = T.n + ' ' + nm + ' ' + z.aff.map(a => Z1_AFF[a] ? Z1_AFF[a].ic : '').join('') + (m._ad && Z1_AD[m._ad] ? ' ' + Z1_AD[m._ad].ic : '');
             c.strokeText(txt, cx, y0 - 3); c.fillStyle = z.en ? '#ff8a7a' : T.col; c.fillText(txt, cx, y0 - 3);
             c.restore();
         }
@@ -28002,6 +28004,123 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         updateGame = (function (o) { return function () { o.apply(this, arguments); if (gameState !== 'PLAYING') return; try { z1SpawnTick(); } catch (e) { rpgErr(e); } }; })(updateGame);
         window.__z1 = { Z1, Z1_MOBS, z1SpawnOne, z1Roll, z1Apply, z1Tame, z1Fire };
 
+        // ================= 🧬 v40.1: АДАПТАЦІЯ ВОРОГІВ =================
+        // Моби «вчаться» на твоєму стилі бою. Багато б’єш мечем — з’являються броньовані; вогнем — вогнестійкі, і т.д.
+        // Кожна адаптація = опір до твого стилю + слабкість до іншого (камінь-ножиці-папір), тож варіативність винагороджується.
+        const Z1A = { S: { melee: 0, ranged: 0, fire: 0, magic: 0, summon: 0 }, out: {}, tellT: {}, f: 0, txt: 0 };
+        const Z1_CAT = {
+            melee: { n: 'мечі й ближній бій', ic: '⚔', col: '#e3e9ed' }, ranged: { n: 'лук і вогнепальна зброя', ic: '🏹', col: '#ffd36b' },
+            fire: { n: 'вогонь', ic: '🔥', col: '#ff7a2a' }, magic: { n: 'магія', ic: '✨', col: '#b388ff' }, summon: { n: 'прислужники', ic: '🪄', col: '#8fd0ff' }
+        };
+        const Z1_AD = {
+            plate: { n: 'Броня', full: 'Броньований', ic: '🛡', col: '#c4ced8', cat: 'melee', res: { melee: 0.35 }, weak: { magic: 0.2, fire: 0.1 } },
+            buckler: { n: 'Щит', full: 'Щитоносець', ic: '🛡', col: '#e0b858', cat: 'ranged', res: { ranged: 0.35 }, weak: { melee: 0.15 } },
+            emberproof: { n: 'Жаростійкий', full: 'Жаростійкий', ic: '🧊', col: '#6fd0ff', cat: 'fire', res: { fire: 0.55 }, weak: { magic: 0.25, melee: 0.1 } },
+            runeward: { n: 'Рунозахист', full: 'З рунозахистом', ic: '🔰', col: '#a98bff', cat: 'magic', res: { magic: 0.35 }, weak: { ranged: 0.2 } },
+            thick: { n: 'Груба шкіра', full: 'Огрубілий', ic: '🦴', col: '#c99a6a', cat: 'summon', res: { summon: 0.3 }, weak: { fire: 0.2 } }
+        };
+        const Z1_C2A = { melee: 'plate', ranged: 'buckler', fire: 'emberproof', magic: 'runeward', summon: 'thick' };
+        function z1Cat(o) {
+            if (o.melee) return 'melee'; if (o.minion || o.sentry) return 'summon';
+            const it = inventory[selectedHotbarSlot], W = it && WEAPONS[it.id]; if (!W) return 'melee';
+            if (W.t === 'ranged') return 'ranged'; if (W.t === 'summon') return 'summon';
+            if (W.t === 'magic') return (W.orb === 'solar' || W.nova === 'fire' || it.id === 'forgotten_tome' && false) ? 'fire' : 'magic';
+            return W.wave === 'fire' || W.fire ? 'fire' : 'melee';
+        }
+        const z1Std = () => 50 * rpgMobHp();
+        function z1AdIn(t, dmg, o) { // вхідна шкода з урахуванням адаптації моба
+            const ob = t && t.o; if (!ob || !ob._ad || t.k !== 'mob') return dmg; const A = Z1_AD[ob._ad]; if (!A) return dmg;
+            const c = z1Cat(o || {}); let k = 1;
+            if (A.res[c]) k = 1 - A.res[c]; else if (A.weak[c]) k = 1 + A.weak[c];
+            if (k !== 1 && Z1A.f - (ob._adT || -99) > 30) {
+                ob._adT = Z1A.f; floatingTexts.push({ x: t.x + (Math.random() - 0.5) * 16, y: t.y - t.r - 8, text: k < 1 ? '🛡 опір' : '✨ слабкість', color: k < 1 ? '#aab4c0' : '#ffe27a', life: 34 });
+                if (k < 1) z1P(t.x, t.y, 0, -0.5, A.col, 2.4, 14, 0);
+            }
+            return Math.max(1, Math.round(dmg * k));
+        }
+        function z1AdLearn(t, dmg, o) {
+            if (!t || t.k !== 'mob') return; const c = z1Cat(o || {}), u = Math.min(3, dmg / Math.max(10, z1Std()));
+            if (v17Client()) Z1A.out[c] = (Z1A.out[c] || 0) + u; else Z1A.S[c] += u;
+        }
+        function z1AdTot() { let s = 0; for (const k in Z1A.S) s += Z1A.S[k]; return s; }
+        function z1AdSnap() { const tot = z1AdTot(); if (tot < 0.5) return Z1A.hadS ? (Z1A.hadS = 0, { melee: 0, ranged: 0, fire: 0, magic: 0, summon: 0 }) : null; Z1A.hadS = 1; const o = {}; for (const k in Z1A.S) o[k] = Math.round(Z1A.S[k] * 10) / 10; return o; }
+        function z1RollAd(m) {
+            if (!Z1_OK.has(m.type) || m.boss || m.lich || m.car || m._npc || m.post || m._hz || m.ghost) return 0;
+            const L = RPG.level; if (L < 5) return 0; const tot = z1AdTot(); if (tot < 6) return 0;
+            let w = 0; for (const k in Z1A.S) w += Z1A.S[k] * Z1A.S[k]; let r = Math.random() * w, c = null;
+            for (const k in Z1A.S) { r -= Z1A.S[k] * Z1A.S[k]; if (r <= 0) { c = k; break; } } if (!c || Z1A.S[c] / tot < 0.4) return 0;
+            const p = Math.min(0.55, (tot - 6) / 30) * Math.min(1, (L - 4) / 10);
+            return Math.random() < p ? Z1_C2A[c] : 0;
+        }
+        // ---------- тік: затухання, синхронізація, повідомлення ----------
+        function z1AdTick() {
+            Z1A.f++;
+            for (const k in Z1A.S) Z1A.S[k] *= 0.99995;
+            if (v17Client()) { if (Z1A.f % 90 === 0 && Object.keys(Z1A.out).length) { try { mpSend({ t: 'x_z1h', c: Z1A.out }); } catch (e) { } Z1A.out = {}; } }
+            else if (Z1A.f % 60 === 0) { // сповіщення, коли вороги «звикли»
+                const tot = z1AdTot(); if (tot >= 6 && RPG.level >= 5) for (const k in Z1A.S) if (Z1A.S[k] / tot >= 0.5 && Z1A.f - (Z1A.tellT[k] || -99999) > 7200) {
+                    Z1A.tellT[k] = Z1A.f; const msg = z1Tell(k); z1Say(msg); if (MP && MP.host) z1Net({ k: 'adapt', c: k }); break;
+                }
+            }
+            z1AdHud();
+        }
+        function z1Tell(k) { const A = Z1_AD[Z1_C2A[k]], C = Z1_CAT[k]; return '🧬 Вороги звикають до стилю «' + C.n + '»: з’являються ' + A.full.toLowerCase() + '. Спробуй змінити тактику!'; }
+        function z1Say(msg) { try { if (typeof homeToast === 'function') homeToast(msg); else floatingTexts.push({ x: player.x, y: player.y - 40, text: msg, color: '#c06aff', life: 160 }); } catch (e) { } }
+        mpOnMsg = (function (o) {
+            return function (m) {
+                try {
+                    if (m && m.t === 'x_z1h' && MP.host && m.c) { for (const k in m.c) if (Z1A.S[k] !== undefined && typeof m.c[k] === 'number') Z1A.S[k] += Math.min(30, Math.max(0, m.c[k])); return; }
+                    if (m && m.t === 'x_z1x' && m.k === 'adapt' && !MP.host && Z1_C2A[m.c]) { z1Say(z1Tell(m.c)); return; }
+                } catch (e) { rpgErr(e); }
+                o(m);
+            };
+        })(mpOnMsg);
+        updateGame = (function (o) { return function () { o.apply(this, arguments); if (gameState !== 'PLAYING') return; try { z1AdTick(); } catch (e) { rpgErr(e); } }; })(updateGame);
+        // ---------- HUD ----------
+        {
+            const st = document.createElement('style');
+            st.textContent = '#z1-ad{position:fixed;left:16px;top:262px;z-index:44;display:none;padding:5px 10px 6px;border-radius:9px;background:rgba(14,22,32,.88);border:2px solid #5a3a8a;color:#e9ddff;font:600 12px "Segoe UI",sans-serif;pointer-events:none;min-width:150px}#z1-ad small{display:block;font-weight:500;color:#b9a8d8;font-size:10.5px;margin-top:1px}#z1-ad i{display:block;height:4px;border-radius:2px;background:#2a2140;margin-top:4px;overflow:hidden}#z1-ad b{display:block;height:100%;border-radius:2px;transition:width .5s}';
+            document.head.appendChild(st);
+            const d = document.createElement('div'); d.id = 'z1-ad'; d.innerHTML = '<span id="z1-ad-t"></span><small id="z1-ad-s"></small><i><b id="z1-ad-b"></b></i>'; (document.getElementById('game-hud') || document.body).appendChild(d);
+        }
+        function z1AdHud() {
+            if (Z1A.f % 20) return; const el = document.getElementById('z1-ad'); if (!el) return; const tot = z1AdTot();
+            if (tot < 4 || RPG.level < 5 || gameState !== 'PLAYING') { el.style.display = 'none'; return; }
+            let best = null; for (const k in Z1A.S) if (!best || Z1A.S[k] > Z1A.S[best]) best = k; const sh = Z1A.S[best] / tot, C = Z1_CAT[best], on = tot >= 6 && sh >= 0.4;
+            el.style.display = 'block'; el.style.borderColor = on ? C.col : '#4a4a5a';
+            document.getElementById('z1-ad-t').textContent = '🧬 Адаптація: ' + C.ic + ' ' + Math.round(sh * 100) + '%';
+            document.getElementById('z1-ad-s').textContent = on ? 'Ворожі ' + Z1_AD[Z1_C2A[best]].full.toLowerCase() + ' · міняй стиль' : 'Вороги ще придивляються…';
+            const b = document.getElementById('z1-ad-b'); b.style.width = Math.min(100, tot / 36 * 100) + '%'; b.style.background = on ? C.col : '#777';
+        }
+        // ---------- візуал адаптації ----------
+        function z1AdOver(c, m, face) {
+            const k = m._ad; if (!k) return; const A = Z1_AD[k]; if (!A) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, w = m.width, h = m.height, t = performance.now() / 1000, f = face || 1;
+            c.save();
+            if (k === 'plate') {
+                c.fillStyle = 'rgba(190,200,212,.88)'; c.strokeStyle = 'rgba(40,48,58,.9)'; c.lineWidth = 1.4;
+                c.beginPath(); c.rect(cx - w * 0.42, cy - h * 0.12, w * 0.84, h * 0.3); c.fill(); c.stroke();
+                c.fillStyle = 'rgba(230,238,246,.7)'; c.fillRect(cx - w * 0.42, cy - h * 0.12, w * 0.84, 2.4); c.fillStyle = 'rgba(40,48,58,.55)'; c.fillRect(cx - 1, cy - h * 0.12, 2, h * 0.3);
+                c.fillStyle = 'rgba(170,180,194,.95)'; c.beginPath(); c.arc(cx - w * 0.42, cy - h * 0.1, 5, 0, 7); c.arc(cx + w * 0.42, cy - h * 0.1, 5, 0, 7); c.fill(); c.stroke();
+            } else if (k === 'buckler') {
+                const sx = cx + f * (w * 0.5 + 2), sy = cy + 2; c.fillStyle = '#8a5a26'; c.strokeStyle = '#3a2410'; c.lineWidth = 1.6; c.beginPath(); c.arc(sx, sy, 10, 0, 7); c.fill(); c.stroke();
+                c.strokeStyle = '#e0b858'; c.lineWidth = 2; c.beginPath(); c.arc(sx, sy, 7, 0, 7); c.stroke(); c.fillStyle = '#e8dcc0'; c.beginPath(); c.arc(sx, sy, 2.6, 0, 7); c.fill();
+            } else if (k === 'emberproof') {
+                glowC(cx, cy, Math.max(w, h) * 0.9, '#6fd0ff', 0.28); c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(16,26,40,.0)';
+                c.strokeStyle = 'rgba(180,235,255,.55)'; c.lineWidth = 1.2; for (let i = 0; i < 4; i++) { const a = i * 1.57 + 0.4; c.beginPath(); c.moveTo(cx + Math.cos(a) * w * 0.3, cy + Math.sin(a) * h * 0.3); c.lineTo(cx + Math.cos(a) * w * 0.62, cy + Math.sin(a) * h * 0.55); c.stroke(); }
+                if (Math.random() < 0.08) z1P(cx + (Math.random() - 0.5) * w, cy + (Math.random() - 0.5) * h, 0, 0.3, '#bff3ff', 2.2, 22, 0.01);
+            } else if (k === 'runeward') {
+                c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(169,139,255,.65)'; c.lineWidth = 1.6; const R = Math.max(w, h) * 0.62; c.beginPath(); c.arc(cx, cy, R, t * 1.6, t * 1.6 + 4.1); c.stroke(); c.beginPath(); c.arc(cx, cy, R * 0.82, -t * 2.1, -t * 2.1 + 2.6); c.stroke();
+                c.fillStyle = 'rgba(210,190,255,.85)'; for (let i = 0; i < 3; i++) { const a = t * 1.6 + i * 2.1; c.fillRect(cx + Math.cos(a) * R - 1.6, cy + Math.sin(a) * R - 1.6, 3.2, 3.2); }
+            } else if (k === 'thick') {
+                c.fillStyle = 'rgba(120,84,50,.95)'; c.strokeStyle = 'rgba(40,24,10,.9)'; c.lineWidth = 1; for (let i = 0; i < 5; i++) { const x = cx - f * w * 0.3 + (i - 2) * w * 0.17 * -f * 0 + (i - 2) * w * 0.16, y = m.y + h * 0.08 + Math.abs(i - 2) * 3; c.beginPath(); c.moveTo(x - 3, y + 7); c.lineTo(x, y - 5); c.lineTo(x + 3, y + 7); c.closePath(); c.fill(); c.stroke(); }
+            }
+            c.restore();
+            if (!m._z1) { // табличка для звичайних адаптованих мобів
+                c.save(); c.font = '700 10px "Segoe UI",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.85)'; const txt = A.ic + ' ' + A.n; const yy = m.y - (m.hp < m.maxHp ? 14 : 6);
+                c.strokeText(txt, cx, yy); c.fillStyle = A.col; c.fillText(txt, cx, yy); c.restore();
+            }
+        }
+
         // ================= 📖 v40: ГАЙДИ — НОВА БОЙОВКА Й ЕВОЛЮЦІЯ МОБІВ =================
         {
             const np = GUIDE_PAGES.find(p => p.id === 'new');
@@ -28009,6 +28128,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 <div class="g-card" style="border-color:#ff7a4a"><h4>⚔ Нова бойовка — v${GAME_VER}</h4><p>Мечі б’ють <b>комбо з трьох змахів</b> (третій — важкий з ударною хвилею), кинджали й списи залишають сліди, батоги лускають, луки й арбалети мають спалахи, а магія — руни, заряд і шлейфи. Усе це <b>бачать обидва гравці</b>.</p></div>
                 <div class="g-card" style="border-color:#c06aff"><h4>👹 Еволюція мобів</h4><p>З ростом рівня моби міцнішають <b>швидше</b> за тебе, а частина з’являється як <b>еліти</b>: Загартовані, Лютi й Мутанти з особливостями (кровопивця, вибуховий, отруйний…). Дивись над ними табличку!</p></div>
                 <div class="g-card" style="border-color:#7a4ac8"><h4>🦇 Нові моби шахт і ночі</h4><p>Печерні кажани, Мрець-шахтар, Магмовий слиз і Нічний Сталкер. У шахтах тепер небезпечно!</p></div>
+                <div class="g-card" style="border-color:#5fe0a8"><h4>🧬 Адаптація ворогів</h4><p>Вороги <b>пристосовуються до твого стилю</b>: багато б’єш мечем — з’являються броньовані, паліш вогнем — жаростійкі. Але кожен захист має слабкість!</p></div>
                 <div class="g-card" style="border-color:#e3b341"><h4>🎲 Скарби данжів</h4><p>У скринях данжів тепер <b>середня</b> зброя. Топові клинки, луки й посохи — крафт, торговці та боси.</p></div>`); }
             const iN = GUIDE_PAGES.findIndex(p => p.id === 'new');
             GUIDE_PAGES.splice(iN + 1, 0, {
@@ -28026,7 +28146,17 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 <div class="g-card" style="border-color:#6fb8ff"><h4 style="color:#6fb8ff">Загартований</h4><p>Більше здоров’я та трохи швидший. Дає більше досвіду й монет.</p></div>
                 <div class="g-card" style="border-color:#ff5a4a"><h4 style="color:#ff5a4a">Лютий</h4><p>Має особливість. На <b>половині здоров’я впадає в лють</b>: швидший і б’є сильніше (червона аура).</p></div>
                 <div class="g-card" style="border-color:#c06aff"><h4 style="color:#c06aff">Мутант</h4><p>Дві особливості. Не відлітає від ударів, <b>викликає підмогу</b> та лікує союзників навколо.</p></div>
-                <div class="g-card"><h4>Особливості</h4><p>🩸 Кровопивця — лікується від ударів по тобі · ⚡ Швидкий · 💥 Вибуховий — після смерті вибухає (там з’являється червоне коло — встигни відбігти) · ☠ Отруйний · 🛡 Броньований — приймає на 35% менше шкоди.</p></div>
+                <div class="g-card"><h4>Особливості</h4><p>🩸 Кровопивця — лікується від ударів по тобі · ⚡ Швидкий · 💥 Вибуховий — після смерті вибухає (там з’являється червоне коло — встигни відбігти) · ☠ Отруйний · 🪨 Кам’яний — приймає на 25% менше шкоди.</p></div>
+              </div>
+              <h3 style="margin-top:14px">🧬 Адаптація ворогів</h3>
+              <p>З <b>5 рівня</b>, якщо ти довго б’єш вороже <b>одним стилем</b> (понад 40% твоєї шкоди), нові моби починають пристосовуватися. Зліва в куті з’являється шкала «Адаптація». Адаптовані моби мають табличку й видимий знак, трохи більше здоров’я та <b>опір твоєму стилю</b>, але <b>слабкі до іншого</b>.</p>
+              <div class="g-grid2">
+                <div class="g-card" style="border-color:#c4ced8"><h4>🛡 Броньований</h4><p>Проти <b>мечів</b>: −35% шкоди. Слабкий до магії (+20%) і вогню (+10%).</p></div>
+                <div class="g-card" style="border-color:#e0b858"><h4>🛡 Щитоносець</h4><p>Проти <b>луків і вогнепальної зброї</b>: −35%. Слабкий до ближнього бою (+15%).</p></div>
+                <div class="g-card" style="border-color:#6fd0ff"><h4>🧊 Жаростійкий</h4><p>Проти <b>вогню</b>: −55%. Слабкий до звичайної магії (+25%) і ближнього бою (+10%).</p></div>
+                <div class="g-card" style="border-color:#a98bff"><h4>🔰 З рунозахистом</h4><p>Проти <b>магії</b> (не вогню): −35%. Слабкий до стрільби (+20%).</p></div>
+                <div class="g-card" style="border-color:#c99a6a"><h4>🦴 Огрубілий</h4><p>Проти <b>прислужників</b>: −30%. Слабкий до вогню (+20%).</p></div>
+                <div class="g-card"><h4>Як це обійти</h4><p>Змішуй стилі: якщо жоден не дає понад 40%, моби <b>не адаптуються</b>. Адаптація повільно <b>вивітрюється</b> (≈ за 4 хвилини вдвічі), тож зміна тактики працює. У мультиплеєрі вороги звикають до стилю <b>всієї групи</b>.</p></div>
               </div>
               <h3 style="margin-top:14px">🦇 Нові моби</h3>
               <div class="g-grid2">
