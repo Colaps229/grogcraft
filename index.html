@@ -11302,7 +11302,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '40.1', GAME_VER_NAME = 'Адаптація';
+        const GAME_VER = '40.2', GAME_VER_NAME = 'Зручність і події';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27815,11 +27815,15 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             glowC(cx, cy, Math.max(m.width, m.height) * (0.9 + 0.15 * Math.sin(t * 4 + m.x)), z.en ? '#ff2a2a' : T.col, z.en ? 0.38 : 0.26);
             if (z.tier === 3) { c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba('#c06aff', 0.5); c.lineWidth = 1.6; c.beginPath(); c.arc(cx, cy, m.height * 0.62, t * 2, t * 2 + 4.2); c.stroke(); c.beginPath(); c.arc(cx, cy, m.height * 0.62, t * 2 + 3.14, t * 2 + 3.14 + 2.2); c.stroke(); }
             c.globalCompositeOperation = 'source-over';
+            const P = z1Plate(m); if (P.a > 0.02) {
+                c.globalAlpha = P.a;
             const w = Math.max(44, m.width + 16), x0 = cx - w / 2, y0 = m.y - 20, pct = Math.max(0, Math.min(1, m.hp / (m.maxHp || 1)));
             c.fillStyle = 'rgba(0,0,0,0.65)'; c.fillRect(x0 - 1, y0 - 1, w + 2, 6); c.fillStyle = z.en ? '#ff3a3a' : T.col; c.fillRect(x0, y0, w * pct, 4);
             c.font = '700 10px "Segoe UI",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.85)';
             const nm = (V373_MOBN[m.type] || (Z1_MOBS[m.type] && Z1_MOBS[m.type].n) || ''), txt = T.n + ' ' + nm + ' ' + z.aff.map(a => Z1_AFF[a] ? Z1_AFF[a].ic : '').join('') + (m._ad && Z1_AD[m._ad] ? ' ' + Z1_AD[m._ad].ic : '');
             c.strokeText(txt, cx, y0 - 3); c.fillStyle = z.en ? '#ff8a7a' : T.col; c.fillText(txt, cx, y0 - 3);
+                if (P.hov && m._ad && Z1_AD[m._ad]) z1AdTip(c, m, Z1_AD[m._ad], y0 - 17);
+            }
             c.restore();
         }
 
@@ -28093,6 +28097,23 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const b = document.getElementById('z1-ad-b'); b.style.width = Math.min(100, tot / 36 * 100) + '%'; b.style.background = on ? C.col : '#777';
         }
         // ---------- візуал адаптації ----------
+        // видимість табличок: зблизька (плавно) або при наведенні мишки
+        function z1Plate(m) {
+            try {
+                const cx = m.x + m.width / 2, cy = m.y + m.height / 2;
+                const hov = Math.abs(mouse.worldX - cx) < m.width / 2 + 14 && Math.abs(mouse.worldY - cy) < m.height / 2 + 14;
+                const d = Math.hypot(cx - (player.x + 12), cy - (player.y + 22));
+                const a = hov ? 1 : Math.max(0, Math.min(1, (400 - d) / 160));
+                return { a, hov };
+            } catch (e) { return { a: 1, hov: false }; }
+        }
+        function z1AdTip(c, m, A, y) {
+            const N = { melee: 'мечі', ranged: 'стрільба', fire: 'вогонь', magic: 'магія', summon: 'прислужники' };
+            const r = Object.keys(A.res).map(k => '−' + Math.round(A.res[k] * 100) + '% ' + N[k]).join(', '), w = Object.keys(A.weak).map(k => '+' + Math.round(A.weak[k] * 100) + '% ' + N[k]).join(', ');
+            const cx = m.x + m.width / 2; c.font = '600 9px "Segoe UI",sans-serif'; c.lineWidth = 3;
+            c.strokeText('Опір: ' + r, cx, y); c.fillStyle = '#ffb0a0'; c.fillText('Опір: ' + r, cx, y);
+            c.strokeText('Слабкий: ' + w, cx, y - 11); c.fillStyle = '#a8f0b8'; c.fillText('Слабкий: ' + w, cx, y - 11);
+        }
         function z1AdOver(c, m, face) {
             const k = m._ad; if (!k) return; const A = Z1_AD[k]; if (!A) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, w = m.width, h = m.height, t = performance.now() / 1000, f = face || 1;
             c.save();
@@ -28115,9 +28136,13 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 c.fillStyle = 'rgba(120,84,50,.95)'; c.strokeStyle = 'rgba(40,24,10,.9)'; c.lineWidth = 1; for (let i = 0; i < 5; i++) { const x = cx - f * w * 0.3 + (i - 2) * w * 0.17 * -f * 0 + (i - 2) * w * 0.16, y = m.y + h * 0.08 + Math.abs(i - 2) * 3; c.beginPath(); c.moveTo(x - 3, y + 7); c.lineTo(x, y - 5); c.lineTo(x + 3, y + 7); c.closePath(); c.fill(); c.stroke(); }
             }
             c.restore();
-            if (!m._z1) { // табличка для звичайних адаптованих мобів
-                c.save(); c.font = '700 10px "Segoe UI",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.85)'; const txt = A.ic + ' ' + A.n; const yy = m.y - (m.hp < m.maxHp ? 14 : 6);
-                c.strokeText(txt, cx, yy); c.fillStyle = A.col; c.fillText(txt, cx, yy); c.restore();
+            if (!m._z1) { // табличка для звичайних адаптованих мобів — зблизька або при наведенні
+                const P = z1Plate(m); if (P.a > 0.02) {
+                    c.save(); c.globalAlpha = P.a; c.font = '700 10px "Segoe UI",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.85)'; const txt = A.ic + ' ' + (P.hov ? A.full : A.n); const yy = m.y - (m.hp < m.maxHp ? 14 : 6);
+                    c.strokeText(txt, cx, yy); c.fillStyle = A.col; c.fillText(txt, cx, yy);
+                    if (P.hov) z1AdTip(c, m, A, yy - 13);
+                    c.restore();
+                }
             }
         }
 
@@ -28167,6 +28192,343 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
               </div>
               <div class="g-tip">🎲 <b>Баланс:</b> у скринях данжів (бібліотека, піраміди, крижана фортеця, руїни) більше нема «імбової» зброї: там лише середні речі. Мультиплеєр: еліти, нові моби й усі ефекти видно обом гравцям.</div>` });
         }
+
+        // ================= 🎒 v40.2: ІНВЕНТАР — ЗАКРІПЛЕННЯ (Alt+клік), Shift+клік =================
+        const Z6 = { first: false };
+        {
+            const st = document.createElement('style'); st.textContent = `
+            .z6-pin{position:relative}
+            .z6-pin::after{content:'📌';position:absolute;left:1px;top:-1px;font-size:12px;line-height:1;filter:drop-shadow(0 0 2px #000);pointer-events:none;z-index:3}
+            .z6-pin{box-shadow:inset 0 0 0 2px rgba(255,214,90,.75)!important}`;
+            document.head.appendChild(st);
+        }
+        function z6Toast(t) { try { homeToast(t); } catch (e) { } }
+        function z6Name(id) { try { return v363Name(id); } catch (e) { return id; } }
+        // позначки на слотах
+        function z6Mark() {
+            try {
+                const hb = document.getElementById('hotbar-container');
+                if (hb) for (let i = 0; i < hb.children.length; i++) hb.children[i].classList.toggle('z6-pin', !!(inventory[i] && inventory[i].pin));
+                const fg = document.getElementById('full-inventory-grid');
+                if (fg) for (let i = 0; i < fg.children.length; i++) fg.children[i].classList.toggle('z6-pin', !!(inventory[i] && inventory[i].pin));
+                const bg = document.getElementById('bp-grid');
+                if (bg) for (let i = 0; i < bg.children.length; i++) bg.children[i].classList.toggle('z6-pin', !!(inventory[30 + i] && inventory[30 + i].pin));
+                const ci = document.getElementById('chest-inventory-container');
+                if (ci) for (let i = 0; i < ci.children.length; i++) ci.children[i].classList.toggle('z6-pin', !!(inventory[i] && inventory[i].pin));
+            } catch (e) { }
+        }
+        updateInventoryUI = (function (o) { return function () { const r = o.apply(this, arguments); z6Mark(); return r; }; })(updateInventoryUI);
+        updateChestUI = (function (o) { return function () { const r = o.apply(this, arguments); z6Mark(); return r; }; })(updateChestUI);
+        function z6Idx(slot) {
+            const p = slot.parentElement; if (!p) return null; const k = Array.prototype.indexOf.call(p.children, slot);
+            if (p.id === 'hotbar-container' || p.id === 'full-inventory-grid' || p.id === 'chest-inventory-container') return { kind: 'inv', i: k };
+            if (p.id === 'bp-grid') return { kind: 'inv', i: 30 + k };
+            if (p.id === 'chest-slots-container') return { kind: 'chest', i: k };
+            return null;
+        }
+        function z6Pin(i) {
+            const it = inventory[i]; if (!it) return; it.pin = it.pin ? 0 : 1; if (!it.pin) delete it.pin;
+            try { playSound('click'); } catch (e) { }
+            z6Toast(it.pin ? '📌 Закріплено: ' + z6Name(it.id) + ' — не потрапить у сортування, смітник, скриню й викидання' : '📌 Закріплення знято: ' + z6Name(it.id));
+            updateInventoryUI(); try { if (chestOpen) updateChestUI(); } catch (e) { }
+        }
+        // Shift+клік у рюкзаку: між панеллю швидкого доступу та рюкзаком
+        function z6Shuffle(i) {
+            const it = inventory[i]; if (!it) return;
+            const hot = i < 9; const from = hot ? 9 : 0, to = hot ? inventory.length : 9;
+            // спершу долити у наявний стак
+            if (itemStackable(it.id) && !it.x) for (let j = from; j < to; j++) { const t = inventory[j]; if (t && t.id === it.id && !t.x && t.count < 999) { const n = Math.min(999 - t.count, it.count); t.count += n; it.count -= n; if (it.count <= 0) { inventory[i] = null; break; } } }
+            if (inventory[i]) { let free = -1; for (let j = from; j < to; j++) if (!inventory[j]) { free = j; break; } if (free < 0) { z6Toast(hot ? '🎒 Рюкзак повний' : '⚡ Панель швидкого доступу заповнена'); return; } inventory[free] = it; inventory[i] = null; }
+            try { playSound('pickup'); } catch (e) { } draggedSlotIndex = null; hideTooltip(); updateInventoryUI();
+        }
+        // Shift+клік у скрині: усі однакові предмети
+        function z6MoveAll(kind, i) {
+            if (!openChestKey || !chestsData[openChestKey]) return;
+            if (kind === 'inv') {
+                const it = inventory[i]; if (!it) return; const id = it.id; let n = 0;
+                for (let j = 0; j < inventory.length; j++) { const s = inventory[j]; if (s && s.id === id && !s.pin) { handleChestInvSlotClick(j, false); if (!inventory[j]) n++; } }
+                if (!n && it.pin) z6Toast('📌 Закріплений предмет не переношу');
+            } else {
+                const arr = chestsData[openChestKey], it = arr[i]; if (!it) return; const id = it.id;
+                for (let j = 0; j < arr.length; j++) { if (arr[j] && arr[j].id === id) handleChestSlotClick(j, false); }
+            }
+        }
+        // обробка кліків (capture — раніше за звичайні onclick)
+        document.addEventListener('click', e => {
+            try {
+                if (!(e.shiftKey || e.altKey)) return; const slot = e.target && e.target.closest ? e.target.closest('.inv-slot, .hotbar-slot, .chest-slot') : null; if (!slot) return; const x = z6Idx(slot); if (!x) return;
+                if (e.altKey && x.kind === 'inv') { e.preventDefault(); e.stopPropagation(); z6Pin(x.i); return; }
+                if (e.shiftKey) {
+                    const inChest = slot.parentElement.id === 'chest-inventory-container' || slot.parentElement.id === 'chest-slots-container';
+                    if (inChest) { e.preventDefault(); e.stopPropagation(); z6MoveAll(x.kind, x.i); return; }
+                    if (x.kind === 'inv') { e.preventDefault(); e.stopPropagation(); z6Shuffle(x.i); return; }
+                }
+            } catch (err) { rpgErr(err); }
+        }, true);
+        // захист закріплених
+        handleChestInvSlotClick = (function (o) { return function (index) { const it = inventory[index]; if (it && it.pin) { z6Toast('📌 Закріплений предмет — зніми закріплення (Alt+клік)'); return; } return o.apply(this, arguments); }; })(handleChestInvSlotClick);
+        v363Trash = (function (o) { return function () { if (draggedSlotIndex !== null && inventory[draggedSlotIndex] && inventory[draggedSlotIndex].pin) { z6Toast('📌 Закріплений предмет не можна знищити'); return; } return o.apply(this, arguments); }; })(v363Trash);
+        v363SortArr = (function (o) {
+            return function (arr, from, to) {
+                const keep = []; for (let i = from; i < to; i++) if (arr[i] && arr[i].pin) { keep.push([i, arr[i]]); arr[i] = null; }
+                const r = o.apply(this, arguments);
+                for (const [i, it] of keep) { if (arr[i]) { let f = -1; for (let j = to - 1; j >= from; j--) if (!arr[j]) { f = j; break; } if (f < 0) f = arr.length; arr[f] = arr[i]; } arr[i] = it; }
+                return r;
+            };
+        })(v363SortArr);
+        dropHovered = (function (o) {
+            return function () {
+                try {
+                    const el = document.elementFromPoint(mouse.x * WZ, mouse.y * WZ), slot = el && el.closest ? el.closest('.inv-slot, .hotbar-slot') : null;
+                    const it = slot ? (() => { const x = z6Idx(slot); return x && inventory[x.i]; })() : (!inventoryOpen && !chestOpen && !furnaceOpen ? inventory[selectedHotbarSlot] : null);
+                    if (it && it.pin) { z6Toast('📌 Закріплений предмет не викидаю'); return; }
+                } catch (e) { }
+                return o.apply(this, arguments);
+            };
+        })(dropHovered);
+        v37StackNearby = (function (o) {
+            return async function () {
+                const keep = []; for (let i = 0; i < inventory.length; i++) if (inventory[i] && inventory[i].pin) { keep.push([i, inventory[i]]); inventory[i] = null; }
+                try { return await o.apply(this, arguments); } finally { for (const [i, it] of keep) { if (!inventory[i]) inventory[i] = it; else { const f = inventory.findIndex(s => !s); if (f >= 0) inventory[f] = it; } } try { updateInventoryUI(); } catch (e) { } }
+            };
+        })(v37StackNearby);
+
+        // ================= ☄ v40.2: СПІЛЬНА ПОДІЯ «ПАДІННЯ ЗОРІ» =================
+        // Уламок падає недалеко від гравців; у три хвилі до нього йдуть вороги. Усі, хто поруч, отримують нагороду.
+        const Z7 = { f: 0, id: 0, st: 'idle', w: 0, W: 3, q: [], alive: 0, k: 0, tm: 0, bx: 0, by: 0, sd: 1, day: -999, np: 1, away: 0, brk: 0, qt: 0, wt: 0, wsz: 1, sc: 1, tot: 0, force: false, c: null, fx: null, got: -1, wins: 0 };
+        Z1_FX.z7b = 1;
+        z1Fx = (function (o) { return function (f, p, t) { if (f.k === 'z7b') { try { z7Draw(f); } catch (e) { } return; } return o.apply(this, arguments); }; })(z1Fx);
+        function z7Draw(f) {
+            const x = f.x, y = f.y, s = performance.now() / 1000, pu = 0.5 + 0.5 * Math.sin(s * 3);
+            ctx.save(); ctx.globalCompositeOperation = 'lighter';
+            const g = ctx.createLinearGradient(0, y - 560, 0, y); g.addColorStop(0, 'rgba(143,216,255,0)'); g.addColorStop(1, 'rgba(143,216,255,' + (0.30 + 0.12 * pu) + ')');
+            ctx.fillStyle = g; ctx.fillRect(x - 15, y - 560, 30, 560); ctx.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.1 * pu) + ')'; ctx.fillRect(x - 4, y - 560, 8, 560);
+            glowC(x, y - 14, 86 + pu * 12, '#8fd8ff', 0.5); glowC(x, y - 14, 34, '#ffffff', 0.45);
+            ctx.strokeStyle = 'rgba(143,216,255,' + (0.25 + 0.15 * pu) + ')'; ctx.lineWidth = 2; ctx.setLineDash([12, 10]); ctx.beginPath(); ctx.ellipse(x, y, 330, 30, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+            ctx.globalCompositeOperation = 'source-over'; ctx.translate(x, y - 22 + Math.sin(s * 2) * 3); ctx.rotate(Math.sin(s) * 0.15);
+            ctx.fillStyle = '#bfeaff'; ctx.strokeStyle = '#2a6a9a'; ctx.lineWidth = 2; ctx.beginPath();
+            for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, r = i % 2 ? 6 : 16; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 3.2, 0, 7); ctx.fill();
+            ctx.restore();
+            if (Math.random() < 0.25) z1P(x + (Math.random() - 0.5) * 60, y - 6, (Math.random() - 0.5) * 0.4, -0.7 - Math.random() * 0.8, '#bff0ff', 2.4, 40, -0.004);
+        }
+        function z7Beacon(on) {
+            const alive = Z7.fx && rpgFx.indexOf(Z7.fx) >= 0;
+            if (!on) { if (alive) Z7.fx.t = Z7.fx.life + 1; Z7.fx = null; return; }
+            if (!alive) Z7.fx = z1Push({ k: 'z7b', x: Z7.bx, y: Z7.by, life: 200 }, false);
+            Z7.fx.x = Z7.bx; Z7.fx.y = Z7.by; Z7.fx.t = 0;
+        }
+        function z7Banner(a, b) { try { v26Banner(a, b); } catch (e) { } if (MP && MP.sh && MP.host) mpSend({ t: 'x_eb', a, b }); }
+        function z7Data() { return { t: 'x_ev', id: Z7.id, s: Z7.st, w: Z7.w, W: Z7.W, a: Z7.alive, q: Z7.q.length, k: Z7.k, tm: Z7.tm, bx: Z7.bx, by: Z7.by }; }
+        function z7Net(force) { if (!(MP && MP.sh && MP.host)) return; if (force || Z7.f % 20 === 0) mpSend(z7Data()); }
+        function z7Plan(w) {
+            const sc = Z7.sc, R = n => Math.max(1, Math.round(n * sc)), q = [], add = (t, n) => { for (let i = 0; i < n; i++) q.push(t); };
+            if (w === 1) { add('zombie', R(5)); add('savage', R(1.5)); }
+            else if (w === 2) { add('zombie', R(4)); add('savage', R(2.5)); add('raider', R(2.5)); }
+            else { add('zombie', R(3)); add('raider', R(3)); add('savage', R(2)); add('brute', Math.max(1, Math.round(sc * 1.2))); }
+            q.sort(() => Math.random() - 0.5); return q;
+        }
+        function z7Spawn(type) {
+            const H = V378.hz, np0 = H.np; H.np = Z7.np;
+            try {
+                for (let tr = 0; tr < 4; tr++) {
+                    const side = tr === 0 ? (Z7.sd = -Z7.sd) : (Math.random() < 0.5 ? -1 : 1), S = v378PickSpawn({ ax: Z7.bx, ay: Z7.by, side: Z7.sd }, side); if (!S) continue;
+                    const B = V378_BASE[type], x0 = S.sx - B.w / 2 + (Math.random() - 0.5) * 50, y0 = S.fy * 32 - B.h - 0.5; if (!v378Free(x0, y0, B.w, B.h)) continue;
+                    const m = v378Mk(type, x0, y0, { _ev: 1 }); createParticles(m.x + B.w / 2, m.y + B.h - 4, '#8fd8ff', 7, 2, 3, 22); return m;
+                }
+            } finally { H.np = np0; }
+            return null;
+        }
+        function z7Count() { let a = 0; for (const m of mobs) if (m._ev && !m.ghost && m.hp > 0) a++; Z7.alive = a; }
+        function z7Clear() { for (let i = mobs.length - 1; i >= 0; i--) { const m = mobs[i]; if (m._ev && !m.ghost) { createParticles(m.x + m.width / 2, m.y + m.height / 2, '#8fd8ff', 12, 2, 4, 28); mobs.splice(i, 1); } } }
+        function z7Pick() {
+            const P = v378Plys(); if (!P.length) return null; const p = P[(Math.random() * P.length) | 0];
+            for (let tr = 0; tr < 8; tr++) { const dir = Math.random() < 0.5 ? -1 : 1, S = v378PickSpawn({ ax: p.x + dir * (800 + Math.random() * 500), ay: p.y, side: 0 }, 0); if (S && S.bx > 30 && S.bx < currentWorld.width - 30) return S; }
+            return null;
+        }
+        function z7Start(S, forced) {
+            Z7.id++; Z7.st = 'warn'; Z7.tm = forced ? 300 : 720; Z7.w = 0; Z7.q = []; Z7.k = 0; Z7.alive = 0; Z7.bx = S.bx * 32 + 16; Z7.by = S.fy * 32; Z7.away = 0; Z7.brk = 0;
+            Z7.np = Math.max(1, v378Plys().length); const lv = Math.min(25, RPG.level || 1); Z7.sc = (0.7 + 0.035 * lv) * (1 + 0.45 * (Z7.np - 1));
+            z7Banner('☄ Падіння зорі!', 'Уламок упав неподалік — вирушайте до світла всією групою. Через ' + Math.round(Z7.tm / 60) + ' с до нього рушать вороги');
+            try { v20Tone('sine', 900, 120, 0.9, 0.1); shake = Math.max(shake, 4); } catch (e) { } z7Net(1);
+        }
+        function z7End(win, quiet) {
+            if (Z7.st === 'win' || Z7.st === 'lose') return; Z7.st = win ? 'win' : 'lose'; Z7.tm = win ? 600 : 300; if (!win) z7Clear();
+            if (win) { z7Banner('🌠 Уламок знешкоджено!', 'Знищено ворогів: ' + Z7.k); Z7.wins++; z7Reward(Z7.id); } else if (!quiet) z7Banner('🌫 Світло згасло', 'Уламок зник без нагороди');
+            z7Net(1);
+        }
+        function z7Reward(id) {
+            if (gameState !== 'PLAYING' || Z7.got === id) return; if (Math.hypot(player.x - Z7.bx, player.y - Z7.by) > 3400) return; Z7.got = id;
+            const lv = RPG.level || 1, L = Math.min(8, Math.floor(lv / 3)), px = player.x + 12, py = player.y, g = 26 + (Math.random() * 16 | 0) + L * 7, fe = 3 + (Math.random() * 3 | 0) + L;
+            v20Drop('gold_coin', g, px, py, 0); v20Drop('iron_ingot', fe, px, py, 1); if (Math.random() < 0.55) v20Drop('life_potion', 1 + (Math.random() * 2 | 0), px, py, -1);
+            let extra = ''; if (lv >= 6 && Math.random() < 0.45) { const n = 1 + (Math.random() * 2 | 0); v20Drop('star_ore', n, px, py, 1.4); extra = ' · ✨ зоряна руда ×' + n; }
+            try { addXP(160 + lv * 40); } catch (e) { }
+            createParticles(px, py, '#8fd8ff', 28, 5, 4, 50); try { v20Tone('triangle', 520, 1040, 0.5, 0.09); setTimeout(() => v20Tone('triangle', 780, 1560, 0.5, 0.08), 200); } catch (e) { }
+            floatingTexts.push({ x: px - 60, y: py - 56, text: '🌠 Нагорода за уламок: +' + g + ' монет' + extra, color: '#bff0ff', life: 150 });
+        }
+        function z7Tick() {
+            if (v17Client()) return; Z7.f++;
+            const day = Math.floor(gameTime / V23_TAU), ph = (gameTime / V23_TAU) % 1, night = Math.sin(gameTime) <= 0, hordeIdle = V378.hz.st === 'idle';
+            if (Z7.st === 'idle') {
+                if ((Z7.f % 60 === 17 && hordeIdle && ((night && ph < 0.7 && Z7.day !== day && day % 3 !== 2 && (RPG.level || 1) >= 4) || Z7.force))) {
+                    const forced = Z7.force; Z7.force = false; Z7.day = day;
+                    if (forced || Math.random() < 0.6) { const S = z7Pick(); if (S) z7Start(S, forced); }
+                }
+                return;
+            }
+            if (Z7.st === 'win' || Z7.st === 'lose') { if (--Z7.tm <= 0) { Z7.st = 'idle'; z7Net(1); } else z7Net(); return; }
+            Z7.tot++; if (!hordeIdle) { z7End(false, true); Z7.st = 'idle'; return; }
+            if (Z7.f % 10 === 0) z7Count();
+            if (Z7.st === 'warn') {
+                if (--Z7.tm <= 0) { Z7.st = 'run'; Z7.w = 1; Z7.q = z7Plan(1); Z7.wsz = Z7.q.length; Z7.qt = 20; Z7.wt = 0; Z7.tot = 0; z7Banner('⚔ Хвиля 1 / ' + Z7.W, 'Тримайтеся поруч з уламком!'); }
+                z7Net(); return;
+            }
+            let near = false; for (const p of v378Plys()) if (Math.hypot(p.x - Z7.bx, p.y - Z7.by) < 3200) near = true; Z7.away = near ? 0 : Z7.away + 1; if (Z7.away > 1500) { z7End(false, true); return; }
+            if (Z7.tot > 20000) { z7End(false); return; }
+            if (Z7.brk > 0) { if (--Z7.brk === 0) { Z7.w++; Z7.q = z7Plan(Z7.w); Z7.wsz = Z7.q.length; Z7.wt = 0; Z7.qt = 20; z7Banner('⚔ Хвиля ' + Z7.w + ' / ' + Z7.W, Z7.w === Z7.W ? 'Остання хвиля!' : 'Тримайтеся!'); } z7Net(); return; }
+            Z7.wt++;
+            if (Z7.q.length) { if (--Z7.qt <= 0 && Z7.alive < 22) { const t = Z7.q.shift(); if (z7Spawn(t)) Z7.alive++; else Z7.q.unshift(t); Z7.qt = 34 + (Math.random() * 24 | 0) - (Z7.w - 1) * 6; } }
+            else {
+                const clear = Z7.alive <= Math.max(0, Math.floor(Z7.wsz * 0.15)) || Z7.wt > 2700;
+                if (clear) { if (Z7.w >= Z7.W) z7End(true); else { Z7.brk = 360; z7Banner('🛡 Хвилю відбито', 'Наступна через ' + Math.round(Z7.brk / 60) + ' с — перегрупуйтесь'); } }
+            }
+            z7Net();
+        }
+        // моби події йдуть до уламка, а не до бази орди
+        v375Steer = (function (o) {
+            return function (m, pDist) {
+                if (m._ev && m._hz) { const H = V378.hz, ax = H.ax, ay = H.ay; H.ax = Z7.bx; H.ay = Z7.by; try { return v378HSteer(m); } finally { H.ax = ax; H.ay = ay; } }
+                return o.apply(this, arguments);
+            };
+        })(v375Steer);
+        v18Loot = (function (o) { return function (m) { o.apply(this, arguments); try { if (m && m._ev && !(MP && MP.sh && !MP.host)) Z7.k++; } catch (e) { } }; })(v18Loot);
+        // ---------- мережа ----------
+        mpOnMsg = (function (o) {
+            return function (m) {
+                try {
+                    if (m && m.t === 'x_ev') { if (MP.host) return; const old = Z7.c; Z7.c = { id: m.id, s: m.s, w: m.w, W: m.W, a: m.a, q: m.q, k: m.k, tm: m.tm, bx: m.bx, by: m.by, at: Z7.f }; Z7.bx = m.bx; Z7.by = m.by; Z7.id = m.id; if (m.s === 'win') { try { z7Reward(m.id); } catch (e) { } } return; }
+                    if (m && m.t === 'x_eb') { if (!MP.host) try { v26Banner(m.a, m.b); } catch (e) { } return; }
+                } catch (e) { rpgErr(e); }
+                return o.apply(this, arguments);
+            };
+        })(mpOnMsg);
+        // ---------- HUD ----------
+        {
+            const st = document.createElement('style'); st.textContent = `
+            #z7-ev{position:fixed;top:132px;left:50%;transform:translateX(-50%);z-index:8;min-width:270px;padding:6px 16px 8px;border-radius:12px;background:linear-gradient(180deg,rgba(14,40,64,.92),rgba(8,22,38,.92));border:2px solid #5fb8f0;box-shadow:0 0 18px rgba(95,184,240,.4);color:#d8f2ff;font:800 14px 'Segoe UI',sans-serif;text-align:center;display:none;pointer-events:none;text-shadow:0 1px 3px #000}
+            #z7-ev small{display:block;font-weight:600;font-size:11px;color:#9ccbe8;margin-top:1px}
+            #z7-ev.win{border-color:#f2c23a;background:linear-gradient(180deg,rgba(70,52,10,.92),rgba(40,28,6,.92));box-shadow:0 0 22px rgba(255,200,60,.45)}
+            #z7-ev.lose{border-color:#7a7a8a;background:rgba(30,30,38,.9);box-shadow:none}`;
+            document.head.appendChild(st); const el = document.createElement('div'); el.id = 'z7-ev'; el.innerHTML = '<div class="t"></div><small></small>'; document.body.appendChild(el);
+        }
+        function z7Hud() {
+            const el = document.getElementById('z7-ev'); if (!el) return; let D = null;
+            if (v17Client()) { if (Z7.c && Z7.f - Z7.c.at < 200) D = Z7.c; } else if (Z7.st !== 'idle') D = { s: Z7.st, w: Z7.w, W: Z7.W, a: Z7.alive, q: Z7.q.length, k: Z7.k, tm: Z7.tm, bx: Z7.bx, by: Z7.by };
+            const hud = !document.getElementById('game-hud').classList.contains('hidden');
+            z7Beacon(!!(D && D.s !== 'idle' && D.s !== 'lose' && gameState === 'PLAYING'));
+            if (!D || D.s === 'idle' || !hud || gameState !== 'PLAYING' || mapOpen) { el.style.display = 'none'; return; }
+            el.style.display = 'block'; el.className = D.s === 'win' ? 'win' : D.s === 'lose' ? 'lose' : '';
+            const t = el.children[0], s = el.children[1], dx = D.bx - (player.x + 12), dist = Math.round(Math.abs(dx) / 32), ar = Math.abs(dx) < 200 ? '◉' : dx < 0 ? '◀' : '▶';
+            if (D.s === 'warn') { t.textContent = '☄ ПАДІННЯ ЗОРІ'; s.textContent = ar + ' ' + dist + ' м до уламка · вороги рушать через ' + Math.ceil(D.tm / 60) + ' с'; }
+            else if (D.s === 'win') { t.textContent = '🌠 УЛАМОК ЗНЕШКОДЖЕНО!'; s.textContent = 'Знищено ворогів: ' + D.k; }
+            else if (D.s === 'lose') { t.textContent = '🌫 СВІТЛО ЗГАСЛО'; s.textContent = 'Нагороди немає'; }
+            else { t.textContent = '☄ УЛАМОК ЗОРІ · Хвиля ' + D.w + '/' + D.W; s.textContent = 'Ворогів залишилось: ' + (D.a + D.q) + ' · ' + ar + ' ' + dist + ' м до уламка'; }
+        }
+        updateGame = (function (o) {
+            return function () {
+                o.apply(this, arguments); if (gameState !== 'PLAYING') { if (Z7.fx) z7Beacon(false); return; }
+                try { z7Tick(); if (v17Client()) Z7.f++; if (Z7.f % 6 === 3) z7Hud(); if (Z7.fx) Z7.fx.t = 0; } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+        window.__z7 = { Z7, force: () => { Z7.force = true; }, tick: z7Tick };
+
+        // ================= 🌍 v40.2: ЕКРАН «ЗАВАНТАЖИТИ СВІТ» =================
+        const Z8 = { q: '', sort: 'recent' };
+        {
+            const st = document.createElement('style'); st.textContent = `
+            #world-select-screen .menu-card{width:min(820px,94vw);padding:18px 22px;max-height:92vh}
+            #world-select-screen .worlds-list{width:100%;max-height:min(58vh,520px);padding:8px;box-sizing:border-box;background:rgba(6,10,16,.55)}
+            .z8-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+            .z8-cont{flex:1 1 100%;display:flex;align-items:center;gap:14px;padding:10px 16px;border-radius:12px;border:2px solid #3fae5a;background:linear-gradient(90deg,rgba(40,110,64,.55),rgba(24,60,44,.55));cursor:pointer;color:#eaffee;font:700 15px 'Segoe UI',sans-serif;transition:transform .12s,box-shadow .12s}
+            .z8-cont:hover{transform:translateY(-1px);box-shadow:0 0 18px rgba(80,255,130,.35)}
+            .z8-cont b{font-size:17px;color:#fff}.z8-cont small{display:block;color:#a8e8b8;font-weight:600;font-size:12px}.z8-cont .go{margin-left:auto;font-size:26px}
+            .z8-q{flex:1;min-width:150px;padding:7px 12px;border-radius:8px;border:2px solid #2c394b;background:#0b121c;color:#fff;font:600 13px 'Segoe UI',sans-serif;outline:none}.z8-q:focus{border-color:#6fdc7a}
+            .z8-chip{padding:6px 11px;border-radius:999px;border:2px solid #2c394b;background:#101a28;color:#a9bbd2;font:700 12px 'Segoe UI',sans-serif;cursor:pointer}.z8-chip.on{border-color:#6fdc7a;color:#eaffee;background:#1b3a2a}
+            #worlds-list-container .z8-card{display:flex;gap:14px;align-items:stretch;padding:10px;margin-bottom:10px;border-radius:12px;border:2px solid #0b0e13;box-shadow:inset 0 0 0 1px #566a86;background:linear-gradient(90deg,rgba(60,76,98,.62),rgba(30,40,56,.62));animation:z8in .35s both}
+            #worlds-list-container .z8-card:hover{box-shadow:inset 0 0 0 1px #6fdc7a,0 0 16px rgba(80,255,130,.28);transform:translateX(3px)}
+            @keyframes z8in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+            .z8-th{position:relative!important;top:auto!important;left:auto!important;z-index:auto!important;flex:0 0 168px;height:84px;border-radius:8px;border:2px solid #0b0e13;image-rendering:pixelated;background:#16202e;align-self:center}
+            .z8-in{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px}
+            .z8-nm{font:800 17px 'Segoe UI',sans-serif;color:#7be08c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .z8-tags{display:flex;flex-wrap:wrap;gap:5px}
+            .z8-tag{padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid #3b4d66;font:700 11px 'Segoe UI',sans-serif;color:#cfe0f5;white-space:nowrap}
+            .z8-meta{font:600 12px 'Segoe UI',sans-serif;color:#9fb2cc}
+            .z8-bt{display:flex;flex-direction:column;gap:6px;justify-content:center}
+            .z8-bt button{min-width:92px}
+            .z8-empty{text-align:center;color:#9fb2cc;padding:26px 10px;font:600 14px 'Segoe UI',sans-serif}.z8-empty big{display:block;font-size:42px;margin-bottom:6px}
+            @media (max-width:640px){.z8-th{display:none}}`;
+            document.head.appendChild(st);
+        }
+        const Z8_SIZE = { small: 'Малий', medium: 'Середній', large: 'Великий' };
+        function z8Rel(t) {
+            if (!t) return '—'; const s = Math.max(0, (Date.now() - t) / 1000);
+            if (s < 90) return 'щойно'; if (s < 3600) return Math.round(s / 60) + ' хв тому'; if (s < 86400) return Math.round(s / 3600) + ' год тому';
+            const d = Math.round(s / 86400); if (d < 30) return d + ' дн. тому'; return new Date(t).toLocaleDateString('uk-UA');
+        }
+        function z8Thumb(cv, w) {
+            const W = cv.width = 168, H = cv.height = 84, c = cv.getContext('2d'), sh = w.sh;
+            const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#5f9fe0'); g.addColorStop(1, '#bfe0f5'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+            c.fillStyle = 'rgba(255,255,255,.55)'; for (let i = 0; i < 3; i++) c.fillRect(((i * 61 + (w.meta.name.length * 13)) % 140), 10 + i * 9, 22 + i * 6, 5);
+            const n = (sh && sh.length) || 0, hgt = (w.meta && w.meta.height) || 120;
+            if (!n) { c.fillStyle = '#4f8a3a'; c.fillRect(0, H * 0.6, W, H * 0.4); return; }
+            let lo = 1e9, hi = -1e9; for (let i = 0; i < n; i += 4) { const v = sh[i]; if (v < lo) lo = v; if (v > hi) hi = v; } const span = Math.max(14, hi - lo + 10);
+            for (let x = 0; x < W; x++) {
+                const v = sh[Math.min(n - 1, Math.floor(x / W * n))], y = Math.round(H * 0.28 + (v - lo) / span * H * 0.55);
+                c.fillStyle = '#58a63e'; c.fillRect(x, y, 1, 3); c.fillStyle = '#7a5230'; c.fillRect(x, y + 3, 1, 7); c.fillStyle = '#5a5a66'; c.fillRect(x, y + 10, 1, H - y);
+            }
+            const p = w.player; if (p && n) { const bx = Math.floor(p.x / 32), x = Math.round(bx / n * W), v = sh[Math.max(0, Math.min(n - 1, bx))]; const y = Math.round(H * 0.28 + (v - lo) / span * H * 0.55); c.fillStyle = '#ff4a4a'; c.fillRect(x - 2, y - 8, 4, 7); c.fillStyle = '#fff'; c.fillRect(x - 1, y - 7, 2, 2); }
+        }
+        function z8List() { try { return JSON.parse(localStorage.getItem('grogcraft_worlds') || '[]'); } catch (e) { return []; } }
+        renderSavedWorldsList = function () {
+            const cont = document.getElementById('worlds-list-container'); if (!cont) return;
+            const all = z8List(), host = cont.parentNode;
+            let top = host.querySelector('.z8-top');
+            if (!top) {
+                top = document.createElement('div'); top.className = 'z8-top';
+                top.innerHTML = '<div class="z8-cont" id="z8-cont" style="display:none"></div><input class="z8-q" id="z8-q" placeholder="🔍 Пошук світу…" autocomplete="off"><span class="z8-chip on" data-s="recent">🕒 Нещодавні</span><span class="z8-chip" data-s="name">🔤 За назвою</span><span class="z8-chip" data-s="time">⏳ Найдовше граю</span>';
+                host.insertBefore(top, cont);
+                top.querySelector('#z8-q').oninput = e => { Z8.q = e.target.value.trim().toLowerCase(); renderSavedWorldsList(); };
+                top.querySelectorAll('.z8-chip').forEach(ch => ch.onclick = () => { Z8.sort = ch.dataset.s; renderSavedWorldsList(); });
+            }
+            top.querySelectorAll('.z8-chip').forEach(ch => ch.classList.toggle('on', ch.dataset.s === Z8.sort));
+            const showTools = all.length >= 3; top.querySelector('#z8-q').style.display = showTools ? '' : 'none'; top.querySelectorAll('.z8-chip').forEach(ch => ch.style.display = all.length >= 2 ? '' : 'none');
+            const qi = top.querySelector('#z8-q'); if (qi.value.trim().toLowerCase() !== Z8.q) qi.value = Z8.q;
+            // «Продовжити»
+            const cb = top.querySelector('#z8-cont'); let last = -1, lt = -1; all.forEach((w, i) => { const t = (w.meta && w.meta.lastSaved) || 0; if (t > lt) { lt = t; last = i; } });
+            if (last >= 0) { const w = all[last], p = w.player && w.player.rpg || {}; cb.style.display = 'flex'; cb.innerHTML = '<span style="font-size:28px">▶</span><div><small>Продовжити останню гру</small><b>' + z8Esc(w.meta.name) + '</b></div><small style="text-align:right;margin-left:auto">' + (p.level ? 'Рів. ' + p.level + ' · ' : '') + z8Rel(w.meta.lastSaved) + '</small><span class="go">➜</span>'; cb.onclick = () => { try { playSound('click'); } catch (e) { } loadWorld(last); }; }
+            else cb.style.display = 'none';
+            cont.innerHTML = '';
+            if (!all.length) { cont.innerHTML = '<div class="z8-empty"><big>🌍</big>Тут поки порожньо.<br>Створи свій перший світ — «Нова гра» в головному меню.</div>'; return; }
+            let rows = all.map((w, i) => ({ w, i })).filter(r => r.w && r.w.meta && (!Z8.q || r.w.meta.name.toLowerCase().includes(Z8.q)));
+            if (Z8.sort === 'name') rows.sort((a, b) => a.w.meta.name.localeCompare(b.w.meta.name, 'uk')); else if (Z8.sort === 'time') rows.sort((a, b) => (b.w.meta.playTime || 0) - (a.w.meta.playTime || 0)); else rows.sort((a, b) => (b.w.meta.lastSaved || 0) - (a.w.meta.lastSaved || 0));
+            if (!rows.length) { cont.innerHTML = '<div class="z8-empty"><big>🔎</big>Нічого не знайдено за запитом «' + z8Esc(Z8.q) + '».</div>'; return; }
+            rows.forEach((r, k) => {
+                const w = r.w, m = w.meta, rp = (w.player && w.player.rpg) || {}, cl = (typeof CLS !== 'undefined' && CLS[rp.cls]) || null, dk = (typeof V30_D !== 'undefined' && V30_D[m.difficulty || 'classic']) || null;
+                const h = Math.floor((m.playTime || 0) / 3600), mi = Math.floor(((m.playTime || 0) % 3600) / 60);
+                const card = document.createElement('div'); card.className = 'z8-card'; card.style.animationDelay = Math.min(k, 8) * 0.04 + 's';
+                const tags = [];
+                if (cl) tags.push('<span class="z8-tag" style="border-color:' + cl.color + ';color:' + cl.color2 + '">' + cl.icon + ' ' + cl.name + (rp.level ? ' · рів. ' + rp.level : '') + '</span>'); else if (rp.level) tags.push('<span class="z8-tag">Рів. ' + rp.level + '</span>');
+                if (dk) tags.push('<span class="z8-tag">' + (dk.ic || '') + ' ' + (dk.n || '') + '</span>');
+                tags.push('<span class="z8-tag">🗺 ' + (Z8_SIZE[m.size] || (m.width ? m.width + ' бл.' : '—')) + '</span>');
+                const hp = w.player && w.player.health; if (hp != null) tags.push('<span class="z8-tag">❤ ' + Math.round(hp) + '</span>');
+                card.innerHTML = '<canvas class="z8-th"></canvas><div class="z8-in"><div class="z8-nm" title="' + z8Esc(m.name) + '">' + z8Esc(m.name) + '</div><div class="z8-tags">' + tags.join('') + '</div><div class="z8-meta">⏱ Награно: ' + h + ' г ' + mi + ' хв · 💾 Збережено: ' + z8Rel(m.lastSaved) + ' · 📅 Створено: ' + new Date(m.created).toLocaleDateString('uk-UA') + '</div></div><div class="z8-bt"><button class="icon-btn">▶ Грати</button><button class="icon-btn danger-btn">🗑 Видалити</button></div>';
+                try { z8Thumb(card.querySelector('canvas'), w); } catch (e) { }
+                const bs = card.querySelectorAll('button'); bs[0].onclick = () => loadWorld(r.i); bs[1].onclick = () => deleteWorld(r.i);
+                cont.appendChild(card);
+            });
+        };
+        function z8Esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        window.__z8 = Z8;
 
         // ================= 📖 ГАЙДИ v38.0 (етап 1) =================
         guide.adviceList.push('Зоряна руда з’являється в глибинах після падіння будь-якого боса. Для видобутку потрібна залізна кирка, для плавки — пічка.', 'Поселення з трьох і більше мешканців стає «безпечною зоною»: монстри в ньому не з’являються. Орда — виняток.', 'Що більше мешканців, то вищий рівень поселення — і сильніші бафи в його межах.');
@@ -28350,6 +28712,59 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const np = GUIDE_PAGES.find(p => p.id === 'new');
             if (np) { const old = np.html; np.html = () => old().replace('<div class="g-grid2">', `<div class="g-grid2">
                 <div class="g-card" style="border-color:#ff8aa8"><h4>💞 Сімейні історії — v37.9</h4><p>Мешканці дружать, закохуються, одружуються й мають дітей. Візити в гості, весілля з феєрверками, прохання родин та Родинний журнал (U). Розділ «Сімейні історії».</p></div>`); }
+        }
+
+        // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
+        const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
+        const Z9_VERS = [
+            ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
+            ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
+            ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
+        ];
+        const Z9_NEW = {
+            '40.2': [
+                ['#8fd8ff', '☄ Падіння зорі', 'Нічна <b>спільна подія</b>: неподалік від гравців падає уламок зорі (світловий стовп і підказка «◀ 42 м»). У <b>три хвилі</b> до нього йдуть вороги — тримайтеся разом. Коли хвилі відбито, <b>нагороду отримують усі, хто поруч</b>: монети, залізо, зілля, іноді зоряна руда. Не збігається з Ордою (вона раз на три ночі).'],
+                ['#ffd04a', '📌 Закріплення предметів', '<b>Alt + клік</b> по предмету — 📌 закріпити. Закріплений предмет не чіпають сортування, смітник, «Скласти у скрині» (X) і викидання (Q). Ще раз Alt + клік — зняти.'],
+                ['#6fdc7a', '⇧ Shift + клік', 'В інвентарі: Shift + клік перекидає предмет між <b>панеллю швидкого доступу й рюкзаком</b>. У вікні скрині: Shift + клік переносить <b>усі однакові предмети</b> (з рюкзака у скриню чи навпаки).'],
+                ['#a98bff', '🌍 Новий екран світів', 'Кожен світ має картку з <b>мініатюрою рельєфу</b> (червоною цяткою — де ти стоїш), класом, рівнем, складністю, розміром і часом збереження. Зверху кнопка «Продовжити останню гру», пошук і сортування.'],
+                ['#ff9a7a', '👁 Чистіші таблички мобів', 'Імена, смужки здоров’я елітів і адаптованих ворогів з’являються <b>лише зблизька</b> (плавно). Наведи мишку на моба — побачиш його назву й <b>опір та слабкості</b>.'],
+                ['#ffb36b', '📖 Порядок у «Що нового»', 'Оновлення згруповані за версіями: <b>свіже — зверху, давнє — знизу</b>. Старі версії згорнуті — натисни на заголовок, щоб розкрити.']
+            ],
+            '39.x': [
+                ['#6fdc7a', '💾 Світи в папці', 'Збереження лежать у <b>AppData\\Roaming\\GrogCraft\\saves\\&lt;назва світу&gt;\\world.json</b>. Видалив папку світу — світ зникає; поклав назад — з’явиться знову. Автозбереження пише туди ж.'],
+                ['#8fd0ff', '⚙ Меню паузи', 'У паузі лише головне: продовжити, гайди, профіль, налаштування, відкрити для друзів, зберегти, вихід. Зовнішність героя й складність світу не змінюються, графіка — в налаштуваннях.'],
+                ['#ffb347', '🚪 Вийти з гри', 'Кнопка в головному меню закриває гру. У лаунчері введення тексту (чат, пошук, назва світу) працює без збоїв, а в одиночній грі чат показує твої повідомлення.']
+            ]
+        };
+        {
+            const np = GUIDE_PAGES.find(p => p.id === 'new');
+            if (np) {
+                const legacy = np.html;
+                np.html = () => {
+                    const d = document.createElement('div'); d.innerHTML = legacy();
+                    const key = c => { const h = c.querySelector('h4'); return h ? h.textContent.replace(/\s*—\s*v[\d.]+/, '').trim() : ''; };
+                    const byKey = new Map(); [...d.querySelectorAll('.g-card')].forEach(c => byKey.set(key(c), c)); // дублікати: лишається пізніша картка
+                    const groups = {}; for (const [k, c] of byKey) { const v = Z9_MAP[k] || 'old'; (groups[v] = groups[v] || []).push(c); }
+                    for (const v in Z9_NEW) groups[v] = Z9_NEW[v].map(a => { const c = document.createElement('div'); c.className = 'g-card'; c.style.borderColor = a[0]; c.innerHTML = '<h4>' + a[1] + '</h4><p>' + a[2] + '</p>'; return c; }).concat(groups[v] || []);
+                    const tip = d.querySelector('.g-tip'); let out = '<p>Усе, що з’являлося в грі, — <b>від найсвіжішого до найдавнішого</b>. Свіжі версії розгорнуті, старіші — натисни на заголовок.</p>';
+                    Z9_VERS.forEach(([v, n], idx) => {
+                        const cs = groups[v]; if (!cs || !cs.length) return;
+                        cs.forEach(c => { const h = c.querySelector('h4'); if (h) h.innerHTML = h.innerHTML.replace(/\s*—\s*v[\d.]+/, ''); });
+                        const label = v === 'old' ? n : v === '36' ? n : 'v' + v + ' — ' + n;
+                        out += '<details class="z9-v"' + (idx < 2 ? ' open' : '') + '><summary><b>' + label + '</b><small>' + cs.length + ' ' + (cs.length === 1 ? 'зміна' : 'змін') + '</small>' + (idx === 0 ? '<em>НОВЕ</em>' : '') + '</summary><div class="g-grid2">' + cs.map(c => c.outerHTML).join('') + '</div></details>';
+                    });
+                    return out + (tip ? tip.outerHTML : '');
+                };
+            }
+            const st = document.createElement('style'); st.textContent = `
+            .z9-v{margin:10px 0;border:2px solid #2c394b;border-radius:10px;background:rgba(10,16,26,.5);overflow:hidden}
+            .z9-v>summary{cursor:pointer;list-style:none;padding:9px 14px;display:flex;align-items:center;gap:10px;font:700 15px 'Segoe UI',sans-serif;color:#e6f0ff;background:linear-gradient(90deg,rgba(60,90,130,.45),rgba(24,34,50,.2))}
+            .z9-v>summary::-webkit-details-marker{display:none}.z9-v>summary::before{content:'▸';color:#ffd04a;transition:transform .15s}.z9-v[open]>summary::before{transform:rotate(90deg)}
+            .z9-v>summary small{margin-left:auto;color:#8fa6c4;font-weight:600;font-size:12px}.z9-v>summary em{font-style:normal;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:#2f9e5a;color:#fff}
+            .z9-v>.g-grid2{padding:4px 10px 12px}`;
+            document.head.appendChild(st);
+            guide.adviceList.push('Побачив світловий стовп і підказку «☄ Падіння зорі»? Гуртуйтесь біля уламка — нагороду отримають усі, хто поруч.', 'Alt + клік закріплює предмет (📌): він не потрапить у сортування, смітник і викидання.');
         }
     </script>
 </body>
