@@ -6503,7 +6503,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 if (bldFrame % 45 === 0) {
                     for (const k in currentWorld.furn) {
                         const f = currentWorld.furn[k], d = FURN[f.t]; if (!d || d.st !== 'floor') continue;
-                        let ok = true; for (let i = 0; i < f.w; i++) { const b = worldMap[f.y + f.h] ? worldMap[f.y + f.h][f.x + i] : 1; if ((!BLOCKS[b].solid && b !== 68) || b === 21) ok = false; }
+                        let ok = true; for (let i = 0; i < f.w; i++) { const b = worldMap[f.y + f.h] ? (worldMap[f.y + f.h][f.x + i] ?? 1) : 1; if ((!BLOCKS[b].solid && b !== 68) || b === 21) ok = false; }
                         if (!ok) { furnBreak(f.x, f.y); }
                     }
                 }
@@ -11318,7 +11318,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '41.4', GAME_VER_NAME = 'Мегаструктури й контракти';
+        const GAME_VER = '41.5', GAME_VER_NAME = 'Глибини';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -29446,7 +29446,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function zmSpawnTick() {
             if (v17Client() || mobs.length >= 40) return; const Z = zfW(); if (!Z) return;
-            const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }], H = currentWorld.height;
+            const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }], H = ((currentWorld.zf && currentWorld.zf.yb) || currentWorld.height);
             for (const p of pl) {
                 const bx = Math.max(0, Math.min(surfaceHeights.length - 1, Math.floor(p.x / 32))), py = p.y / 32, sf = surfaceHeights[bx] || 40;
                 if (Z.sky && py < 31 && py < sf - 8 && Math.abs(bx - Z.sky.cx) < 360) {
@@ -29742,7 +29742,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ---------- виклик ----------
         spawnXBoss = (function (o) { return function (kind) { const n0 = rpgBosses.length, r = o.apply(this, arguments); if (kind === 'tempest' && rpgBosses.length > n0) { const b = rpgBosses[rpgBosses.length - 1], R = BXR || player; b.x = R.x + 12 - b.w / 2; b.y = Math.max(90, R.y - 300); b.vx = 0; b.vy = 0; } return r; }; })(spawnXBoss);
         function zfSummon(it) {
-            const S = SUMMON[it.id], Z = zfW(), H = currentWorld.height, col = Math.floor((player.x + 12) / 32), row = (player.y + 22) / 32; const fail = txt => { floatingTexts.push({ x: player.x - 70, y: player.y - 34, text: txt, color: '#e67e22', life: 100 }); bossSound('warn'); return true; };
+            const S = SUMMON[it.id], Z = zfW(), H = ((currentWorld.zf && currentWorld.zf.yb) || currentWorld.height), col = Math.floor((player.x + 12) / 32), row = (player.y + 22) / 32; const fail = txt => { floatingTexts.push({ x: player.x - 70, y: player.y - 34, text: txt, color: '#e67e22', life: 100 }); bossSound('warn'); return true; };
             if (rpgBosses.length || boss || libBoss) { floatingTexts.push({ x: player.x - 40, y: player.y - 30, text: 'Бій уже триває!', color: '#e67e22', life: 50 }); return true; }
             if (S.boss === 'tempest') { if (!Z || !Z.sky) return fail('На цьому світі немає Небесної цитаделі.'); if (row > Z.sky.ty + 4 || Math.abs(col - Z.sky.cx) > Z.sky.hw + 10) return fail('Підніміться на острів Небесної цитаделі!'); }
             else { if (!Z || !Z.vol) return fail('На цьому світі немає Вулканічної безодні.'); if (col < Z.vol.x0 || col > Z.vol.x1 || row < H - 34) return fail('Спустіться у Вулканічну безодню, до залу Горна!'); }
@@ -30541,8 +30541,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= ⛏ v41.4: ПОКИНУТА ШАХТА З ВІЗКАМИ =================
         const ZO = { cd: 0, col: [], bq: [], rem: {}, hz: 0 };
         const ZC = { on: false, x: 0, row: 0, v: 0, dir: 1, t: 0, y: 0, jmp: 0, ls: -1 };
-        function zlMine(w, h, rnd) {
-            const Lm = Math.max(130, Math.min(240, Math.floor(w * 0.2))), BH = 26; let L = Lm, pl = null; for (const f of [1, 0.85, 0.72, 0.6, 0.5]) { L = Math.max(96, Math.floor(Lm * f)); pl = zlPlace(w, h, L, BH, { rnd, dy: 4, dyr: 12, flat: 22, thr: 0.68, soft: 1 }); if (pl) break; } if (!pl) return;
+        function zlMine(w, h, rnd, pl0) {
+            const Lm = Math.max(130, Math.min(240, Math.floor(w * 0.2))), BH = 26; let L = Lm, pl = pl0 || null; if (pl0) L = pl0.L; else for (const f of [1, 0.85, 0.72, 0.6, 0.5]) { L = Math.max(96, Math.floor(Lm * f)); pl = zlPlace(w, h, L, BH, { rnd, dy: 4, dyr: 12, flat: 22, thr: 0.68, soft: 1 }); if (pl) break; } if (!pl) return;
             const { x0, y0 } = pl, x1 = x0 + L - 1, yt = y0 + 12, Z = zlW(), S = zlSetB, R = rnd, ri = (a, b) => a + Math.floor(R() * (b - a + 1));
             const ev = [[0.18, 1], [0.24, 1], [0.3, 1], [0.66, -1], [0.72, -1]].map(([f, d]) => [x0 + Math.floor(L * f), d]); const prof = [];
             for (let x = x0; x <= x1; x++) { let o = 0; for (const [sx, d] of ev) if (x >= sx) o += d; prof.push(yt + o); }
@@ -30577,7 +30577,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const ox = x1 - 7, oc = pf(ox), ol = u => [[u, 1, 1], ['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 25, 50], ['life_potion', 2, 4], ['crystal_ingot', 1, 3, 0.7], ['cosmic_ingot', 1, 2, 0.35]];
             zlChest(ox - 3, oc, ol('miner_lantern')); zlChest(ox + 1, oc, [['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 15, 30], ['torch', 10, 20], ['life_potion', 1, 3]]); S(ox - 1, oc - 3, 55); S(ox + 4, oc - 3, 55); S(ox + 3, oc, 48);
             // входи з поверхні
-            const e1 = x0 + 6, e2 = x0 + Math.floor(L * 0.82); zlShaft(e1, pf(e1) - 1); zlShaft(e2, pf(e2) - 1);
+            const e1 = x0 + 6, e2 = x0 + Math.floor(L * 0.82); if (!pl0) { zlShaft(e1, pf(e1) - 1); zlShaft(e2, pf(e2) - 1); }
             Z.mines.push({ x0, y0, x1, y1: y0 + BH - 1, gx0, gx1, bridge, lv: [lvA, lvB], plates, st, idx });
             zlRegister('mine', x0, y0, x1, y0 + BH - 1, { x: x0 + (L >> 1), y: yt });
         }
@@ -30785,13 +30785,19 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function zqHurt(base, cause, ic, col) { bHurt(Math.max(2, Math.round((player.maxHealth * base + 4) * zqTrap())), cause, ic, { col, pc: col }); }
         const zqPhase = (x) => { const t = (Date.now() / 16.667 + (x * 37) % 240) % 240; return t < 150 ? 0 : t < 190 ? 1 : 2; };
-        ZL.vent = (x, y) => { const L = zqL(); return L && L.vents.some(v => v[0] === x && v[1] === y) ? zqPhase(x) : 0; };
+        // групи пасток: лабіринт + глибинні камери (Z.zd.groups) поблизу гравця
+        function zqGroups() {
+            const a = [], Z = zlW(); if (!Z) return a; const L = zqInLab(); if (L) a.push(L);
+            if (Z.zd && Z.zd.groups) { const px = (player.x + 12) / 32, py = (player.y + 22) / 32; for (const g of Z.zd.groups) if (px > g.x0 - 14 && px < g.x1 + 14 && py > g.y0 - 14 && py < g.y1 + 14) a.push(g); }
+            return a;
+        }
+        ZL.vent = (x, y) => { const Z = zlW(); if (!Z) return 0; const L = Z.lab; if (L && L.vents.some(v => v[0] === x && v[1] === y)) return zqPhase(x); if (Z.zd && Z.zd.groups) for (const g of Z.zd.groups) if (g.vents.some(v => v[0] === x && v[1] === y)) return zqPhase(x); return 0; };
 
         function zqTick() {
-            const L = zqInLab(); const Zs = zlSt();
+            const Zs = zlSt(), gs = zqGroups();
             if (ZQ.hz > 0) ZQ.hz--; if (ZQ.cd.rune > 0) ZQ.cd.rune--;
-            if (L) {
-                const pls = zqPlayers();
+            if (gs.length) {
+                const pls = zqPlayers(); for (const L of gs) {
                 // стрільниці: телеграф → постріл
                 for (const [x, y, dir] of L.darts) {
                     const key = x + ',' + y; if (zlGetB(x, y) !== 94) continue; let w = ZQ.dw[key] || 0, c = ZQ.cd[key] || 0;
@@ -30804,6 +30810,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 // плити тиску
                 if (gameState === 'PLAYING') { const bx = Math.floor((player.x + 12) / 32), by = Math.floor((player.y + player.height - 3) / 32); if (zlGetB(bx, by) === 95) { const key = bx + ',' + by; if (!(ZQ.cd[key] > 0)) { ZQ.cd[key] = 300; zqVolley(bx * 32 + 16, by * 32 + 16); zlSend({ k: 'qv', x: bx * 32 + 16, y: by * 32 + 16 }); zlTxt('⚠ Плита тиску!', '#ffb07a'); createParticles(bx * 32 + 16, by * 32 + 28, '#b8a888', 8, 3, 3, 20); } } }
                 for (const k in ZQ.cd) if (k.indexOf(',') > 0 && ZQ.cd[k] > 0 && !L.darts.some(d => d[0] + ',' + d[1] === k)) ZQ.cd[k]--;
+            }
             }
             // снаряди
             for (let i = ZQ.pr.length - 1; i >= 0; i--) {
@@ -30868,14 +30875,14 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             return function (t) {
                 o.apply(this, arguments);
                 try {
-                    const L = zqL(); if (!L) return; const now = performance.now() / 1000;
+                    const L = zqL(); if (!L && !ZQ.pr.length) return; const now = performance.now() / 1000;
                     ctx.save();
                     for (const p of ZQ.pr) {
                         if (p.d > 0) { if (p.d < 24) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 + 0.4 * Math.sin(p.d * 1.3); ctx.fillStyle = '#ff5a3a'; ctx.beginPath(); ctx.arc(p.x - p.dir * 6, p.y, 5, 0, 7); ctx.fill(); } continue; }
                         ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.strokeStyle = '#d8d2c4'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(p.x - p.dir * 14, p.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.fillStyle = '#6a3a2a'; ctx.beginPath(); ctx.moveTo(p.x, p.y - 3); ctx.lineTo(p.x + p.dir * 6, p.y); ctx.lineTo(p.x, p.y + 3); ctx.fill();
                         ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.strokeStyle = '#ff8a5a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(p.x - p.dir * 22, p.y); ctx.lineTo(p.x, p.y); ctx.stroke();
                     }
-                    if (ZQ.sol > 0) { const dx = L.door[0] * 32 + 16, dy = (L.door[1] + 1) * 32 + 16, a = Math.min(1, ZQ.sol / 60); ctx.globalCompositeOperation = 'lighter'; for (const [sx, sy, k] of L.stelae) { const x0 = sx * 32 + 16, y0 = sy * 32 + 10; if (Math.abs(x0 - player.x) > 1500) continue; ctx.globalAlpha = 0.5 * a; const g = ctx.createLinearGradient(x0, y0, dx, dy); g.addColorStop(0, ZQ_GL[k][1]); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(dx, dy); ctx.stroke(); const f = ((now * 0.9 + k * 0.25) % 1); ctx.globalAlpha = a; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x0 + (dx - x0) * f, y0 + (dy - y0) * f, 4, 0, 7); ctx.fill(); } }
+                    if (L && ZQ.sol > 0) { const dx = L.door[0] * 32 + 16, dy = (L.door[1] + 1) * 32 + 16, a = Math.min(1, ZQ.sol / 60); ctx.globalCompositeOperation = 'lighter'; for (const [sx, sy, k] of L.stelae) { const x0 = sx * 32 + 16, y0 = sy * 32 + 10; if (Math.abs(x0 - player.x) > 1500) continue; ctx.globalAlpha = 0.5 * a; const g = ctx.createLinearGradient(x0, y0, dx, dy); g.addColorStop(0, ZQ_GL[k][1]); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(dx, dy); ctx.stroke(); const f = ((now * 0.9 + k * 0.25) % 1); ctx.globalAlpha = a; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x0 + (dx - x0) * f, y0 + (dy - y0) * f, 4, 0, 7); ctx.fill(); } }
                     ctx.restore();
                 } catch (e) { }
             };
@@ -31105,16 +31112,164 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             };
         })(updateGame);
         window.__zh = { ZH, zhRoll, zhRank };
+        // ================= ⛏ v41.5: ГЛИБИНИ — світ копається значно глибше =================
+        // Під старим дном світу (≈120 рядків) додається ще 130 рядків: печери, багаті жили руд, лавові зали,
+        // глибокі шахти, камери зі скарбами й пастками та непробивна Безодня. Працює і для нових, і для старих світів.
+        const ZR = { EX: 130, seen: {}, tick: 0, NAMES: [['⛏ Глибокі печери', 'Руди тут густіші, а камери ховають скарби.'], ['🔥 Серце землі', 'Базальт, лавові озера й магмова руда.'], ['🕳 Безодня', 'Нижче — лише лава й корінна порода.']] };
+        {
+            BLOCKS[105] = { name: 'Корінна порода', solid: true, item: 'bedrock', hardness: 9000, color: '#16141c' }; MAP_COL[105] = '#16141c'; BLOCK_NEED[105] = 9;
+            itemSprites.bedrock = generateSprite(cx => { cx.fillStyle = '#16141c'; cx.fillRect(0, 0, 32, 32); for (const [x, y, w, h, c] of [[1, 2, 13, 9, '#26222e'], [16, 1, 14, 10, '#201c28'], [3, 13, 11, 9, '#201c28'], [17, 13, 12, 9, '#2c2836'], [0, 24, 14, 8, '#26222e'], [16, 24, 15, 8, '#1e1a26']]) { zfFr(cx, c, [[x, y, w, h]]); zfFr(cx, 'rgba(255,255,255,.06)', [[x, y, w, 1]]); } zfFr(cx, '#3a2a5a', [[6, 6, 2, 1], [22, 18, 3, 1], [10, 27, 2, 1]]); });
+            ITEM_METADATA.bedrock = { name: 'Корінна порода', rarity: RPG_TIERS[0].r, color: RPG_TIERS[0].c, type: '🧱 Блок', desc: 'Дно світу. Не руйнується.' };
+        }
+        const zrZone = row => { const Z = currentWorld && currentWorld.zd; if (!Z || !Z.EX || row < Z.y0 + 2) return -1; const t = (row - Z.y0) / Z.EX; return t < 0.34 ? 0 : t < 0.7 ? 1 : 2; };
+
+        function zrLoot(t, rich) {
+            const a = rich ? 1.4 : 1, L = [['gold_coin', Math.round((14 + t * 14) * a), Math.round((38 + t * 36) * a), 0.95], ['iron_ingot', 4, 10, 0.8], ['gold_ingot', 2 + t, 5 + t * 2, 0.7], ['life_potion', 1, 2 + t, 0.6], ['mana_potion', 1, 3, 0.5], ['torch', 6, 14, 0.5], ['crystal_ingot', 1, 2 + t, 0.25 + 0.15 * t], ['elf_dust', 2, 5, 0.3]];
+            if (t >= 1) L.push(['cosmic_ingot', 1, 2, 0.18 + 0.12 * (t - 1) + (rich ? 0.1 : 0)], ['rune_core', 1, 1, 0.08 + (rich ? 0.07 : 0)], ['gem_ruby', 1, 1, 0.1], ['gem_emerald', 1, 1, 0.1]);
+            if (t >= 2) L.push(['cosmic_ingot', 2, 4, 0.35], ['rune_core', 1, 2, 0.22], ['gem_diamond', 1, 1, 0.12], ['breath_potion', 1, 2, 0.3]);
+            return L;
+        }
+        function zrBox(x0, y0, w, h, S) { for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) S(x, y, (y < y0 || y >= y0 + h || x < x0 || x >= x0 + w) ? 70 : 0); }
+        function zrChamber(x0, y0, type, t, rnd, grp) {
+            const S = zlSetB, R = rnd, dirs = [-1, 1], ed = dirs[(R() * 2) | 0];
+            let w, h; if (type === 0) { w = 9; h = 5; } else if (type === 1) { w = 19; h = 5; } else { w = 11; h = 6; }
+            zrBox(x0, y0, w, h, S); const fl = y0 + h - 1, g = { x0: x0 - 2, y0: y0 - 2, x1: x0 + w + 2, y1: y0 + h + 2, darts: [], vents: [], plates: [] };
+            S(x0 + 1, y0, 9); S(x0 + w - 2, y0, 9); if (R() < 0.5) S(x0, y0, 46); if (R() < 0.5) S(x0 + w - 1, y0, 46); if (R() < 0.6) S(x0 + 3 + ((R() * (w - 6)) | 0), fl, 48);
+            const dr = ed === -1 ? 1 : -1; // стрільниця дивиться на вхід-у-кімнату
+            const wallX = ed === -1 ? x0 - 1 : x0 + w, dartX = ed === -1 ? x0 + w : x0 - 1;
+            if (type === 0) {
+                zlChest(x0 + (ed === -1 ? w - 2 : 1), fl, zrLoot(t, false)); for (const sx of [x0 + 3, x0 + 5]) S(sx, fl, 47);
+                S(dartX, fl - 1, 94); g.darts.push([dartX, fl - 1, dr]);
+            } else if (type === 1) {
+                zlChest(x0 + (ed === -1 ? w - 2 : 1), fl, zrLoot(t, true));
+                const ps = [0.28, 0.5, 0.72].map(f => x0 + Math.round(w * f)); ps.forEach((px, i) => { if (i === 1) { S(px, y0 + h, 96); g.vents.push([px, y0 + h]); } else { S(px, fl, 95); g.plates.push([px, fl]); } });
+                S(dartX, fl - 1, 94); g.darts.push([dartX, fl - 1, dr]);
+            } else {
+                zlChest(x0 + 2, fl, zrLoot(t, true)); zlChest(x0 + w - 3, fl, zrLoot(t, true));
+                S(x0 + 5, fl, 95); g.plates.push([x0 + 5, fl]); for (const sx of [x0 + 4, x0 + 6]) S(sx, fl, 47);
+                S(x0 - 1, fl - 1, 94); g.darts.push([x0 - 1, fl - 1, 1]); S(x0 + w, fl - 1, 94); g.darts.push([x0 + w, fl - 1, -1]);
+            }
+            // вхід-тунель назовні до найближчої порожнечі
+            const ex = ed === -1 ? x0 - 2 : x0 + w + 1; let n = 0; for (let k = 0; k < 30; k++) { const x = ex + ed * k; if (zlGetB(x, fl) === 0 && zlGetB(x, fl - 1) === 0 && k > 0) break; S(x, fl, 0); S(x, fl - 1, 0); n++; if (k === 0) { S(x, fl - 2, 55); } }
+            S(wallX, fl, 0); S(wallX, fl - 1, 0);
+            g.tier = t; return g;
+        }
+
+        function zrExtend() {
+            const cw = currentWorld; if (!cw || cw.zd || !worldMap || !worldMap.length) return;
+            const w = cw.width, h0 = cw.height; if (h0 >= 200) { cw.zd = { v: 1, y0: h0, EX: 0, groups: [] }; return; }
+            const EX = ZR.EX, H = h0 + EX, rnd = vzRng(vzHash((cw.name || 'w') + 'zd') + 3), ri = (a, b) => a + Math.floor(rnd() * (b - a + 1)), S = (x, y, id) => { if (x > 0 && x < w - 1 && y >= 0 && y < H) worldMap[y][x] = id; }, G = (x, y) => (x >= 0 && x < w && y >= 0 && y < H) ? worldMap[y][x] : 1;
+            for (let y = h0; y < H; y++) worldMap.push(new Array(w).fill(3));
+            cw.height = H; cw.zd = { v: 1, y0: h0, EX, groups: [] }; if (cw.zf) cw.zf.yb = h0;
+            cw.zl = cw.zl || { v: 1, rects: [], mk: [], s: {} }; const Z = cw.zl; Z.rects = Z.rects || []; Z.mk = Z.mk || [];
+            const prot = []; const inProt = (x, y) => { for (const r of prot) if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return true; return false; };
+            // ---- породи: базальт і обсидіан ----
+            const nz = (x, y) => Math.sin(x * 0.11 + Math.sin(y * 0.07) * 2) + Math.sin(y * 0.13 + Math.cos(x * 0.05) * 2);
+            for (let y = h0; y < H; y++) { const t = (y - h0) / EX; if (t < 0.34) continue; for (let x = 0; x < w; x++) { const v = nz(x, y); if (v > (t > 0.7 ? 0.1 : 1.0)) worldMap[y][x] = 82; else if (t > 0.7 && v < -1.55) worldMap[y][x] = 83; } }
+            // ---- руди: густі жили ----
+            const vein = (id, n, ya, yb, smin, smax) => {
+                for (let i = 0; i < n; i++) {
+                    let sx = 0, sy = 0, ok = 0; for (let tr = 0; tr < 20 && !ok; tr++) { sx = 3 + Math.floor(rnd() * (w - 6)); sy = Math.floor(ya + rnd() * (yb - ya)); if (sy >= h0 && sy < H - 4) { const b = G(sx, sy); if (b === 3 || b === 82) ok = 1; } } if (!ok) continue;
+                    const cells = [[sx, sy]]; S(sx, sy, id); const size = smin + Math.floor(rnd() * (smax - smin + 1));
+                    for (let k = 0, g = 0; k < size && g < 60; g++) { const [cx, cy] = cells[Math.floor(rnd() * cells.length)], d = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(rnd() * 4)], nx = cx + d[0], ny = cy + d[1]; const b = G(nx, ny); if ((b !== 3 && b !== 82) || ny < h0 || ny >= H - 4) continue; S(nx, ny, id); cells.push([nx, ny]); k++; }
+                }
+            };
+            const A = w * EX;
+            vein(7, Math.round(A / 240), h0, H - 8, 5, 11); vein(8, Math.round(A / 300), h0 + 12, H - 8, 4, 9); vein(6, Math.round(A / 900), h0, H - 8, 4, 9); vein(29, Math.round(A / 380), h0 + 8, H - 8, 4, 8); vein(84, Math.round(A * 0.3 / 700), h0 + EX * 0.62, H - 6, 3, 6);
+            // ---- споруди: глибокі шахти й камери (ставляться в суцільну породу, потім печери їх обминають) ----
+            const solidFrac = (x0, y0, bw, bh) => { let s = 0, n = 0; for (let k = 0; k < 90; k++) { const b = G(x0 + Math.floor(rnd() * bw), y0 + Math.floor(rnd() * bh)); n++; if (b === 3 || b === 82 || b === 83 || (b >= 6 && b <= 8) || b === 29) s++; } return s / n; };
+            const free = (x0, y0, x1, y1, m) => { for (const r of Z.rects) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; for (const r of prot) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; return true; };
+            const nMine = w >= 3200 ? 3 : w >= 1600 ? 2 : 1;
+            for (let i = 0; i < nMine; i++) {
+                const L = Math.max(110, Math.min(200, Math.floor(w * 0.16)));
+                for (let tr = 0; tr < 120; tr++) {
+                    const x0 = 16 + Math.floor(rnd() * (w - 32 - L)), y0 = h0 + 10 + Math.floor(rnd() * (EX - 56)); if (!free(x0, y0, x0 + L, y0 + 26, 8) || solidFrac(x0, y0, L, 26) < 0.55) continue;
+                    try { zlMine(w, h0, rnd, { x0, y0, L }); prot.push({ x0: x0 - 2, y0: y0 - 2, x1: x0 + L + 2, y1: y0 + 28 }); } catch (e) { console.error('zrMine', e); } break;
+                }
+            }
+            const nCh = Math.round(w / 26);
+            for (let i = 0, ok = 0; i < nCh * 3 && ok < nCh; i++) {
+                const type = rnd() < 0.4 ? 0 : rnd() < 0.55 ? 1 : 2, bw = type === 0 ? 9 : type === 1 ? 19 : 11, bh = type === 2 ? 6 : 5, x0 = 24 + Math.floor(rnd() * (w - 48 - bw)), y0 = h0 + 8 + Math.floor(rnd() * (EX - 30));
+                if (!free(x0 - 32, y0, x0 + bw + 32, y0 + bh, 4) || solidFrac(x0 - 3, y0 - 3, bw + 6, bh + 6) < 0.6) continue;
+                const t = Math.max(0, zrZone(y0 + 2)); try { const g = zrChamber(x0, y0, type, t, rnd, 0); cw.zd.groups.push(g); prot.push({ x0: g.x0 - 3, y0: g.y0 - 3, x1: g.x1 + 3, y1: g.y1 + 3 }); ok++; } catch (e) { console.error('zrChamber', e); }
+            }
+            // ---- печери-зали ----
+            const caves = [], nC = Math.round(w / 40);
+            for (let i = 0; i < nC; i++) {
+                const rx = 5 + rnd() * 8, ry = 3 + rnd() * 4, cx = Math.floor(14 + rnd() * (w - 28)), cy = Math.floor(h0 + 10 + rnd() * (EX - 34)), t = (cy - h0) / EX, ph = rnd() * 6;
+                const cells = []; for (let dy = -Math.ceil(ry) - 1; dy <= Math.ceil(ry) + 1; dy++) for (let dx = -Math.ceil(rx) - 1; dx <= Math.ceil(rx) + 1; dx++) { const u = dx / rx, v = dy / ry, lim = 1 + 0.25 * Math.sin(dx * 0.9 + ph) * Math.cos(dy * 1.3 - ph); if (u * u + v * v <= lim && !inProt(cx + dx, cy + dy)) { const b = G(cx + dx, cy + dy); if (b !== 105) { S(cx + dx, cy + dy, 0); cells.push([cx + dx, cy + dy, dy]); } } }
+                const mode = rnd() < (t > 0.7 ? 0.6 : t > 0.34 ? 0.3 : 0) ? 'lava' : (t < 0.34 && rnd() < 0.3 ? 'water' : ''), cut = cy + Math.floor(ry * 0.35);
+                if (mode) for (const [x, y] of cells) if (y >= cut) S(x, y, mode === 'lava' ? 85 : 13);
+                // прикраси на підлозі
+                if (!mode) for (let dx = -Math.ceil(rx); dx <= Math.ceil(rx); dx++) { const x = cx + dx; let y = cy; while (y < cy + ry + 3 && G(x, y + 1) === 0) y++; if (G(x, y) === 0 && G(x, y + 1) !== 0 && G(x, y + 1) !== 85 && G(x, y + 1) !== 13) { const q = rnd(); if (q < 0.09) S(x, y, 67); else if (q < 0.16) S(x, y, 61); else if (q < 0.19) S(x, y - 1, 67); } }
+                if (t > 0.34 && rnd() < 0.5) { const cells2 = cells.filter(c => c[2] < -ry * 0.5); for (const c of cells2) if (rnd() < 0.05) S(c[0], c[1], 86); }
+                caves.push({ cx, cy, rx, ry, mode });
+            }
+            // ---- довгі тунелі ----
+            const nT = Math.round(w / 16);
+            for (let i = 0; i < nT; i++) {
+                let x = 10 + rnd() * (w - 20), y = h0 + 6 + rnd() * (EX - 26), ang = (rnd() < 0.5 ? 0 : Math.PI) + (rnd() - 0.5) * 0.7; const len = 70 + rnd() * 90, rad = 1.3 + rnd() * 1.0;
+                for (let st = 0; st < len; st++) {
+                    x += Math.cos(ang) * 1.2; y += Math.sin(ang) * 1.2; ang += (rnd() - 0.5) * 0.5; if (y < h0 + 3) ang = Math.abs(ang); if (y > H - 20) ang = -Math.abs(ang); const ix = Math.floor(x), iy = Math.floor(y), r = Math.floor(rad);
+                    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= rad * rad * 1.1 && iy + dy > h0 + 2 && iy + dy < H - 18 && ix + dx > 2 && ix + dx < w - 2 && !inProt(ix + dx, iy + dy)) { const b = G(ix + dx, iy + dy); if (b !== 85 && b !== 13) S(ix + dx, iy + dy, 0); }
+                }
+            }
+            // ---- Безодня: лавове море на дні ----
+            for (let x = 2; x < w - 2; x++) {
+                const top = H - 16 + Math.round(3 * Math.sin(x * 0.08) + 2 * Math.sin(x * 0.21 + 1)), lav = H - 9 + Math.round(1.6 * Math.sin(x * 0.15 + 2));
+                for (let y = top; y < H - 3; y++) S(x, y, y >= lav ? 85 : 0);
+            }
+            for (let k = 0; k < w / 14; k++) { const px = 4 + Math.floor(rnd() * (w - 8)), ph = 3 + Math.floor(rnd() * 5), base = H - 4; for (let y = base - ph; y < base; y++) for (let dx = 0; dx < 2 + (rnd() < 0.4 ? 1 : 0); dx++) S(px + dx, y, rnd() < 0.15 ? 84 : 82); }
+            for (let x = 2; x < w - 2; x += 9 + Math.floor(rnd() * 8)) { const top = H - 16 + Math.round(3 * Math.sin(x * 0.08) + 2 * Math.sin(x * 0.21 + 1)); S(x, top, 86); }
+            for (let y = H - 3; y < H; y++) for (let x = 0; x < w; x++) worldMap[y][x] = 105;
+            for (let y = h0; y < H; y++) { worldMap[y][0] = 105; worldMap[y][w - 1] = 105; }
+            // старе дно світу (рядок h0-1): лишаємо, воно вже має природний вигляд
+            cw.zd.caves = caves.length; try { zrRebuildSurf(); } catch (e) { }
+        }
+        function zrRebuildSurf() { /* поверхня не змінюється */ }
+
+        generateWorldData = (function (o) { return function () { o.apply(this, arguments); try { zrExtend(); } catch (e) { console.error('zrExtend', e); } }; })(generateWorldData);
+        loadWorld = (function (o) { return function (i) { o(i); try { if (currentWorld && currentWorld.zd === undefined && worldMap && worldMap.length && !v17Client()) zrExtend(); } catch (e) { console.error('zrRetro', e); } }; })(loadWorld);
+
+        // ---------- мешканці глибин (лише хост) ----------
+        function zrSpawnTick() {
+            if (v17Client() || mobs.length >= 44) return; const cw = currentWorld; if (!cw || !cw.zd || !cw.zd.EX) return;
+            const pls = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }];
+            for (const p of pls) {
+                const t = zrZone(p.y / 32); if (t < 0) continue;
+                if (t === 2 && Math.random() < 0.04) { let near = 0; for (const m of mobs) if ((m.type === 'ashfiend' || m.type === 'cinder') && Math.abs(m.x - p.x) < 1400 && Math.abs(m.y - p.y) < 900) near++; if (near < Math.min(5, 2 + Math.floor(RPG.level / 12))) { try { zmSpawnOne(p, Math.random() < 0.7 ? 'ashfiend' : 'cinder'); } catch (e) { } } continue; }
+                if (t >= 0 && Math.random() < (t === 1 ? 0.05 : 0.035)) {
+                    let near = 0; for (const m of mobs) if (m.type === 'specter' && Math.abs(m.x - p.x) < 1500 && Math.abs(m.y - p.y) < 1000) near++;
+                    if (near < Math.min(4, 2 + Math.floor(RPG.level / 12) + t)) { const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32); const sp = zlSpotIn({ x0: bx - 28, x1: bx + 28, y0: by - 14, y1: by + 14 }, 'specter', pls); if (sp) zlSpawn('specter', sp); }
+                }
+            }
+        }
+        updateGame = (function (o) {
+            return function () {
+                o.apply(this, arguments); if (gameState !== 'PLAYING') return;
+                try {
+                    ZR.tick++; if (ZR.tick % 30 === 0) zrSpawnTick();
+                    if (ZR.tick % 20 === 0) { const z = zrZone((player.y + 22) / 32); if (z >= 0 && !ZR.seen[z]) { ZR.seen[z] = 1; v26Banner(ZR.NAMES[z][0], ZR.NAMES[z][1]); try { zlTone('sine', 140, 90, 0.8, 0.08); } catch (e) { } } }
+                } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+        window.__zr = { ZR, zrZone, zrExtend };
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['41.4', 'Мегаструктури й контракти', 'new'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['41.5', 'Глибини', 'new'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '41.5': [
+                ['#ff9a4a', '⛏ Світ став майже вдвічі глибшим', 'Під старим дном з’явилося ще <b>130 рядків</b>: <b>Глибокі печери</b>, <b>Серце землі</b> (базальт, лава, магмова руда) і <b>Безодня</b> з лавовим морем та непробивною Корінною породою. Це працює і в нових, і в уже створених світах — глибину додасть автоматично при завантаженні.'],
+                ['#ffd24a', '💎 Багаті жили', 'Залізо, золото, вугілля, кришталева руда й магмова руда тут <b>густіші</b>, ніж угорі. Великі печери-зали зі світними кристалами, грибами, водою й озерами лави та довгі звивисті тунелі.'],
+                ['#c8c2b4', '🗝 Глибокі шахти й камери', 'Під землею ховаються <b>глибокі шахти</b> з візками й привидами та десятки <b>кам’яних камер</b> зі скарбами: стрільниці, плити тиску, вогнеплюї й шипи охороняють скрині. Чим глибше — тим цінніша здобич (космічні злитки, Рунні ядра, самоцвіти).'],
+                ['#ff6a4a', '⚠ Небезпеки глибин', 'У Серці землі й Безодні тече лава — без броні Горна довго в ній не вистоїш. Тут бродять привиди шахтарів, а в Безодні — попелясті біси й жарові велетні. Бери зілля, смолоскипи й будуй мости над лавою.']
+            ],
             '41.4': [
                 ['#7fe8ff', '🏛 Затоплений храм', 'Під землею лежить <b>храм припливу</b>: зала з колонами під водою, бульбашки повітря, бічні кімнати з жертовниками. Запали <b>три жертовники</b> (ПКМ) — кожен викликає хвилі медуз, — і Рунні ворота сховища відкриються. Всередині — Тризуб припливу й Перлина припливу (дихання під водою).'],
                 ['#ffc86a', '⛏ Покинута шахта', 'Довгий тунель із <b>вагонетками на рейках</b> (ПКМ по візку, A/D — рух, S — гальмо, Пробіл — зіскочити). Провал із шипами перекриває міст — тягни <b>важелі</b> з обох боків. Хиткі дошки обвалюють стелю, а в кінці за завалом чекає контора шахтаря з Лампою шахтаря. Тут блукають привиди.'],
