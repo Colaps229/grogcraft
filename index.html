@@ -1104,7 +1104,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             ['tempest_staff', 'Посох Громовиці', 'magic', 'staff', 'tempest', 140, 26, 4, { mana: 14, orb: 'nebula', aoe: 120 }, 'Кулі розряду вибухають крапками блискавок. Куєтся з Ядра Бурі.'],
             ['magma_cleaver', 'Тесак Горна Безодні', 'melee', 'sword', 'magma', 255, 22, 4, { wave: 'fire' }, 'Важкий клинок, що не охолов за століття. Хвиля вогню з кожним змахом. Куєтся з Ядра Магми.'],
             ['magma_arbalest', 'Арбалет Розлому', 'ranged', 'crossbow', 'magma', 190, 28, 4, { ammo: 'bolt', pierce: 6 }, 'Розплавлені болти пронизують до шести ворогів. Куєтся з Ядра Магми.'],
-            ['magma_staff', 'Посох Розлому', 'magic', 'staff', 'magma', 170, 26, 4, { mana: 16, orb: 'solar', aoe: 150 }, 'Магмова куля ламає землю вибухом. Куєтся з Ядра Магми.']
+            ['magma_staff', 'Посох Розлому', 'magic', 'staff', 'magma', 170, 26, 4, { mana: 16, orb: 'solar', aoe: 150 }, 'Магмова куля ламає землю вибухом. Куєтся з Ядра Магми.'],
+            ['grimoire_1', 'Гримуар учня', 'magic', 'tome', 'solar', 55, 20, 1, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 2 сторінки. Збирай закляття на Рунному верстаті; X — наступна сторінка.'],
+            ['grimoire_2', 'Гримуар чародія', 'magic', 'tome', 'astral', 100, 20, 3, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 3 сторінки й більша шкода.'],
+            ['grimoire_3', 'Гримуар Чотирьох Пір', 'magic', 'tome', 'nebula', 150, 20, 4, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 4 сторінки. Переплетена матеріалами всіх чотирьох сезонів.']
         ];
         WROWS.forEach(r => { WEAPONS[r[0]] = Object.assign({ name: r[1], t: r[2], k: r[3], pal: r[4], dmg: r[5], cd: r[6], tier: r[7], desc: r[9] }, r[8]); });
         Object.keys(WEAPONS).forEach(id => { const W = WEAPONS[id]; W.aim = W.aim || (W.k !== 'sword' && W.k !== 'dagger' ? 1 : 0); });
@@ -6503,7 +6506,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 if (bldFrame % 45 === 0) {
                     for (const k in currentWorld.furn) {
                         const f = currentWorld.furn[k], d = FURN[f.t]; if (!d || d.st !== 'floor') continue;
-                        let ok = true; for (let i = 0; i < f.w; i++) { const b = worldMap[f.y + f.h] ? worldMap[f.y + f.h][f.x + i] : 1; if ((!BLOCKS[b].solid && b !== 68) || b === 21) ok = false; }
+                        let ok = true; for (let i = 0; i < f.w; i++) { const b = worldMap[f.y + f.h] ? (worldMap[f.y + f.h][f.x + i] ?? 1) : 1; if ((!BLOCKS[b].solid && b !== 68) || b === 21) ok = false; }
                         if (!ok) { furnBreak(f.x, f.y); }
                     }
                 }
@@ -11318,7 +11321,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '41.4', GAME_VER_NAME = 'Мегаструктури й контракти';
+        const GAME_VER = '41.8', GAME_VER_NAME = 'Конструктор заклять';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -29446,7 +29449,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function zmSpawnTick() {
             if (v17Client() || mobs.length >= 40) return; const Z = zfW(); if (!Z) return;
-            const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }], H = currentWorld.height;
+            const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }], H = ((currentWorld.zf && currentWorld.zf.yb) || currentWorld.height);
             for (const p of pl) {
                 const bx = Math.max(0, Math.min(surfaceHeights.length - 1, Math.floor(p.x / 32))), py = p.y / 32, sf = surfaceHeights[bx] || 40;
                 if (Z.sky && py < 31 && py < sf - 8 && Math.abs(bx - Z.sky.cx) < 360) {
@@ -29742,7 +29745,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ---------- виклик ----------
         spawnXBoss = (function (o) { return function (kind) { const n0 = rpgBosses.length, r = o.apply(this, arguments); if (kind === 'tempest' && rpgBosses.length > n0) { const b = rpgBosses[rpgBosses.length - 1], R = BXR || player; b.x = R.x + 12 - b.w / 2; b.y = Math.max(90, R.y - 300); b.vx = 0; b.vy = 0; } return r; }; })(spawnXBoss);
         function zfSummon(it) {
-            const S = SUMMON[it.id], Z = zfW(), H = currentWorld.height, col = Math.floor((player.x + 12) / 32), row = (player.y + 22) / 32; const fail = txt => { floatingTexts.push({ x: player.x - 70, y: player.y - 34, text: txt, color: '#e67e22', life: 100 }); bossSound('warn'); return true; };
+            const S = SUMMON[it.id], Z = zfW(), H = ((currentWorld.zf && currentWorld.zf.yb) || currentWorld.height), col = Math.floor((player.x + 12) / 32), row = (player.y + 22) / 32; const fail = txt => { floatingTexts.push({ x: player.x - 70, y: player.y - 34, text: txt, color: '#e67e22', life: 100 }); bossSound('warn'); return true; };
             if (rpgBosses.length || boss || libBoss) { floatingTexts.push({ x: player.x - 40, y: player.y - 30, text: 'Бій уже триває!', color: '#e67e22', life: 50 }); return true; }
             if (S.boss === 'tempest') { if (!Z || !Z.sky) return fail('На цьому світі немає Небесної цитаделі.'); if (row > Z.sky.ty + 4 || Math.abs(col - Z.sky.cx) > Z.sky.hw + 10) return fail('Підніміться на острів Небесної цитаделі!'); }
             else { if (!Z || !Z.vol) return fail('На цьому світі немає Вулканічної безодні.'); if (col < Z.vol.x0 || col > Z.vol.x1 || row < H - 34) return fail('Спустіться у Вулканічну безодню, до залу Горна!'); }
@@ -30541,8 +30544,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= ⛏ v41.4: ПОКИНУТА ШАХТА З ВІЗКАМИ =================
         const ZO = { cd: 0, col: [], bq: [], rem: {}, hz: 0 };
         const ZC = { on: false, x: 0, row: 0, v: 0, dir: 1, t: 0, y: 0, jmp: 0, ls: -1 };
-        function zlMine(w, h, rnd) {
-            const Lm = Math.max(130, Math.min(240, Math.floor(w * 0.2))), BH = 26; let L = Lm, pl = null; for (const f of [1, 0.85, 0.72, 0.6, 0.5]) { L = Math.max(96, Math.floor(Lm * f)); pl = zlPlace(w, h, L, BH, { rnd, dy: 4, dyr: 12, flat: 22, thr: 0.68, soft: 1 }); if (pl) break; } if (!pl) return;
+        function zlMine(w, h, rnd, pl0) {
+            const Lm = Math.max(130, Math.min(240, Math.floor(w * 0.2))), BH = 26; let L = Lm, pl = pl0 || null; if (pl0) L = pl0.L; else for (const f of [1, 0.85, 0.72, 0.6, 0.5]) { L = Math.max(96, Math.floor(Lm * f)); pl = zlPlace(w, h, L, BH, { rnd, dy: 4, dyr: 12, flat: 22, thr: 0.68, soft: 1 }); if (pl) break; } if (!pl) return;
             const { x0, y0 } = pl, x1 = x0 + L - 1, yt = y0 + 12, Z = zlW(), S = zlSetB, R = rnd, ri = (a, b) => a + Math.floor(R() * (b - a + 1));
             const ev = [[0.18, 1], [0.24, 1], [0.3, 1], [0.66, -1], [0.72, -1]].map(([f, d]) => [x0 + Math.floor(L * f), d]); const prof = [];
             for (let x = x0; x <= x1; x++) { let o = 0; for (const [sx, d] of ev) if (x >= sx) o += d; prof.push(yt + o); }
@@ -30577,7 +30580,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const ox = x1 - 7, oc = pf(ox), ol = u => [[u, 1, 1], ['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 25, 50], ['life_potion', 2, 4], ['crystal_ingot', 1, 3, 0.7], ['cosmic_ingot', 1, 2, 0.35]];
             zlChest(ox - 3, oc, ol('miner_lantern')); zlChest(ox + 1, oc, [['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 15, 30], ['torch', 10, 20], ['life_potion', 1, 3]]); S(ox - 1, oc - 3, 55); S(ox + 4, oc - 3, 55); S(ox + 3, oc, 48);
             // входи з поверхні
-            const e1 = x0 + 6, e2 = x0 + Math.floor(L * 0.82); zlShaft(e1, pf(e1) - 1); zlShaft(e2, pf(e2) - 1);
+            const e1 = x0 + 6, e2 = x0 + Math.floor(L * 0.82); if (!pl0) { zlShaft(e1, pf(e1) - 1); zlShaft(e2, pf(e2) - 1); }
             Z.mines.push({ x0, y0, x1, y1: y0 + BH - 1, gx0, gx1, bridge, lv: [lvA, lvB], plates, st, idx });
             zlRegister('mine', x0, y0, x1, y0 + BH - 1, { x: x0 + (L >> 1), y: yt });
         }
@@ -30785,13 +30788,19 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function zqHurt(base, cause, ic, col) { bHurt(Math.max(2, Math.round((player.maxHealth * base + 4) * zqTrap())), cause, ic, { col, pc: col }); }
         const zqPhase = (x) => { const t = (Date.now() / 16.667 + (x * 37) % 240) % 240; return t < 150 ? 0 : t < 190 ? 1 : 2; };
-        ZL.vent = (x, y) => { const L = zqL(); return L && L.vents.some(v => v[0] === x && v[1] === y) ? zqPhase(x) : 0; };
+        // групи пасток: лабіринт + глибинні камери (Z.zd.groups) поблизу гравця
+        function zqGroups() {
+            const a = [], Z = zlW(); if (!Z) return a; const L = zqInLab(); if (L) a.push(L);
+            if (Z.zd && Z.zd.groups) { const px = (player.x + 12) / 32, py = (player.y + 22) / 32; for (const g of Z.zd.groups) if (px > g.x0 - 14 && px < g.x1 + 14 && py > g.y0 - 14 && py < g.y1 + 14) a.push(g); }
+            return a;
+        }
+        ZL.vent = (x, y) => { const Z = zlW(); if (!Z) return 0; const L = Z.lab; if (L && L.vents.some(v => v[0] === x && v[1] === y)) return zqPhase(x); if (Z.zd && Z.zd.groups) for (const g of Z.zd.groups) if (g.vents.some(v => v[0] === x && v[1] === y)) return zqPhase(x); return 0; };
 
         function zqTick() {
-            const L = zqInLab(); const Zs = zlSt();
+            const Zs = zlSt(), gs = zqGroups();
             if (ZQ.hz > 0) ZQ.hz--; if (ZQ.cd.rune > 0) ZQ.cd.rune--;
-            if (L) {
-                const pls = zqPlayers();
+            if (gs.length) {
+                const pls = zqPlayers(); for (const L of gs) {
                 // стрільниці: телеграф → постріл
                 for (const [x, y, dir] of L.darts) {
                     const key = x + ',' + y; if (zlGetB(x, y) !== 94) continue; let w = ZQ.dw[key] || 0, c = ZQ.cd[key] || 0;
@@ -30804,6 +30813,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 // плити тиску
                 if (gameState === 'PLAYING') { const bx = Math.floor((player.x + 12) / 32), by = Math.floor((player.y + player.height - 3) / 32); if (zlGetB(bx, by) === 95) { const key = bx + ',' + by; if (!(ZQ.cd[key] > 0)) { ZQ.cd[key] = 300; zqVolley(bx * 32 + 16, by * 32 + 16); zlSend({ k: 'qv', x: bx * 32 + 16, y: by * 32 + 16 }); zlTxt('⚠ Плита тиску!', '#ffb07a'); createParticles(bx * 32 + 16, by * 32 + 28, '#b8a888', 8, 3, 3, 20); } } }
                 for (const k in ZQ.cd) if (k.indexOf(',') > 0 && ZQ.cd[k] > 0 && !L.darts.some(d => d[0] + ',' + d[1] === k)) ZQ.cd[k]--;
+            }
             }
             // снаряди
             for (let i = ZQ.pr.length - 1; i >= 0; i--) {
@@ -30868,14 +30878,14 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             return function (t) {
                 o.apply(this, arguments);
                 try {
-                    const L = zqL(); if (!L) return; const now = performance.now() / 1000;
+                    const L = zqL(); if (!L && !ZQ.pr.length) return; const now = performance.now() / 1000;
                     ctx.save();
                     for (const p of ZQ.pr) {
                         if (p.d > 0) { if (p.d < 24) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 + 0.4 * Math.sin(p.d * 1.3); ctx.fillStyle = '#ff5a3a'; ctx.beginPath(); ctx.arc(p.x - p.dir * 6, p.y, 5, 0, 7); ctx.fill(); } continue; }
                         ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.strokeStyle = '#d8d2c4'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(p.x - p.dir * 14, p.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.fillStyle = '#6a3a2a'; ctx.beginPath(); ctx.moveTo(p.x, p.y - 3); ctx.lineTo(p.x + p.dir * 6, p.y); ctx.lineTo(p.x, p.y + 3); ctx.fill();
                         ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.strokeStyle = '#ff8a5a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(p.x - p.dir * 22, p.y); ctx.lineTo(p.x, p.y); ctx.stroke();
                     }
-                    if (ZQ.sol > 0) { const dx = L.door[0] * 32 + 16, dy = (L.door[1] + 1) * 32 + 16, a = Math.min(1, ZQ.sol / 60); ctx.globalCompositeOperation = 'lighter'; for (const [sx, sy, k] of L.stelae) { const x0 = sx * 32 + 16, y0 = sy * 32 + 10; if (Math.abs(x0 - player.x) > 1500) continue; ctx.globalAlpha = 0.5 * a; const g = ctx.createLinearGradient(x0, y0, dx, dy); g.addColorStop(0, ZQ_GL[k][1]); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(dx, dy); ctx.stroke(); const f = ((now * 0.9 + k * 0.25) % 1); ctx.globalAlpha = a; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x0 + (dx - x0) * f, y0 + (dy - y0) * f, 4, 0, 7); ctx.fill(); } }
+                    if (L && ZQ.sol > 0) { const dx = L.door[0] * 32 + 16, dy = (L.door[1] + 1) * 32 + 16, a = Math.min(1, ZQ.sol / 60); ctx.globalCompositeOperation = 'lighter'; for (const [sx, sy, k] of L.stelae) { const x0 = sx * 32 + 16, y0 = sy * 32 + 10; if (Math.abs(x0 - player.x) > 1500) continue; ctx.globalAlpha = 0.5 * a; const g = ctx.createLinearGradient(x0, y0, dx, dy); g.addColorStop(0, ZQ_GL[k][1]); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(dx, dy); ctx.stroke(); const f = ((now * 0.9 + k * 0.25) % 1); ctx.globalAlpha = a; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x0 + (dx - x0) * f, y0 + (dy - y0) * f, 4, 0, 7); ctx.fill(); } }
                     ctx.restore();
                 } catch (e) { }
             };
@@ -31105,16 +31115,1095 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             };
         })(updateGame);
         window.__zh = { ZH, zhRoll, zhRank };
+        // ================= ⛏ v41.5: ГЛИБИНИ — світ копається значно глибше =================
+        // Під старим дном світу (≈120 рядків) додається ще 130 рядків: печери, багаті жили руд, лавові зали,
+        // глибокі шахти, камери зі скарбами й пастками та непробивна Безодня. Працює і для нових, і для старих світів.
+        const ZR = { EX: 130, seen: {}, tick: 0, NAMES: [['⛏ Глибокі печери', 'Руди тут густіші, а камери ховають скарби.'], ['🔥 Серце землі', 'Базальт, лавові озера й магмова руда.'], ['🕳 Безодня', 'Нижче — лише лава й корінна порода.']] };
+        {
+            BLOCKS[105] = { name: 'Корінна порода', solid: true, item: 'bedrock', hardness: 9000, color: '#16141c' }; MAP_COL[105] = '#16141c'; BLOCK_NEED[105] = 9;
+            itemSprites.bedrock = generateSprite(cx => { cx.fillStyle = '#16141c'; cx.fillRect(0, 0, 32, 32); for (const [x, y, w, h, c] of [[1, 2, 13, 9, '#26222e'], [16, 1, 14, 10, '#201c28'], [3, 13, 11, 9, '#201c28'], [17, 13, 12, 9, '#2c2836'], [0, 24, 14, 8, '#26222e'], [16, 24, 15, 8, '#1e1a26']]) { zfFr(cx, c, [[x, y, w, h]]); zfFr(cx, 'rgba(255,255,255,.06)', [[x, y, w, 1]]); } zfFr(cx, '#3a2a5a', [[6, 6, 2, 1], [22, 18, 3, 1], [10, 27, 2, 1]]); });
+            ITEM_METADATA.bedrock = { name: 'Корінна порода', rarity: RPG_TIERS[0].r, color: RPG_TIERS[0].c, type: '🧱 Блок', desc: 'Дно світу. Не руйнується.' };
+        }
+        const zrZone = row => { const Z = currentWorld && currentWorld.zd; if (!Z || !Z.EX || row < Z.y0 + 2) return -1; const t = (row - Z.y0) / Z.EX; return t < 0.34 ? 0 : t < 0.7 ? 1 : 2; };
+
+        function zrLoot(t, rich) {
+            const a = rich ? 1.4 : 1, L = [['gold_coin', Math.round((14 + t * 14) * a), Math.round((38 + t * 36) * a), 0.95], ['iron_ingot', 4, 10, 0.8], ['gold_ingot', 2 + t, 5 + t * 2, 0.7], ['life_potion', 1, 2 + t, 0.6], ['mana_potion', 1, 3, 0.5], ['torch', 6, 14, 0.5], ['crystal_ingot', 1, 2 + t, 0.25 + 0.15 * t], ['elf_dust', 2, 5, 0.3]];
+            if (t >= 1) L.push(['cosmic_ingot', 1, 2, 0.18 + 0.12 * (t - 1) + (rich ? 0.1 : 0)], ['rune_core', 1, 1, 0.08 + (rich ? 0.07 : 0)], ['gem_ruby', 1, 1, 0.1], ['gem_emerald', 1, 1, 0.1]);
+            if (t >= 2) L.push(['cosmic_ingot', 2, 4, 0.35], ['rune_core', 1, 2, 0.22], ['gem_diamond', 1, 1, 0.12], ['breath_potion', 1, 2, 0.3]);
+            return L;
+        }
+        function zrBox(x0, y0, w, h, S) { for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) S(x, y, (y < y0 || y >= y0 + h || x < x0 || x >= x0 + w) ? 70 : 0); }
+        function zrChamber(x0, y0, type, t, rnd, grp) {
+            const S = zlSetB, R = rnd, dirs = [-1, 1], ed = dirs[(R() * 2) | 0];
+            let w, h; if (type === 0) { w = 9; h = 5; } else if (type === 1) { w = 19; h = 5; } else { w = 11; h = 6; }
+            zrBox(x0, y0, w, h, S); const fl = y0 + h - 1, g = { x0: x0 - 2, y0: y0 - 2, x1: x0 + w + 2, y1: y0 + h + 2, darts: [], vents: [], plates: [] };
+            S(x0 + 1, y0, 9); S(x0 + w - 2, y0, 9); if (R() < 0.5) S(x0, y0, 46); if (R() < 0.5) S(x0 + w - 1, y0, 46); if (R() < 0.6) S(x0 + 3 + ((R() * (w - 6)) | 0), fl, 48);
+            const dr = ed === -1 ? 1 : -1; // стрільниця дивиться на вхід-у-кімнату
+            const wallX = ed === -1 ? x0 - 1 : x0 + w, dartX = ed === -1 ? x0 + w : x0 - 1;
+            if (type === 0) {
+                zlChest(x0 + (ed === -1 ? w - 2 : 1), fl, zrLoot(t, false)); for (const sx of [x0 + 3, x0 + 5]) S(sx, fl, 47);
+                S(dartX, fl - 1, 94); g.darts.push([dartX, fl - 1, dr]);
+            } else if (type === 1) {
+                zlChest(x0 + (ed === -1 ? w - 2 : 1), fl, zrLoot(t, true));
+                const ps = [0.28, 0.5, 0.72].map(f => x0 + Math.round(w * f)); ps.forEach((px, i) => { if (i === 1) { S(px, y0 + h, 96); g.vents.push([px, y0 + h]); } else { S(px, fl, 95); g.plates.push([px, fl]); } });
+                S(dartX, fl - 1, 94); g.darts.push([dartX, fl - 1, dr]);
+            } else {
+                zlChest(x0 + 2, fl, zrLoot(t, true)); zlChest(x0 + w - 3, fl, zrLoot(t, true));
+                S(x0 + 5, fl, 95); g.plates.push([x0 + 5, fl]); for (const sx of [x0 + 4, x0 + 6]) S(sx, fl, 47);
+                S(x0 - 1, fl - 1, 94); g.darts.push([x0 - 1, fl - 1, 1]); S(x0 + w, fl - 1, 94); g.darts.push([x0 + w, fl - 1, -1]);
+            }
+            // вхід-тунель назовні до найближчої порожнечі
+            const ex = ed === -1 ? x0 - 2 : x0 + w + 1; let n = 0; for (let k = 0; k < 30; k++) { const x = ex + ed * k; if (zlGetB(x, fl) === 0 && zlGetB(x, fl - 1) === 0 && k > 0) break; S(x, fl, 0); S(x, fl - 1, 0); n++; if (k === 0) { S(x, fl - 2, 55); } }
+            S(wallX, fl, 0); S(wallX, fl - 1, 0);
+            g.tier = t; return g;
+        }
+
+        function zrExtend() {
+            const cw = currentWorld; if (!cw || cw.zd || !worldMap || !worldMap.length) return;
+            const w = cw.width, h0 = cw.height; if (h0 >= 200) { cw.zd = { v: 1, y0: h0, EX: 0, groups: [] }; return; }
+            const EX = ZR.EX, H = h0 + EX, rnd = vzRng(vzHash((cw.name || 'w') + 'zd') + 3), ri = (a, b) => a + Math.floor(rnd() * (b - a + 1)), S = (x, y, id) => { if (x > 0 && x < w - 1 && y >= 0 && y < H) worldMap[y][x] = id; }, G = (x, y) => (x >= 0 && x < w && y >= 0 && y < H) ? worldMap[y][x] : 1;
+            for (let y = h0; y < H; y++) worldMap.push(new Array(w).fill(3));
+            cw.height = H; cw.zd = { v: 1, y0: h0, EX, groups: [] }; if (cw.zf) cw.zf.yb = h0;
+            cw.zl = cw.zl || { v: 1, rects: [], mk: [], s: {} }; const Z = cw.zl; Z.rects = Z.rects || []; Z.mk = Z.mk || [];
+            const prot = []; const inProt = (x, y) => { for (const r of prot) if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return true; return false; };
+            // ---- породи: базальт і обсидіан ----
+            const nz = (x, y) => Math.sin(x * 0.11 + Math.sin(y * 0.07) * 2) + Math.sin(y * 0.13 + Math.cos(x * 0.05) * 2);
+            for (let y = h0; y < H; y++) { const t = (y - h0) / EX; if (t < 0.34) continue; for (let x = 0; x < w; x++) { const v = nz(x, y); if (v > (t > 0.7 ? 0.1 : 1.0)) worldMap[y][x] = 82; else if (t > 0.7 && v < -1.55) worldMap[y][x] = 83; } }
+            // ---- руди: густі жили ----
+            const vein = (id, n, ya, yb, smin, smax) => {
+                for (let i = 0; i < n; i++) {
+                    let sx = 0, sy = 0, ok = 0; for (let tr = 0; tr < 20 && !ok; tr++) { sx = 3 + Math.floor(rnd() * (w - 6)); sy = Math.floor(ya + rnd() * (yb - ya)); if (sy >= h0 && sy < H - 4) { const b = G(sx, sy); if (b === 3 || b === 82) ok = 1; } } if (!ok) continue;
+                    const cells = [[sx, sy]]; S(sx, sy, id); const size = smin + Math.floor(rnd() * (smax - smin + 1));
+                    for (let k = 0, g = 0; k < size && g < 60; g++) { const [cx, cy] = cells[Math.floor(rnd() * cells.length)], d = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(rnd() * 4)], nx = cx + d[0], ny = cy + d[1]; const b = G(nx, ny); if ((b !== 3 && b !== 82) || ny < h0 || ny >= H - 4) continue; S(nx, ny, id); cells.push([nx, ny]); k++; }
+                }
+            };
+            const A = w * EX;
+            vein(7, Math.round(A / 240), h0, H - 8, 5, 11); vein(8, Math.round(A / 300), h0 + 12, H - 8, 4, 9); vein(6, Math.round(A / 900), h0, H - 8, 4, 9); vein(29, Math.round(A / 380), h0 + 8, H - 8, 4, 8); vein(84, Math.round(A * 0.3 / 700), h0 + EX * 0.62, H - 6, 3, 6);
+            // ---- споруди: глибокі шахти й камери (ставляться в суцільну породу, потім печери їх обминають) ----
+            const solidFrac = (x0, y0, bw, bh) => { let s = 0, n = 0; for (let k = 0; k < 90; k++) { const b = G(x0 + Math.floor(rnd() * bw), y0 + Math.floor(rnd() * bh)); n++; if (b === 3 || b === 82 || b === 83 || (b >= 6 && b <= 8) || b === 29) s++; } return s / n; };
+            const free = (x0, y0, x1, y1, m) => { for (const r of Z.rects) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; for (const r of prot) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; return true; };
+            const nMine = w >= 3200 ? 3 : w >= 1600 ? 2 : 1;
+            for (let i = 0; i < nMine; i++) {
+                const L = Math.max(110, Math.min(200, Math.floor(w * 0.16)));
+                for (let tr = 0; tr < 120; tr++) {
+                    const x0 = 16 + Math.floor(rnd() * (w - 32 - L)), y0 = h0 + 10 + Math.floor(rnd() * (EX - 56)); if (!free(x0, y0, x0 + L, y0 + 26, 8) || solidFrac(x0, y0, L, 26) < 0.55) continue;
+                    try { zlMine(w, h0, rnd, { x0, y0, L }); prot.push({ x0: x0 - 2, y0: y0 - 2, x1: x0 + L + 2, y1: y0 + 28 }); } catch (e) { console.error('zrMine', e); } break;
+                }
+            }
+            const nCh = Math.round(w / 26);
+            for (let i = 0, ok = 0; i < nCh * 3 && ok < nCh; i++) {
+                const type = rnd() < 0.4 ? 0 : rnd() < 0.55 ? 1 : 2, bw = type === 0 ? 9 : type === 1 ? 19 : 11, bh = type === 2 ? 6 : 5, x0 = 24 + Math.floor(rnd() * (w - 48 - bw)), y0 = h0 + 8 + Math.floor(rnd() * (EX - 30));
+                if (!free(x0 - 32, y0, x0 + bw + 32, y0 + bh, 4) || solidFrac(x0 - 3, y0 - 3, bw + 6, bh + 6) < 0.6) continue;
+                const t = Math.max(0, zrZone(y0 + 2)); try { const g = zrChamber(x0, y0, type, t, rnd, 0); cw.zd.groups.push(g); prot.push({ x0: g.x0 - 3, y0: g.y0 - 3, x1: g.x1 + 3, y1: g.y1 + 3 }); ok++; } catch (e) { console.error('zrChamber', e); }
+            }
+            // ---- печери-зали ----
+            const caves = [], nC = Math.round(w / 40);
+            for (let i = 0; i < nC; i++) {
+                const rx = 5 + rnd() * 8, ry = 3 + rnd() * 4, cx = Math.floor(14 + rnd() * (w - 28)), cy = Math.floor(h0 + 10 + rnd() * (EX - 34)), t = (cy - h0) / EX, ph = rnd() * 6;
+                const cells = []; for (let dy = -Math.ceil(ry) - 1; dy <= Math.ceil(ry) + 1; dy++) for (let dx = -Math.ceil(rx) - 1; dx <= Math.ceil(rx) + 1; dx++) { const u = dx / rx, v = dy / ry, lim = 1 + 0.25 * Math.sin(dx * 0.9 + ph) * Math.cos(dy * 1.3 - ph); if (u * u + v * v <= lim && !inProt(cx + dx, cy + dy)) { const b = G(cx + dx, cy + dy); if (b !== 105) { S(cx + dx, cy + dy, 0); cells.push([cx + dx, cy + dy, dy]); } } }
+                const mode = rnd() < (t > 0.7 ? 0.6 : t > 0.34 ? 0.3 : 0) ? 'lava' : (t < 0.34 && rnd() < 0.3 ? 'water' : ''), cut = cy + Math.floor(ry * 0.35);
+                if (mode) for (const [x, y] of cells) if (y >= cut) S(x, y, mode === 'lava' ? 85 : 13);
+                // прикраси на підлозі
+                if (!mode) for (let dx = -Math.ceil(rx); dx <= Math.ceil(rx); dx++) { const x = cx + dx; let y = cy; while (y < cy + ry + 3 && G(x, y + 1) === 0) y++; if (G(x, y) === 0 && G(x, y + 1) !== 0 && G(x, y + 1) !== 85 && G(x, y + 1) !== 13) { const q = rnd(); if (q < 0.09) S(x, y, 67); else if (q < 0.16) S(x, y, 61); else if (q < 0.19) S(x, y - 1, 67); } }
+                if (t > 0.34 && rnd() < 0.5) { const cells2 = cells.filter(c => c[2] < -ry * 0.5); for (const c of cells2) if (rnd() < 0.05) S(c[0], c[1], 86); }
+                caves.push({ cx, cy, rx, ry, mode });
+            }
+            // ---- довгі тунелі ----
+            const nT = Math.round(w / 16);
+            for (let i = 0; i < nT; i++) {
+                let x = 10 + rnd() * (w - 20), y = h0 + 6 + rnd() * (EX - 26), ang = (rnd() < 0.5 ? 0 : Math.PI) + (rnd() - 0.5) * 0.7; const len = 70 + rnd() * 90, rad = 1.3 + rnd() * 1.0;
+                for (let st = 0; st < len; st++) {
+                    x += Math.cos(ang) * 1.2; y += Math.sin(ang) * 1.2; ang += (rnd() - 0.5) * 0.5; if (y < h0 + 3) ang = Math.abs(ang); if (y > H - 20) ang = -Math.abs(ang); const ix = Math.floor(x), iy = Math.floor(y), r = Math.floor(rad);
+                    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= rad * rad * 1.1 && iy + dy > h0 + 2 && iy + dy < H - 18 && ix + dx > 2 && ix + dx < w - 2 && !inProt(ix + dx, iy + dy)) { const b = G(ix + dx, iy + dy); if (b !== 85 && b !== 13) S(ix + dx, iy + dy, 0); }
+                }
+            }
+            // ---- Безодня: лавове море на дні ----
+            for (let x = 2; x < w - 2; x++) {
+                const top = H - 16 + Math.round(3 * Math.sin(x * 0.08) + 2 * Math.sin(x * 0.21 + 1)), lav = H - 9 + Math.round(1.6 * Math.sin(x * 0.15 + 2));
+                for (let y = top; y < H - 3; y++) S(x, y, y >= lav ? 85 : 0);
+            }
+            for (let k = 0; k < w / 14; k++) { const px = 4 + Math.floor(rnd() * (w - 8)), ph = 3 + Math.floor(rnd() * 5), base = H - 4; for (let y = base - ph; y < base; y++) for (let dx = 0; dx < 2 + (rnd() < 0.4 ? 1 : 0); dx++) S(px + dx, y, rnd() < 0.15 ? 84 : 82); }
+            for (let x = 2; x < w - 2; x += 9 + Math.floor(rnd() * 8)) { const top = H - 16 + Math.round(3 * Math.sin(x * 0.08) + 2 * Math.sin(x * 0.21 + 1)); S(x, top, 86); }
+            for (let y = H - 3; y < H; y++) for (let x = 0; x < w; x++) worldMap[y][x] = 105;
+            for (let y = h0; y < H; y++) { worldMap[y][0] = 105; worldMap[y][w - 1] = 105; }
+            // старе дно світу (рядок h0-1): лишаємо, воно вже має природний вигляд
+            cw.zd.caves = caves.length; try { zrRebuildSurf(); } catch (e) { }
+        }
+        function zrRebuildSurf() { /* поверхня не змінюється */ }
+
+        generateWorldData = (function (o) { return function () { o.apply(this, arguments); try { zrExtend(); } catch (e) { console.error('zrExtend', e); } }; })(generateWorldData);
+        loadWorld = (function (o) { return function (i) { o(i); try { if (currentWorld && currentWorld.zd === undefined && worldMap && worldMap.length && !v17Client()) zrExtend(); } catch (e) { console.error('zrRetro', e); } }; })(loadWorld);
+
+        // ---------- мешканці глибин (лише хост) ----------
+        function zrSpawnTick() {
+            if (v17Client() || mobs.length >= 44) return; const cw = currentWorld; if (!cw || !cw.zd || !cw.zd.EX) return;
+            const pls = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }];
+            for (const p of pls) {
+                const t = zrZone(p.y / 32); if (t < 0) continue;
+                if (t === 2 && Math.random() < 0.04) { let near = 0; for (const m of mobs) if ((m.type === 'ashfiend' || m.type === 'cinder') && Math.abs(m.x - p.x) < 1400 && Math.abs(m.y - p.y) < 900) near++; if (near < Math.min(5, 2 + Math.floor(RPG.level / 12))) { try { zmSpawnOne(p, Math.random() < 0.7 ? 'ashfiend' : 'cinder'); } catch (e) { } } continue; }
+                if (t >= 0 && Math.random() < (t === 1 ? 0.05 : 0.035)) {
+                    let near = 0; for (const m of mobs) if (m.type === 'specter' && Math.abs(m.x - p.x) < 1500 && Math.abs(m.y - p.y) < 1000) near++;
+                    if (near < Math.min(4, 2 + Math.floor(RPG.level / 12) + t)) { const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32); const sp = zlSpotIn({ x0: bx - 28, x1: bx + 28, y0: by - 14, y1: by + 14 }, 'specter', pls); if (sp) zlSpawn('specter', sp); }
+                }
+            }
+        }
+        updateGame = (function (o) {
+            return function () {
+                o.apply(this, arguments); if (gameState !== 'PLAYING') return;
+                try {
+                    ZR.tick++; if (ZR.tick % 30 === 0) zrSpawnTick();
+                    if (ZR.tick % 20 === 0) { const z = zrZone((player.y + 22) / 32); if (z >= 0 && !ZR.seen[z]) { ZR.seen[z] = 1; v26Banner(ZR.NAMES[z][0], ZR.NAMES[z][1]); try { zlTone('sine', 140, 90, 0.8, 0.08); } catch (e) { } } }
+                } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+        window.__zr = { ZR, zrZone, zrExtend };
+        // ================= 📅 v41.6: ЩОДЕННІ ЗАВДАННЯ (3 на день, серія днів, нагороди) =================
+        const ZD = { open: false, f: 0, ui: null, btn: null, msg: '', dirty: 0, sig: '' };
+        const zdFresh = () => ({ day: -1, t: [], streak: 0, last: -99, done: 0 });
+        const zdNorm = d => { const o = zdFresh(); if (d && typeof d === 'object') { o.day = d.day | 0; o.t = Array.isArray(d.t) ? d.t.filter(q => q && q.k && q.n > 0) : []; o.streak = Math.max(0, d.streak | 0); o.last = d.last === undefined ? -99 : d.last | 0; o.done = Math.max(0, d.done | 0); } return o; };
+        RPG.dt = zdFresh();
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); d.dt = RPG.dt; return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { RPG.dt = zdNorm(d && d.dt); const r = o.apply(this, arguments); ZD.sig = ''; return r; }; })(rpgLoad);
+        rpgNew = (function (o) { return function (cls, keepInv) { if (!ZP.keep && !keepInv) RPG.dt = zdFresh(); return o.apply(this, arguments); }; })(rpgNew);
+        const zdDay = () => Math.floor(gameTime / (2 * Math.PI));
+        const zdMult = () => 1 + Math.min(0.5, 0.1 * Math.max(0, RPG.dt.streak));
+
+        // шаблони: тип, текст, мінімальний рівень, кількість, коефіцієнт нагороди
+        const ZD_GATHER = [['coal_ore', 'Вугілля', 1, 24], ['iron_ore', 'Залізна руда', 1, 16], ['wood', 'Деревина', 1, 30], ['gold_ore', 'Золота руда', 6, 12], ['crystal_ore', 'Кришталева руда', 14, 8], ['magma_ore', 'Магмова руда', 26, 6]];
+        const ZD_NAME = id => { try { return (ITEM_METADATA[id] && ITEM_METADATA[id].name) || id; } catch (e) { return id; } };
+        function zdMake(r, lv) {
+            const out = [], pg = ZD_GATHER.filter(g => lv >= g[2]), g = pg[Math.floor(r() * pg.length)];
+            out.push({ k: 'g', t: g[0], n: g[3], p: 0, w: 1 });
+            const cb = [{ k: 'kill', t: '', n: Math.min(40, 18 + Math.floor(lv / 2)), w: 1 }, { k: 'night', t: '', n: Math.min(28, 10 + Math.floor(lv / 4)), w: 1.25 }, { k: 'under', t: '', n: Math.min(28, 10 + Math.floor(lv / 4)), w: 1.2 }];
+            const c = cb[Math.floor(r() * cb.length)]; c.p = 0; out.push(c);
+            const ms = [{ k: 'craft', t: '', n: 6, w: 1 }]; if (lv >= 8) ms.push({ k: 'depth', t: '', n: 70, w: 1.3 }); if (lv >= 16) ms.push({ k: 'deep2', t: '', n: 1, w: 1.5 }); if (lv >= 5) ms.push({ k: 'contract', t: '', n: 1, w: 1.6 });
+            const m = ms[Math.floor(r() * ms.length)]; m.p = 0; out.push(m);
+            out.forEach(q => { q.c = 0; q.coin = Math.round((36 + lv * 3.2) * q.w / 5) * 5; q.tok = q.k === 'contract' || q.k === 'deep2' ? 2 : 1; q.xp = Math.round(xpNeed(RPG.level) * 0.05 * q.w); });
+            return out;
+        }
+        function zdRoll() {
+            const d = RPG.dt, day = zdDay(); if (d.day === day && d.t.length) return;
+            if (day - d.last > 1) d.streak = 0;
+            d.day = day; const r = vzRng(vzHash((currentWorld && currentWorld.name || 'w') + 'dt' + day + RPG.level) + 9); d.t = zdMake(r, RPG.level); ZD.sig = ''; ZD.dirty = 1;
+        }
+        const zdText = q => q.k === 'g' ? 'Здобудь: ' + ZD_NAME(q.t) + ' × ' + q.n : q.k === 'kill' ? 'Переможи ворогів: ' + q.n : q.k === 'night' ? 'Переможи ворогів вночі: ' + q.n : q.k === 'under' ? 'Переможи ворогів під землею: ' + q.n : q.k === 'craft' ? 'Виготов предмети: ' + q.n : q.k === 'depth' ? 'Спустись на ' + q.n + ' блоків під поверхню' : q.k === 'deep2' ? 'Дістанься «Серця землі» (глибоко під землею)' : 'Виконай мисливський контракт';
+        const zdIcon = q => ({ g: '⛏', kill: '⚔', night: '🌙', under: '🕳', craft: '🔨', depth: '⬇', deep2: '🔥', contract: '📜' }[q.k] || '🎯');
+
+        function zdAdd(k, n, t) { const d = RPG.dt; if (!d.t.length || d.day !== zdDay()) return; let ch = 0; for (const q of d.t) if (!q.c && q.k === k && (q.t === '' || q.t === t) && q.p < q.n) { q.p = Math.min(q.n, q.p + (n || 1)); ch = 1; if (q.p >= q.n) { try { v26Banner('📅 Завдання виконано!', zdText(q) + ' — забери нагороду [Z]'); zlTone('triangle', 520, 880, 0.35, 0.09); } catch (e) { } } } if (ch) { ZD.dirty = 1; ZD.sig = ''; } }
+        const zdUnder = () => { const bx = Math.max(0, Math.min(surfaceHeights.length - 1, Math.floor((player.x + 12) / 32))); return (player.y + 22) / 32 > (surfaceHeights[bx] || 40) + 8; };
+        giveItem = (function (o) { return function (id, n) { const r = o.apply(this, arguments); try { if (gameState === 'PLAYING' && typeof id === 'string') zdAdd('g', n === undefined ? 1 : n, id); } catch (e) { } return r; }; })(giveItem);
+        rpgKill = (function (o) { return function (kind, x, y) { try { if (typeof kind === 'string' && !V364.noProf && !ZH.inBoss) { zdAdd('kill', 1); if (isNightNow()) zdAdd('night', 1); if (zdUnder()) zdAdd('under', 1); } } catch (e) { rpgErr(e); } return o.apply(this, arguments); }; })(rpgKill);
+        v378OnCraft = (function (o) { return function (id, n) { try { zdAdd('craft', 1); } catch (e) { } return o.apply(this, arguments); }; })(v378OnCraft);
+
+        function zdClaim(i) {
+            const d = RPG.dt, q = d.t[i]; if (!q || q.c || q.p < q.n) return;
+            q.c = 1; const coin = Math.round(q.coin * zdMult() / 5) * 5; giveItem('gold_coin', coin); RPG.ct.tok += q.tok; try { rpgOrbsAt(player.x + 12, player.y, q.xp); } catch (e) { }
+            ZD.msg = `🎁 +${coin} 🪙 · +${q.tok} 🎖 · +${q.xp} досвіду`;
+            if (d.t.every(x => x.c)) {
+                d.done++; if (d.last !== d.day) { d.streak = (d.day - d.last === 1) ? d.streak + 1 : 1; d.last = d.day; }
+                const sb = Math.min(5, d.streak); giveItem('life_potion', 2); giveItem('gold_ingot', 2 + sb); if (d.streak >= 3) giveItem('crystal_ingot', 1); if (d.streak >= 7) giveItem('cosmic_ingot', 1);
+                ZD.msg = `🌟 Усі завдання дня! Серія: ${d.streak}. Бонус: 2 зілля життя, ${2 + sb} золотих злитків` + (d.streak >= 3 ? ', кришталевий злиток' : '') + (d.streak >= 7 ? ', космічний злиток' : '');
+                try { v26Banner('🌟 День виконано!', 'Серія: ' + d.streak + ' · бонус до нагород +' + Math.round((zdMult() - 1) * 100) + '%'); zlTone('triangle', 440, 1320, 0.9, 0.12); createParticles(player.x + 12, player.y, '#ffe08a', 40, 5, 4, 55); } catch (e) { }
+            } else { try { playSound('pickup'); } catch (e) { } }
+            updateInventoryUI(); ZD.sig = ''; ZD.dirty = 1;
+        }
+
+        // ---------- УІ ----------
+        {
+            const st = document.createElement('style');
+            st.textContent = `#zd-ui{position:fixed;inset:0;z-index:74;display:none;align-items:center;justify-content:center;background:rgba(6,8,14,.6);backdrop-filter:blur(2px)}
+#zd-ui .zd-p{width:min(560px,94vw);background:linear-gradient(#1a2a3c,#0f1824);border:3px solid #4a7aa8;border-radius:14px;box-shadow:0 0 40px #000c;padding:16px 18px;color:#e4eefa;font:600 13px "Segoe UI",sans-serif;animation:zhIn .28s ease-out}
+#zd-ui h2{margin:0 0 4px;font:800 19px "Segoe UI",sans-serif;color:#9fd4ff;letter-spacing:1px}
+#zd-ui .zd-s{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}#zd-ui .zd-s span{background:#0005;border:1px solid #4a7aa8;border-radius:8px;padding:4px 10px;font-weight:800}
+#zd-ui .zd-t{display:flex;align-items:center;gap:12px;background:#0a1220;border:2px solid #2a4a68;border-radius:10px;padding:10px 12px;margin-bottom:8px;animation:zhCard .35s ease-out backwards}
+#zd-ui .zd-t.ok{border-color:#4aa86a}#zd-ui .zd-t.c{opacity:.55}#zd-ui .zd-i{font-size:26px}
+#zd-ui .zd-m{flex:1}#zd-ui .zd-b{height:7px;background:#ffffff1a;border-radius:4px;overflow:hidden;margin-top:5px}#zd-ui .zd-b i{display:block;height:100%;background:linear-gradient(90deg,#4a9ad8,#8adfff)}
+#zd-ui .zd-t.ok .zd-b i{background:linear-gradient(90deg,#4aa86a,#9fe88a)}
+#zd-ui button{font:700 12px "Segoe UI",sans-serif;color:#0a1a2a;background:linear-gradient(#bfe6ff,#6aaee0);border:2px solid #1a3a58;border-radius:7px;padding:6px 12px;cursor:pointer}
+#zd-ui button:disabled{filter:grayscale(.8) brightness(.6);cursor:default}#zd-ui button.x{background:#2a3a4c;color:#b8c8da}
+#zd-ui .zd-msg{min-height:18px;margin-top:6px;color:#ffe08a;text-align:center}
+#zd-btn{position:fixed;top:236px;right:16px;z-index:7;width:220px;padding:5px 10px;border-radius:9px;background:rgba(14,20,32,.88);border:2px solid #3b4a60;color:#dbe6f5;font:700 12px 'Segoe UI',sans-serif;cursor:pointer;display:none;user-select:none}#zd-btn:hover{border-color:#6aaee0}#zd-btn.pulse{border-color:#ffe08a;box-shadow:0 0 10px #ffe08a88}`;
+            document.head.appendChild(st);
+            const ui = document.createElement('div'); ui.id = 'zd-ui'; document.body.appendChild(ui); ZD.ui = ui;
+            const b = document.createElement('div'); b.id = 'zd-btn'; b.onclick = () => zdToggle(); b.title = 'Щоденні завдання (Z)'; document.body.appendChild(b); ZD.btn = b;
+            ui.addEventListener('mousedown', e => { if (e.target === ui) zdClose(); });
+            window.addEventListener('keydown', e => {
+                if (ZD.open && e.code === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); zdClose(); return; }
+                if (e.code !== 'KeyZ' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) || gameState !== 'PLAYING') return; zdToggle();
+            }, true);
+        }
+        function zdRender() {
+            const d = RPG.dt; let h = `<div class="zd-p"><h2>📅 ЩОДЕННІ ЗАВДАННЯ</h2><div class="zd-s"><span>🔥 Серія: ${d.streak}</span><span>Бонус: +${Math.round((zdMult() - 1) * 100)}%</span><span>✔ Днів виконано: ${d.done}</span><button class="x" id="zd-x" style="margin-left:auto">✕</button></div>`;
+            d.t.forEach((q, i) => { const ok = q.p >= q.n, pr = Math.round(q.p / q.n * 100), coin = Math.round(q.coin * zdMult() / 5) * 5; h += `<div class="zd-t ${ok ? 'ok' : ''} ${q.c ? 'c' : ''}" style="animation-delay:${i * 70}ms"><div class="zd-i">${zdIcon(q)}</div><div class="zd-m"><div>${zdText(q)}</div><div style="font-size:11px;opacity:.85">🪙 ${coin} · 🎖 ${q.tok} · ✨ ${q.xp}</div><div class="zd-b"><i style="width:${pr}%"></i></div><div style="font-size:11px;opacity:.75;margin-top:2px">${q.p} / ${q.n}</div></div><button data-i="${i}" ${(!ok || q.c) ? 'disabled' : ''}>${q.c ? '✔' : ok ? '🎁 Забрати' : '…'}</button></div>`; });
+            h += `<div style="font-size:11px;opacity:.75">Нові завдання щодня. Виконай усі три, щоб отримати бонус; кожен день поспіль збільшує серію й нагороди (до +50%).</div><div class="zd-msg">${ZD.msg || ''}</div></div>`; ZD.ui.innerHTML = h;
+            ZD.ui.querySelector('#zd-x').onclick = zdClose; ZD.ui.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { ZD.msg = ''; zdClaim(+b.dataset.i); zdRender(); });
+        }
+        function zdToggle() { if (ZD.open) return zdClose(); zdRoll(); ZD.open = true; ZD.msg = ''; ZD.ui.style.display = 'flex'; zdRender(); }
+        function zdClose() { ZD.open = false; ZD.ui.style.display = 'none'; }
+
+        updateGame = (function (o) {
+            return function () {
+                o.apply(this, arguments); if (gameState !== 'PLAYING') return;
+                try {
+                    ZD.f++; if (ZD.f % 30 === 0) {
+                        const d = RPG.dt; if (d.day !== zdDay() || !d.t.length) { if (RPG.level >= 1) zdRoll(); }
+                        const y = (player.y + 22) / 32, bx = Math.max(0, Math.min(surfaceHeights.length - 1, Math.floor((player.x + 12) / 32))), dep = y - (surfaceHeights[bx] || 40);
+                        if (dep >= 70) zdAdd('depth', 100); try { if (typeof zrZone === 'function' && zrZone(y) >= 1) zdAdd('deep2', 1); } catch (e) { }
+                        const done = d.t.filter(q => q.c).length, rdy = d.t.filter(q => !q.c && q.p >= q.n).length, hud = !document.getElementById('game-hud').classList.contains('hidden');
+                        const s = done + '/' + rdy + '/' + d.streak + hud + mapOpen; if (s !== ZD.sig) { ZD.sig = s; ZD.btn.style.display = hud && !mapOpen ? 'block' : 'none'; ZD.btn.textContent = '📅 Завдання [Z] · ' + done + '/' + d.t.length + (d.streak ? ' · 🔥' + d.streak : ''); ZD.btn.classList.toggle('pulse', rdy > 0); }
+                    }
+                    if (ZD.open && ZD.dirty) { ZD.dirty = 0; zdRender(); }
+                } catch (e) { rpgErr(e); }
+            };
+        })(updateGame);
+        window.__zd = { ZD, zdRoll, zdAdd };
+        // ================= 🍂 v41.7: ПОРИ РОКУ З ПОДІЯМИ =================
+        // Сезон = floor(день/6) % 4; усе виводиться із gameTime (він синхронний у мультиплеєрі) — мережа не потрібна.
+        const ZSN = { force: null, s: -1, ev: null, pet: [], bolts: [], sparks: [], fx: [], cold: 0, mdrop: 0, f: 0, hud: null, ovl: null, evEl: null, coldEl: null, flash: 0, wind: 0, clm: 0 };
+        const ZSN_S = [
+            { k: 'sp', n: 'Весна', ic: '🌸', col: '#ff9ad0', d: 'Відновлення здоров’я +25%. Луки в цвіту.' },
+            { k: 'su', n: 'Літо', ic: '☀️', col: '#ffd54a', d: 'Швидкість руху +5%. Світлячки у вечірніх лісах.' },
+            { k: 'au', n: 'Осінь', ic: '🍁', col: '#ff8a3a', d: 'Досвід +8%. Листопад і довгі ночі.' },
+            { k: 'wi', n: 'Зима', ic: '❄️', col: '#9fdcff', d: 'Відновлення мани +20%, але вночі й у хуртовину накопичується холод — грійся біля вогню або під дахом.' }
+        ];
+        const ZSN_EV = {
+            sp: { n: 'Квітнева злива', ic: '🌧', col: '#ff9ad0', need: 20, txt: 'Збери пелюстки, що падають з неба', item: 'bloom_essence', night: false },
+            su: { n: 'Літня гроза', ic: '⛈', col: '#ffe36b', need: 6, txt: 'Ухиляйся від блискавок і збирай іскри', item: 'storm_glass', night: true },
+            au: { n: 'Ніч привидів', ic: '🎃', col: '#ff8a3a', need: 6, txt: 'Переможи привидів жнив', item: 'ember_leaf', night: true },
+            wi: { n: 'Хуртовина', ic: '🌨', col: '#9fdcff', need: 4, txt: 'Переживи бурю й переможи крижаних примар', item: 'frost_heart', night: true }
+        };
+        const ztFresh = () => ({ c: { sp: -1, su: -1, au: -1, wi: -1 }, n: 0 });
+        const ztNorm = d => { const o = ztFresh(); if (d && typeof d === 'object') { for (const k of ['sp', 'su', 'au', 'wi']) o.c[k] = (d.c && Number.isFinite(d.c[k])) ? d.c[k] | 0 : -1; o.n = Math.max(0, d.n | 0); } return o; };
+        RPG.sn = ztFresh();
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); d.sn = RPG.sn; return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { RPG.sn = ztNorm(d && d.sn); ZSN.ev = null; return o.apply(this, arguments); }; })(rpgLoad);
+        rpgNew = (function (o) { return function (cls, keepInv) { if (!ZP.keep && !keepInv) RPG.sn = ztFresh(); return o.apply(this, arguments); }; })(rpgNew);
+
+        const ztDay = () => Math.floor(gameTime / (2 * Math.PI));
+        const ztSeason = () => ZSN.force ? ZSN.force.s : Math.floor(ztDay() / 6) % 4;
+        const ztDis = () => ZSN.force ? ZSN.force.d : ztDay() % 6;
+        const ztHash = (a, b) => (((a * 73856093) ^ (b * 19349663)) >>> 0);
+        const ztSurf = bx => surfaceHeights[Math.max(0, Math.min(surfaceHeights.length - 1, bx))] || 40;
+        const ztUnder = () => (player.y + 22) / 32 > ztSurf(Math.floor((player.x + 12) / 32)) + 6;
+        function ztRoofed() { const bx = Math.floor((player.x + 12) / 32), by = Math.floor(player.y / 32); for (let i = 1; i < 16; i++) if (isSolid(bx, by - i) || (BLOCKS[worldMap[by - i] && worldMap[by - i][bx]] || {}).isLeaves) return true; return false; }
+        function ztWarm() { const bx = Math.floor((player.x + 12) / 32), by = Math.floor((player.y + 22) / 32); for (let i = -5; i <= 5; i++) for (let j = -4; j <= 4; j++) { const b = worldMap[by + j] && worldMap[by + j][bx + i]; if (b && V34_LC[b] && b !== 13) return true; } return false; }
+
+        // ---------- предмети ----------
+        {
+            const T = i => RPG_TIERS[i], S = itemSprites, F = zfFr, P = zfPoly, C = zfC;
+            const mk = (id, name, ti, type, desc, stat) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, desc }; if (stat) ITEM_METADATA[id].stat = stat; };
+            mk('bloom_essence', 'Есенція цвіту', 3, '🧪 Матеріал', 'Крапля весняної зливи, що пахне тисячею квітів. Дається за Квітневу зливу.');
+            mk('storm_glass', 'Грозове скло', 3, '🧪 Матеріал', 'Пісок, сплавлений блискавкою у холодне скло. Дається за Літню грозу.');
+            mk('ember_leaf', 'Жарке листя', 3, '🧪 Матеріал', 'Кленовий лист, що тліне без вогню. Дається за Ніч привидів.');
+            mk('frost_heart', 'Серце зими', 3, '🧪 Матеріал', 'Крижаний кристал, що б’ється як серце. Дається за Хуртовину.');
+            S.bloom_essence = generateSprite(cx => { F(cx, '#e8e0f0', [[13, 4, 6, 4]]); P(cx, [[11, 8], [21, 8], [25, 20], [22, 28], [10, 28], [7, 20]], '#ff9ad0', '#8a2a6a'); F(cx, 'rgba(255,255,255,.5)', [[11, 12, 3, 10]]); C(cx, 16, 19, 4, '#ffe6f4'); for (const [x, y] of [[16, 15], [20, 19], [16, 23], [12, 19]]) C(cx, x, y, 2.2, '#ff5aa8'); C(cx, 16, 19, 1.6, '#ffe36b'); });
+            S.storm_glass = generateSprite(cx => { P(cx, [[16, 2], [24, 10], [22, 24], [16, 30], [9, 23], [8, 10]], '#7fe8ff', '#1a5a8a'); P(cx, [[16, 2], [24, 10], [16, 14]], '#d8faff', null); P(cx, [[18, 8], [13, 17], [17, 17], [14, 26], [21, 14], [17, 14]], '#fff6a8', '#c89a1a'); });
+            S.ember_leaf = generateSprite(cx => { P(cx, [[16, 3], [20, 9], [27, 8], [23, 15], [28, 21], [20, 21], [16, 29], [12, 21], [4, 21], [9, 15], [5, 8], [12, 9]], '#ff7a2a', '#8a2a0a'); P(cx, [[16, 8], [18, 14], [24, 15], [19, 18], [16, 24], [13, 18], [8, 15], [14, 14]], '#ffc24a', null); F(cx, '#8a2a0a', [[15, 20, 2, 10]]); });
+            S.frost_heart = generateSprite(cx => { P(cx, [[16, 29], [4, 15], [4, 9], [9, 4], [16, 9], [23, 4], [28, 9], [28, 15]], '#9fdcff', '#1a5a9a'); P(cx, [[16, 9], [9, 4], [4, 9], [8, 14], [16, 17]], '#e8faff', null); P(cx, [[16, 17], [23, 12], [27, 15], [16, 28]], '#4aa8ee', null); F(cx, '#ffffff', [[8, 8, 3, 2]]); });
+            // обереги пір року
+            const charm = (id, nm, st, desc, c1, c2, glyph) => {
+                ACC[id] = [nm, 3, st, desc, 'amulet', c1, c2];
+                const bits = []; if (st.hp) bits.push('+' + st.hp + ' здоров’я'); if (st.rhp) bits.push('+' + st.rhp + ' відновлення'); if (st.rmp) bits.push('+' + st.rmp + ' мани/с'); if (st.crit) bits.push('+' + Math.round(st.crit * 100) + '% крит'); if (st.spd) bits.push('+' + Math.round(st.spd * 100) + '% швидкості'); if (st.xp) bits.push('+' + Math.round(st.xp * 100) + '% досвіду'); if (st.coldRes) bits.push('−' + Math.round(st.coldRes * 100) + '% холоду');
+                ITEM_METADATA[id] = { name: nm, rarity: T(3).r, color: T(3).c, type: '💍 Аксесуар', desc: desc + ' Приносить найбільше користі в «свою» пору року.', stat: bits.join(', ') };
+                S[id] = generateSprite(cx => { cx.strokeStyle = c2; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(6, 4); cx.quadraticCurveTo(16, 16, 26, 4); cx.stroke(); C(cx, 16, 19, 9, c2); C(cx, 16, 19, 7.4, c1); glyph(cx); });
+            };
+            charm('bloom_charm', 'Квітковий оберіг', { hp: 20, rhp: 0.55, xp: 0.04 }, 'Живі пелюстки не в’януть ніколи.', '#ff9ad0', '#8a2a6a', cx => { for (const [x, y] of [[16, 15], [20, 19], [16, 23], [12, 19]]) C(cx, x, y, 2.4, '#fff0f8'); C(cx, 16, 19, 1.8, '#ffd23a'); });
+            charm('storm_pendant', 'Грозовий кулон', { crit: 0.06, spd: 0.05, hp: 10 }, 'Всередині сидить маленька гроза.', '#7fe8ff', '#1a4a7a', cx => P(cx, [[18, 12], [12, 20], [16, 20], [14, 27], [21, 18], [17, 18]], '#fff6a8', '#c89a1a'));
+            charm('ember_lantern', 'Осінній ліхтарик', { xp: 0.07, hp: 15, rhp: 0.25 }, 'Тепле світло, що не гасне на вітрі.', '#ffb04a', '#7a3a0a', cx => { P(cx, [[16, 12], [20, 18], [16, 27], [12, 18]], '#ff5a1a', '#fff0a8'); });
+            charm('frost_core', 'Серце морозу', { hp: 30, rmp: 0.5, coldRes: 0.65 }, 'Холод більше не лізе під шкіру.', '#bfeaff', '#2a5a9a', cx => { cx.strokeStyle = '#ffffff'; cx.lineWidth = 1.6; cx.beginPath(); for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; cx.moveTo(16 + Math.cos(a) * 6, 19 + Math.sin(a) * 6); cx.lineTo(16 - Math.cos(a) * 6, 19 - Math.sin(a) * 6); } cx.stroke(); });
+            recipes.push({ result: 'bloom_charm', count: 1, req: { bloom_essence: 2, gold_ingot: 6, life_potion: 2 }, lvl: 12 });
+            recipes.push({ result: 'storm_pendant', count: 1, req: { storm_glass: 2, crystal_ingot: 4, gold_ingot: 4 }, lvl: 14 });
+            recipes.push({ result: 'ember_lantern', count: 1, req: { ember_leaf: 2, gold_ingot: 6, torch: 10 }, lvl: 12 });
+            recipes.push({ result: 'frost_core', count: 1, req: { frost_heart: 2, crystal_ingot: 5, cosmic_ingot: 1 }, lvl: 16 });
+        }
+
+        // ---------- моби подій ----------
+        const ZTM = {
+            harvestghost: { n: 'Привид жнив', w: 30, h: 38, hp: 95, dmg: 14, xp: 36, col: '#ffa24a', sight: 760, cause: 'Вас налякав привид жнив', fly: 1 },
+            frostwraith: { n: 'Крижана примара', w: 34, h: 42, hp: 150, dmg: 17, xp: 54, col: '#9fdcff', sight: 780, cause: 'Вас заморозила крижана примара', fly: 1 }
+        };
+        for (const k in ZTM) { Z1_MOBS[k] = ZTM[k]; XP_BASE[k] = ZTM[k].xp; V18DMG[k] = ZTM[k].dmg; if (typeof V373_MOBN !== 'undefined') V373_MOBN[k] = ZTM[k].n; }
+        function ztDrawGhost(c, m) {
+            const t = performance.now() / 1000, id = (m.mid || 0) + m.x * 0.01, p = Math.sin(t * 2.6 + id), tel = (m.cast || 0) > 0;
+            zxGlow(c, 0, -2, 40 + (tel ? 20 : 0), tel ? '#fff0b0' : '#ff9a3a', tel ? 0.75 : 0.3);
+            const g = c.createLinearGradient(0, -22, 0, 22); g.addColorStop(0, 'rgba(255,244,226,.96)'); g.addColorStop(1, 'rgba(255,170,90,.05)');
+            c.fillStyle = g; c.beginPath(); c.moveTo(-14, 4); c.quadraticCurveTo(-15, -22 - p * 2, 0, -22 - p * 2); c.quadraticCurveTo(15, -22 - p * 2, 14, 4); for (let i = 0; i < 5; i++) c.lineTo(14 - i * 7 + 0, 14 + (i % 2 ? 6 : 0) + Math.sin(t * 5 + i + id) * 2.2); c.closePath(); c.fill();
+            c.fillStyle = tel ? '#fff' : '#3a1204'; c.beginPath(); c.moveTo(-8, -10); c.lineTo(-3, -10); c.lineTo(-5.5, -4); c.fill(); c.beginPath(); c.moveTo(3, -10); c.lineTo(8, -10); c.lineTo(5.5, -4); c.fill();
+            c.beginPath(); c.ellipse(0, 3, 3.4, tel ? 6 : 3, 0, 0, 7); c.fill();
+            c.fillStyle = '#ff7a1a'; c.beginPath(); c.arc(10, 9, 6, 0, 7); c.fill(); c.fillStyle = '#ffe28a'; c.fillRect(8, 7, 2, 2); c.fillRect(11, 7, 2, 2); c.fillStyle = '#4a7a1a'; c.fillRect(9, 2, 2, 3);
+        }
+        function ztDrawWraith(c, m) {
+            const t = performance.now() / 1000, id = (m.mid || 0) + m.x * 0.01, p = Math.sin(t * 2.2 + id), tel = (m.cast || 0) > 0;
+            zxGlow(c, 0, -2, 46 + (tel ? 22 : 0), tel ? '#ffffff' : '#7fd0ff', tel ? 0.8 : 0.32);
+            const g = c.createLinearGradient(0, -24, 0, 26); g.addColorStop(0, 'rgba(210,240,255,.95)'); g.addColorStop(1, 'rgba(70,130,220,.05)');
+            c.fillStyle = g; c.beginPath(); c.moveTo(-9, -20); c.lineTo(9, -20); c.lineTo(18, 6 + p * 2); for (let i = 0; i < 6; i++) c.lineTo(18 - i * 7, 20 + (i % 2 ? 7 : 0) + Math.sin(t * 4 + i + id) * 2.4); c.lineTo(-18, 6 + p * 2); c.closePath(); c.fill();
+            c.fillStyle = '#4aa8ee'; c.beginPath(); c.moveTo(-9, -20); c.lineTo(0, -34 - p * 2); c.lineTo(9, -20); c.closePath(); c.fill(); c.fillStyle = '#e8faff'; c.beginPath(); c.moveTo(-5, -20); c.lineTo(0, -29 - p * 2); c.lineTo(5, -20); c.closePath(); c.fill();
+            c.fillStyle = tel ? '#ffffff' : '#0a2a5a'; c.fillRect(-5, -15, 3.4, 4.6); c.fillRect(2, -15, 3.4, 4.6);
+            c.strokeStyle = 'rgba(220,250,255,.85)'; c.lineWidth = 1.4; for (const s of [-1, 1]) { c.beginPath(); c.moveTo(s * 14, -4); c.lineTo(s * (24 + p * 2), -12); c.lineTo(s * 30, -6); c.stroke(); }
+        }
+        Object.assign(V377_DRAW, { harvestghost: ztDrawGhost, frostwraith: ztDrawWraith });
+        function ztSteer(m, pDist) {
+            const D = ZTM[m.type], cx = m.x + m.width / 2, cy = m.y + m.height / 2, T = v17T(cx, cy), dxT = T.x - cx, dyT = T.y - cy, adT = Math.hypot(dxT, dyT), dir = dxT >= 0 ? 1 : -1;
+            m._alert = Math.max(0, (m._alert || 0) - 1); m._lc = Math.max(-1, (m._lc || 0) - 1); m._ph = (m._ph || 0) + 1; m.cast = Math.max(0, (m.cast || 0) - 1);
+            const dm = D.dmg * rpgMobDmg() * z1Dm(m), id = (m.mid || 0) * 1.7 + (m._ph0 = m._ph0 || Math.random() * 6);
+            if (m._fvx === undefined) { m._fvx = 0; m._fvy = 0; }
+            const wi = m.type === 'frostwraith';
+            if (m.cast > 0) { m._fvx *= 0.7; m._fvy *= 0.7; if (m.cast === 1) { zlTone('sine', wi ? 1100 : 600, wi ? 300 : 160, 0.3, 0.08); createParticles(cx, cy, D.col, 18, 4, 3, 28); if (wi && Math.hypot(player.x + 12 - cx, player.y + 22 - cy) < 118) { try { V16.chill = Math.max(V16.chill || 0, 140); ZSN.cold = Math.min(100, ZSN.cold + 22); } catch (e) { } } } }
+            else {
+                const tx = T.x - dir * 100 + Math.sin(m._ph * 0.03 + id) * 90, ty = T.y - 50 + Math.sin(m._ph * 0.05 + id) * 40;
+                m._fvx = zlCl(m._fvx + zlCl((tx - cx) * 0.007, -0.17, 0.17), -(wi ? 1.8 : 2.1), wi ? 1.8 : 2.1); m._fvy = zlCl(m._fvy + zlCl((ty - cy) * 0.009, -0.17, 0.17), -1.6, 1.6);
+                if (m._lc <= 0 && adT < 180) { m.cast = 40; m._lc = 125 + (Math.random() * 50 | 0); z1Fire({ x: cx, y: cy, r: wi ? 120 : 104, d: dm * (wi ? 1.5 : 1.7), c: D.cause, col: D.col, life: 40 }); }
+            }
+            m.vx = m._fvx; m.vy = m._fvy;
+        }
+        v375Steer = (function (o) { return function (m, pDist) { if (ZTM[m.type]) return ztSteer(m, pDist); return o.apply(this, arguments); }; })(v375Steer);
+        function ztIcon(type) {
+            const cv = document.createElement('canvas'); cv.width = 88; cv.height = 88; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+            try { c.translate(44, 46); c.scale(1.7, 1.7); (type === 'harvestghost' ? ztDrawGhost : ztDrawWraith)(c, { x: 0, mid: 1, cast: 0 }); } catch (e) { }
+            return cv.toDataURL();
+        }
+        v18MobIcon = (function (o) { return function (type) { if (ZTM[type]) return ztIcon(type); return o(type); }; })(v18MobIcon);
+        V28_MOBS.push(['harvestghost', 'Привид жнив', '❤ 95', 'З’являється в Ніч привидів (осінь). Літає навколо й кличе жахливим стогоном: відійди від кола, що світиться. Лишає Жарке листя.']);
+        V28_MOBS.push(['frostwraith', 'Крижана примара', '❤ 150', 'Приходить у зимову хуртовину. Її крижана хвиля заморожує й додає холоду. Лишає Серце зими.']);
+        v18Loot = (function (o) {
+            return function (m) {
+                o.apply(this, arguments);
+                try {
+                    if (!m || !ZTM[m.type]) return; const cx = m.x + m.width / 2, cy = m.y + m.height / 3, d = (id, n) => { if (ITEM_METADATA[id]) v20Drop(id, n, cx, cy, (Math.random() - 0.5) * 4); };
+                    d('gold_coin', 3 + (Math.random() * 6 | 0)); if (Math.random() < 0.18) d('life_potion', 1);
+                    if (ZSN.mdrop < 2 && Math.random() < 0.09) { ZSN.mdrop++; d(m.type === 'harvestghost' ? 'ember_leaf' : 'frost_heart', 1); }
+                    createParticles(cx, cy, ZTM[m.type].col, 14, 3, 3, 28);
+                } catch (e) { rpgErr(e); }
+            };
+        })(v18Loot);
+
+        // ---------- бонуси сезону ----------
+        recalcStats = (function (o) {
+            return function () {
+                const r = o.apply(this, arguments); const st = RPG.st; if (!st) return r; const s = ztSeason();
+                if (s === 0) st.hpRegen *= 1.25; else if (s === 1) { st.speed = Math.min(1.7, st.speed * 1.05); player.speed = 4.8 * st.speed; } else if (s === 2) st.xpMult *= 1.08; else st.mpRegen *= 1.2;
+                return r;
+            };
+        })(recalcStats);
+
+        // ---------- візуал тайлів ----------
+        const ZSN_TINT = [null, null, { 2: 'rgba(214,110,24,.62)', 5: ['rgba(255,120,30,.62)', 'rgba(210,60,20,.62)', 'rgba(255,190,50,.6)', 'rgba(170,70,20,.62)'], 71: 'rgba(214,110,24,.5)' }, { 2: 'rgba(210,235,255,.45)', 5: ['rgba(235,245,255,.72)'], 71: 'rgba(210,235,255,.4)' }];
+        const ztCache = new Map();
+        function ztTinted(sp, col) { const key = col; let m = ztCache.get(sp); if (!m) { m = {}; ztCache.set(sp, m); } if (m[key]) return m[key]; const cv = document.createElement('canvas'); cv.width = sp.width || 32; cv.height = sp.height || 32; const c = cv.getContext('2d'); c.drawImage(sp, 0, 0); c.globalCompositeOperation = 'source-atop'; c.fillStyle = col; c.fillRect(0, 0, cv.width, cv.height); return (m[key] = cv); }
+        drawBlockTile = (function (o) {
+            return function (bId, x, y, t) {
+                o.apply(this, arguments);
+                try {
+                    if (ZSN.s < 0 || (bId !== 2 && bId !== 5 && bId !== 71)) return; const s = ZSN.s, bd = BLOCKS[bId], sp = spriteOf(bd.item); if (!sp) return; const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE;
+                    const open = y > 0 && !BLOCKS[worldMap[y - 1][x]].solid && worldMap[y - 1][x] !== 5;
+                    if (bId === 5) {
+                        if (s === 0) { ctx.fillStyle = 'rgba(255,170,210,.36)'; const h = ztHash(x, y); if (h % 3 === 0) { ctx.drawImage(ztTinted(v16Leaf(x) || sp, 'rgba(255,150,205,.5)'), px + Math.sin(t * 1.6 + x * 0.8 + y * 0.5) * 1.3 - 1, py, 34, 32); } }
+                        else if (s >= 2) { const tn = ZSN_TINT[s][5]; const col = tn[ztHash(x >> 1, y >> 1) % tn.length]; ctx.drawImage(ztTinted(v16Leaf(x) || sp, col), px + Math.sin(t * 1.6 + x * 0.8 + y * 0.5) * 1.3 - 1, py, 34, 32); }
+                        if (s === 3 && open) { ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillRect(px + 1, py, 30, 4); ctx.fillRect(px + 5, py + 4, 20, 2); }
+                        return;
+                    }
+                    if (s === 0 && open) { const h = ztHash(x, y); if (h % 4 === 0) { const fx = px + 4 + (h >> 3) % 22, cols = ['#ff7ac0', '#fff', '#ffd23a', '#c88aff']; ctx.fillStyle = '#2f8a3a'; ctx.fillRect(fx + 1, py - 3, 1, 3); ctx.fillStyle = cols[(h >> 6) % 4]; ctx.fillRect(fx, py - 6, 3, 3); ctx.fillStyle = '#ffe36b'; ctx.fillRect(fx + 1, py - 5, 1, 1); } }
+                    else if (s === 1 && open) { ctx.fillStyle = 'rgba(255,225,70,.14)'; ctx.fillRect(px, py, 32, 8); }
+                    else if (s === 2 && open) { ctx.drawImage(ztTinted(sp, ZSN_TINT[2][bId]), 0, 0, 32, 10, px, py, 32, 10); }
+                    else if (s === 3 && open) { ctx.drawImage(ztTinted(sp, ZSN_TINT[3][bId]), 0, 0, 32, 10, px, py, 32, 10); const h = ztHash(x, y) % 3; ctx.fillStyle = 'rgba(248,252,255,.97)'; ctx.fillRect(px, py - 2, 32, 5 + h); ctx.fillRect(px + 3, py + 3 + h, 26, 2); ctx.fillStyle = 'rgba(190,220,250,.8)'; ctx.fillRect(px, py + 2 + h, 32, 1); }
+                } catch (e) { }
+            };
+        })(drawBlockTile);
+
+        // ---------- HUD ----------
+        {
+            const st = document.createElement('style');
+            st.textContent = `#zt-ovl{position:fixed;inset:0;z-index:2;pointer-events:none;transition:background 2.5s,opacity 1s;mix-blend-mode:normal}
+#zt-badge{margin-left:8px;padding:1px 8px;border-radius:10px;font:800 12px "Segoe UI",sans-serif;background:#0006;border:1px solid var(--zc,#fff);color:var(--zc,#fff);white-space:nowrap;text-shadow:0 1px 2px #000}
+#zt-ev{position:fixed;top:112px;left:50%;transform:translateX(-50%);z-index:6;display:none;min-width:250px;padding:7px 14px 8px;border-radius:12px;background:linear-gradient(#162030ee,#0c1420ee);border:2px solid var(--zc,#9cf);color:#fff;font:700 12px "Segoe UI",sans-serif;text-align:center;box-shadow:0 0 18px var(--zc,#9cf);pointer-events:none;animation:ztIn .5s ease-out}
+#zt-ev b{font-size:14px;letter-spacing:.5px}#zt-ev i{display:block;height:7px;margin-top:5px;border-radius:5px;background:#0008;overflow:hidden;border:1px solid #fff3}#zt-ev i s{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--zc,#9cf),#fff);transition:width .3s}
+#zt-cold{position:fixed;top:170px;left:50%;transform:translateX(-50%);z-index:6;display:none;width:200px;font:800 11px "Segoe UI",sans-serif;color:#cfeeff;text-align:center;pointer-events:none;text-shadow:0 1px 2px #000}
+#zt-cold i{display:block;height:8px;margin-top:2px;border-radius:5px;background:#0009;overflow:hidden;border:1px solid #9fdcff88}#zt-cold i s{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fe0ff,#c8f0ff);transition:width .2s}
+@keyframes ztIn{from{opacity:0;transform:translate(-50%,-14px) scale(.9)}to{opacity:1;transform:translate(-50%,0) scale(1)}}`;
+            document.head.appendChild(st);
+            const o = document.createElement('div'); o.id = 'zt-ovl'; document.body.appendChild(o); ZSN.ovl = o;
+            const e = document.createElement('div'); e.id = 'zt-ev'; document.body.appendChild(e); ZSN.evEl = e;
+            const c = document.createElement('div'); c.id = 'zt-cold'; c.innerHTML = '🥶 Холод<i><s></s></i>'; document.body.appendChild(c); ZSN.coldEl = c;
+            const box = document.getElementById('time-hud-box'); if (box) { const b = document.createElement('span'); b.id = 'zt-badge'; box.appendChild(b); ZSN.hud = b; }
+        }
+
+        // ---------- події ----------
+        function ztEvCheck() {
+            const s = ztSeason(), dis = ztDis(), day = ztDay(), E = ZSN_EV[ZSN_S[s].k];
+            const on = dis === 2 && (E.night ? isNightNow() : !isNightNow()) && gameState === 'PLAYING';
+            if (on && (!ZSN.ev || ZSN.ev.day !== day)) {
+                const k = ZSN_S[s].k; ZSN.ev = { k, day, prog: 0, need: E.need, done: RPG.sn.c[k] === day, t: 0 }; ZSN.mdrop = 0; ZSN.pet.length = 0; ZSN.bolts.length = 0; ZSN.sparks.length = 0;
+                try { v26Banner(E.ic + ' ' + E.n, E.txt); zlTone('sine', 300, 900, 0.9, 0.1); } catch (e) { }
+            } else if (!on && ZSN.ev) {
+                const ev = ZSN.ev; ZSN.ev = null; ZSN.pet.length = 0; ZSN.bolts.length = 0; ZSN.sparks.length = 0;
+                try { if (!ev.done) v26Banner('💨 ' + ZSN_EV[ev.k].n + ' минула', 'Наступного разу в цю пору — нова спроба'); } catch (e) { }
+                if (!v17Client()) for (let i = mobs.length - 1; i >= 0; i--) if (ZTM[mobs[i].type]) { createParticles(mobs[i].x + 14, mobs[i].y + 14, '#ffffff', 10, 2, 3, 24); mobs.splice(i, 1); }
+            }
+        }
+        function ztProg(n) {
+            const ev = ZSN.ev; if (!ev || ev.done) return; ev.prog = Math.min(ev.need, ev.prog + n);
+            if (ev.prog >= ev.need) ztDone();
+        }
+        function ztDone() {
+            const ev = ZSN.ev; if (!ev || ev.done) return; ev.done = true; const E = ZSN_EV[ev.k]; RPG.sn.c[ev.k] = ev.day; RPG.sn.n++;
+            const coin = Math.round((60 + RPG.level * 6) / 5) * 5, n = 1 + (Math.random() < 0.25 ? 1 : 0);
+            giveItem('gold_coin', coin); giveItem(E.item, n); try { if (window.__splEventRune) __splEventRune(ev.k); } catch (e) { } try { rpgOrbsAt(player.x + 12, player.y, Math.round(xpNeed(RPG.level) * 0.12)); } catch (e) { }
+            if (Math.random() < 0.4) giveItem('life_potion', 1);
+            try { v26Banner(E.ic + ' ' + E.n + ' — готово!', `+${n} ${ITEM_METADATA[E.item].name} · +${coin} 🪙`); for (let i = 0; i < 40; i++) createParticles(player.x + 12 + (Math.random() - 0.5) * 100, player.y - Math.random() * 60, E.col, 1, 3, 4, 40); zlTone('triangle', 440, 1320, 0.9, 0.12); updateInventoryUI(); } catch (e) { }
+        }
+        const ztOutdoor = () => !ztUnder();
+        function ztEvTick() {
+            const ev = ZSN.ev; if (!ev) return; ev.t++;
+            const px = player.x + 12, py = player.y + 22, out = ztOutdoor();
+            if (ev.k === 'sp' && !ev.done && out) {
+                if (ZSN.pet.length < 7 && Math.random() < 0.045) ZSN.pet.push({ x: px + (Math.random() - 0.5) * 760, y: py - 340 - Math.random() * 120, ph: Math.random() * 6, l: 0 });
+                for (let i = ZSN.pet.length - 1; i >= 0; i--) {
+                    const p = ZSN.pet[i]; p.l++; p.y += 0.85; p.x += Math.sin(p.l * 0.05 + p.ph) * 0.9; const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32);
+                    if (Math.hypot(p.x - px, p.y - py) < 30) { ZSN.pet.splice(i, 1); ztProg(1); createParticles(p.x, p.y, '#ffb0dc', 10, 2, 3, 24); zlTone('sine', 880 + Math.random() * 300, 1500, 0.12, 0.06); if (ev.prog % 5 === 0) { try { v377Add('regen', 240); } catch (e) { } } }
+                    else if (p.l > 900 || isSolid(bx, by)) ZSN.pet.splice(i, 1);
+                }
+            }
+            if (ev.k === 'su' && out && ev.t % 2 === 0) {
+                if (!ev.nb) ev.nb = 120 + (Math.random() * 60 | 0); ev.nb -= 2;
+                if (ev.nb <= 0 && ZSN.bolts.length < 2) {
+                    ev.nb = 140 + (Math.random() * 90 | 0); const direct = Math.random() < 0.3, bx = Math.floor((px + (direct ? 0 : (Math.random() < 0.5 ? -1 : 1) * (90 + Math.random() * 190))) / 32);
+                    if (bx > 2 && bx < currentWorld.width - 3) { let gy = ztSurf(bx); while (gy < currentWorld.height - 2 && !isSolid(bx, gy)) gy++; ZSN.bolts.push({ x: bx * 32 + 16, y: gy * 32, t: 0, hit: 0 }); zlTone('sine', 200, 900, 0.7, 0.05); }
+                }
+            }
+            for (let i = ZSN.bolts.length - 1; i >= 0; i--) {
+                const b = ZSN.bolts[i]; b.t++;
+                if (b.t === 58) {
+                    b.hit = 1; ZSN.flash = 1; shake = Math.max(shake, 8); zlTone('sawtooth', 160, 36, 0.9, 0.16); createParticles(b.x, b.y - 6, '#fff6a8', 28, 6, 4, 34);
+                    if (Math.abs(px - b.x) < 58 && Math.abs(py - b.y) < 150 && !ztRoofedAt(b.x, b.y)) { try { rpgHurt(26, 'Вас уразила блискавка', '⚡'); } catch (e) { } }
+                    if (!ev.done) ZSN.sparks.push({ x: b.x, y: b.y - 16, l: 0 });
+                }
+                if (b.t > 76) ZSN.bolts.splice(i, 1);
+            }
+            for (let i = ZSN.sparks.length - 1; i >= 0; i--) { const s = ZSN.sparks[i]; s.l++; if (Math.hypot(s.x - px, s.y - py) < 34) { ZSN.sparks.splice(i, 1); ztProg(1); createParticles(s.x, s.y, '#fff6a8', 16, 3, 3, 28); zlTone('triangle', 700, 1500, 0.2, 0.08); } else if (s.l > 520) ZSN.sparks.splice(i, 1); }
+            // моби подій (лише хост)
+            if ((ev.k === 'au' || ev.k === 'wi') && !v17Client() && ev.t % 30 === 0) {
+                const type = ev.k === 'au' ? 'harvestghost' : 'frostwraith', pl = (MP && MP.sh) ? v17Players() : [{ x: px, y: py }];
+                const cap = Math.min(5, 2 + Math.floor(RPG.level / 10)) + (pl.length - 1);
+                let have = 0; for (const m of mobs) if (m.type === type) have++;
+                if (have < cap && mobs.length < 46) for (const p of pl) if (Math.random() < 0.55 && have < cap) { if (ztSpawn(p, type)) have++; }
+            }
+        }
+        function ztRoofedAt(x, y) { return false; }
+        function ztSpawn(tp, type) {
+            const D = ZTM[type];
+            for (let a = 0; a < 14; a++) {
+                const sx = tp.x + (Math.random() < 0.5 ? -1 : 1) * (380 + Math.random() * 460), sy = tp.y - 40 - Math.random() * 200, bx = Math.floor(sx / 32), by = Math.floor(sy / 32);
+                if (bx < 3 || bx >= currentWorld.width - 3 || by < 3) continue; let ok = true; for (let i = -1; i <= 1 && ok; i++) for (let j = -1; j <= 1 && ok; j++) if (isSolid(bx + i, by + j)) ok = false; if (!ok) continue;
+                const hp = Math.round(D.hp * rpgMobHp()); const m = { type, x: sx - D.w / 2, y: sy - D.h / 2, vx: 0, vy: 0, hp, maxHp: hp, width: D.w, height: D.h, frame: Math.random() * 6, onGround: false, _alert: 200 }; mobs.push(m); return m;
+            }
+            return null;
+        }
+        rpgKill = (function (o) { return function (kind, x, y) { try { if (ZSN.ev && !ZSN.ev.done && typeof kind === 'string' && !V364.noProf && ((ZSN.ev.k === 'au' && kind === 'harvestghost') || (ZSN.ev.k === 'wi' && kind === 'frostwraith'))) ztProg(1); } catch (e) { } return o.apply(this, arguments); }; })(rpgKill);
+
+        // ---------- холод (зима) ----------
+        function ztColdTick() {
+            const s = ztSeason(), ev = ZSN.ev, bliz = ev && ev.k === 'wi', cold = ZSN.cold;
+            let exposed = s === 3 && (isNightNow() || bliz) && !ztUnder() && !ztRoofed() && !ztWarm();
+            if (typeof v377Has === 'function' && v377Has('frostward')) exposed = false;
+            const arm = ['helmet', 'chestplate', 'leggings', 'boots'].reduce((a, k) => a + (player.armor && player.armor[k] ? 1 : 0), 0);
+            const res = Math.max(0.1, 1 - arm * 0.14 - accSum('coldRes'));
+            if (exposed) ZSN.cold = Math.min(100, cold + (bliz ? 0.05 : 0.03) * res * 2.2); else ZSN.cold = Math.max(0, cold - (s === 3 ? 0.14 : 0.4));
+            if (ZSN.cold > 60 && ZSN.f % 6 === 0) { try { V16.chill = Math.max(V16.chill || 0, 20); } catch (e) { } }
+            if (ZSN.cold >= 99.9 && ZSN.f % 120 === 0 && gameState === 'PLAYING' && player.health > 0) { try { bHurt(Math.max(2, Math.round(player.maxHealth * 0.015)), 'Ви замерзли', '🥶', { col: '#9fdcff', pc: '#cfeeff' }); } catch (e) { } }
+            const el = ZSN.coldEl; if (el) { const show = ZSN.cold > 3; if (show !== (el.style.display === 'block')) el.style.display = show ? 'block' : 'none'; if (show) el.querySelector('s').style.width = ZSN.cold + '%'; }
+        }
+
+        // ---------- частинки погоди ----------
+        function ztFx() {
+            if (ztUnder()) { ZSN.fx.length = 0; return; }
+            const s = ztSeason(), ev = ZSN.ev, W = canvas.width, H = canvas.height, cx = camera.x, cy = camera.y, night = isNightNow();
+            const rain = ev && (ev.k === 'sp' || ev.k === 'su'), bliz = ev && ev.k === 'wi', ghost = ev && ev.k === 'au';
+            const n = rain ? (ev.k === 'su' ? 5 : 3) : bliz ? 5 : s === 3 ? 1 : s === 2 ? 1 : s === 0 ? 1 : 0;
+            const pre = ZSN.fx.length;
+            if (pre < 260) for (let i = 0; i < n; i++) {
+                if (!rain && !bliz && Math.random() > 0.35) continue; const x = cx + Math.random() * (W + 200) - 100, y = cy - 20;
+                if (rain) ZSN.fx.push({ k: 'r', x, y, vx: ev.k === 'su' ? -3.2 : -1, vy: ev.k === 'su' ? 15 : 11, l: 0 });
+                else if (bliz) ZSN.fx.push({ k: 's', x: cx + Math.random() * (W + 600), y: cy - 10 - Math.random() * 40, vx: -6 - Math.random() * 3, vy: 3 + Math.random() * 3, l: 0, z: 1.5 + Math.random() * 2 });
+                else if (s === 3) ZSN.fx.push({ k: 's', x, y, vx: -0.5 + Math.random() * 0.6, vy: 1.1 + Math.random(), l: 0, z: 1.5 + Math.random() * 1.5 });
+                else if (s === 2) ZSN.fx.push({ k: 'l', x, y, vx: -0.6 + Math.random() * 1.2, vy: 0.9 + Math.random() * 0.8, l: 0, ph: Math.random() * 6, c: ['#ff8a2a', '#d8481a', '#ffc23a', '#a8501a'][Math.random() * 4 | 0] });
+                else if (s === 0) ZSN.fx.push({ k: 'p', x, y, vx: 0.2 + Math.random() * 0.6, vy: 0.6 + Math.random() * 0.5, l: 0, ph: Math.random() * 6 });
+            }
+            if (s === 1 && ZSN.fx.length < 260 && (night || Math.random() < 0.15) && Math.random() < 0.18) { const fx = cx + Math.random() * W, fy = ztSurf(Math.floor(fx / 32)) * 32 - 10 - Math.random() * 150; if (!isSolid(Math.floor(fx / 32), Math.floor(fy / 32))) ZSN.fx.push({ k: 'f', x: fx, y: fy, vx: 0, vy: 0, l: 0, ph: Math.random() * 6 }); }
+            if (ghost && Math.random() < 0.3) { const gx = cx + Math.random() * W, gy = ztSurf(Math.floor(gx / 32)) * 32 - 20; ZSN.fx.push({ k: 'g', x: gx, y: gy, vx: 0.3, vy: -0.5, l: 0, ph: Math.random() * 6 }); }
+            for (let i = ZSN.fx.length - 1; i >= 0; i--) {
+                const p = ZSN.fx[i]; p.l++;
+                if (p.k === 'r' || p.k === 's') { p.x += p.vx; p.y += p.vy; } else if (p.k === 'l') { p.x += p.vx + Math.sin(p.l * 0.06 + p.ph) * 1.1; p.y += p.vy; } else if (p.k === 'p') { p.x += p.vx + Math.sin(p.l * 0.05 + p.ph) * 0.8; p.y += p.vy; } else if (p.k === 'f') { p.x += Math.sin(p.l * 0.03 + p.ph) * 0.6; p.y += Math.cos(p.l * 0.025 + p.ph) * 0.4; } else if (p.k === 'g') { p.x += p.vx + Math.sin(p.l * 0.04 + p.ph) * 0.5; p.y += p.vy; }
+                const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32);
+                const dead = p.y > cy + H + 40 || p.x < cx - 140 || p.x > cx + W + 140 || p.l > (p.k === 'f' || p.k === 'g' ? 360 : 260) || ((p.k === 'r' || p.k === 's' || p.k === 'l' || p.k === 'p') && isSolid(bx, by));
+                if (dead) { if (p.k === 'r' && p.l < 250 && Math.random() < 0.3) ZSN.fx.push({ k: 'sp', x: p.x, y: p.y, vx: 0, vy: 0, l: 0 }); ZSN.fx.splice(i, 1); }
+                if (p.k === 'sp' && p.l > 8) { const j = ZSN.fx.indexOf(p); if (j >= 0) ZSN.fx.splice(j, 1); }
+            }
+        }
+        function ztDrawFx() {
+            const ev = ZSN.ev; ctx.save();
+            for (const p of ZSN.fx) {
+                if (p.k === 'r') { ctx.strokeStyle = ev && ev.k === 'su' ? 'rgba(190,215,255,.65)' : 'rgba(180,215,255,.5)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.vx * 1.6, p.y + p.vy * 1.6); ctx.stroke(); }
+                else if (p.k === 'sp') { ctx.fillStyle = 'rgba(200,225,255,.6)'; ctx.fillRect(p.x - 3, p.y - 1, 6, 1.5); }
+                else if (p.k === 's') { ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fillRect(p.x, p.y, p.z, p.z); }
+                else if (p.k === 'l') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.l * 0.07 + p.ph); ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, 5, 2.6, 0, 0, 7); ctx.fill(); ctx.restore(); }
+                else if (p.k === 'p') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.l * 0.05 + p.ph); ctx.fillStyle = 'rgba(255,170,210,.9)'; ctx.beginPath(); ctx.ellipse(0, 0, 3.6, 2, 0, 0, 7); ctx.fill(); ctx.restore(); }
+                else if (p.k === 'f') { const a = 0.5 + 0.5 * Math.sin(p.l * 0.12 + p.ph); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(230,255,110,${0.15 + a * 0.45})`; ctx.beginPath(); ctx.arc(p.x, p.y, 7 + a * 3, 0, 7); ctx.fill(); ctx.fillStyle = `rgba(255,255,200,${0.4 + a * 0.5})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+                else if (p.k === 'g') { const a = Math.min(1, p.l / 40) * Math.max(0, 1 - p.l / 360); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,150,60,${0.12 * a})`; ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+            }
+            const t = performance.now() / 1000;
+            for (const p of ZSN.pet) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.sin(p.l * 0.07 + p.ph) * 0.8); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,150,210,.35)'; ctx.beginPath(); ctx.arc(0, 0, 15 + Math.sin(t * 4 + p.ph) * 2, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#ff9ad0'; for (let k = 0; k < 5; k++) { ctx.rotate(1.2566); ctx.beginPath(); ctx.ellipse(0, -5, 3, 5.5, 0, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe36b'; ctx.beginPath(); ctx.arc(0, 0, 2.4, 0, 7); ctx.fill(); ctx.restore(); }
+            for (const s of ZSN.sparks) { const a = Math.min(1, (520 - s.l) / 80); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a; ctx.fillStyle = 'rgba(255,240,140,.4)'; ctx.beginPath(); ctx.arc(s.x, s.y + Math.sin(t * 5 + s.x) * 3, 16 + Math.sin(t * 8) * 3, 0, 7); ctx.fill(); ctx.fillStyle = '#fff6a8'; ctx.beginPath(); ctx.arc(s.x, s.y + Math.sin(t * 5 + s.x) * 3, 4, 0, 7); ctx.fill(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+            for (const b of ZSN.bolts) {
+                if (b.t < 58) { const k = b.t / 58; ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(255,${90 + 120 * k | 0},80,${0.35 + 0.5 * k})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(b.x, b.y, 58 * (1 - k * 0.2), 12, 0, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.ellipse(b.x, b.y, 58 * k, 12 * k, 0, 0, 7); ctx.stroke(); ctx.fillStyle = `rgba(255,230,120,${0.08 + 0.12 * k})`; ctx.beginPath(); ctx.ellipse(b.x, b.y, 58, 12, 0, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+                else if (b.t < 76) {
+                    const a = 1 - (b.t - 58) / 18; ctx.globalCompositeOperation = 'lighter'; let x = b.x + (((b.x * 7) % 5) - 2), y = b.y - 900; const pts = [[x, y]]; const sd = Math.floor(b.x) % 97; let r = sd + 1;
+                    while (y < b.y) { r = (r * 16807) % 2147483647; y += 38 + (r % 30); r = (r * 16807) % 2147483647; x = b.x + ((r % 60) - 30) * (1 - Math.max(0, (y - b.y + 300) / 300)); pts.push([x, Math.min(y, b.y)]); }
+                    pts[pts.length - 1][0] = b.x; ctx.strokeStyle = `rgba(160,200,255,${0.5 * a})`; ctx.lineWidth = 14; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.stroke();
+                    ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 4; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.stroke(); ctx.fillStyle = `rgba(255,240,170,${0.5 * a})`; ctx.beginPath(); ctx.arc(b.x, b.y, 40 * a + 10, 0, 7); ctx.fill(); ctx.globalCompositeOperation = 'source-over';
+                }
+            }
+            ctx.restore();
+        }
+        drawBossesAll = (function (o) { return function (t) { o.apply(this, arguments); try { if (ZSN.fx.length || ZSN.pet.length || ZSN.bolts.length || ZSN.sparks.length) ztDrawFx(); } catch (e) { } }; })(drawBossesAll);
+
+        // ---------- головний цикл ----------
+        const ZSN_OV = [['rgba(255,170,220,.05)', 0], ['rgba(255,220,90,.06)', 0], ['rgba(255,130,40,.10)', 0], ['rgba(170,215,255,.10)', 0]];
+        function ztHud() {
+            const s = ztSeason(), S = ZSN_S[s], dis = ztDis(), ev = ZSN.ev;
+            if (ZSN.hud) { ZSN.hud.textContent = S.ic + ' ' + S.n + ' · ' + (dis + 1) + '/6'; ZSN.hud.style.setProperty('--zc', S.col); ZSN.hud.title = S.d; }
+            let bg = ZSN_OV[s][0];
+            if (ev && !ev.done || ev) { if (ev.k === 'su') bg = 'rgba(15,20,50,.30)'; else if (ev.k === 'au') bg = 'rgba(120,40,10,.20)'; else if (ev.k === 'wi') bg = 'rgba(210,235,255,.24)'; else bg = 'rgba(255,150,210,.08)'; }
+            ZSN.ovl.style.background = ZSN.flash > 0.02 ? `rgba(255,255,255,${0.55 * ZSN.flash})` : bg; ZSN.ovl.style.transition = ZSN.flash > 0.02 ? 'none' : 'background 2.5s';
+            const el = ZSN.evEl; if (ev) { const E = ZSN_EV[ev.k], pr = ev.done ? 100 : Math.round(ev.prog / ev.need * 100); const sig = ev.k + ev.done + ev.prog; if (el.dataset.sig !== sig) { el.dataset.sig = sig; el.style.setProperty('--zc', E.col); el.innerHTML = `<b>${E.ic} ${E.n}</b><br>${ev.done ? '✔ Виконано — нагороду отримано' : E.txt + ' · ' + ev.prog + '/' + ev.need}<i><s style="width:${pr}%"></s></i>`; } el.style.display = 'block'; } else { el.style.display = 'none'; el.dataset.sig = ''; }
+        }
+        updateGame = (function (o) {
+            return function () {
+                const r = o.apply(this, arguments);
+                try {
+                    if (gameState !== 'PLAYING') return r; ZSN.f++;
+                    const s = ztSeason();
+                    if (s !== ZSN.s) { const first = ZSN.s < 0; ZSN.s = s; try { if (RPG.ready) recalcStats(); } catch (e) { } if (!first) { try { v26Banner(ZSN_S[s].ic + ' ' + ZSN_S[s].n, ZSN_S[s].d); zlTone('sine', 400, 800, 0.8, 0.08); for (let i = 0; i < 30; i++) createParticles(player.x + 12 + (Math.random() - 0.5) * 200, player.y - Math.random() * 90, ZSN_S[s].col, 1, 2.5, 4, 50); } catch (e) { } } }
+                    if (ZSN.f % 20 === 1) ztEvCheck();
+                    ztEvTick(); ztColdTick(); ztFx(); ZSN.flash = Math.max(0, ZSN.flash - 0.07); if (ZSN.f % 4 === 0) ztHud();
+                } catch (e) { }
+                return r;
+            };
+        })(updateGame);
+        window.__zt = { ZSN, ZSN_EV, ZTM, ztSpawn, ztProg, ztEvCheck };
+        // ================= 📖 v41.8: КОНСТРУКТОР ЗАКЛЯТЬ (Рунний верстат + Гримуар) =================
+        // Закляття = Форма × Стихія × Ефект. Руни здобуваються повільно (з рідкісних ворогів, босів і подій), вивчаються на верстаті.
+        const SPL = { sim: null, ui: null, hud: null, open: false, tab: 0, pick: { f: 'bolt', e: 'fire', x: 'none' }, msg: '', cdv: 0, cdMax: 1, setCd: 0, f: 0, hf: 0, pv: null, raf: 0, bx: 0, by: 0 };
+        const SPL_COL = { fire: ['#ff7a2a', '#ffd36a'], frost: ['#7fd8ff', '#eefcff'], storm: ['#ffe36b', '#9fd0ff'], nature: ['#6fe07a', '#e2ff9a'], void: ['#b070ff', '#2a0a4a'] };
+        const SPL_F = {
+            bolt: { n: 'Снаряд', ic: '✴️', g: 'm', m: 1.0, mana: 10, cd: 26, d: 'Згусток енергії летить у курсор. Швидкий і дешевий.' },
+            nova: { n: 'Хвиля', ic: '🌀', g: 'f', m: 1.15, mana: 18, cd: 40, d: 'Кільце сили розходиться навколо тебе й б’є всіх довкола.' },
+            beam: { n: 'Промінь', ic: '📏', g: 'm', m: 1.35, mana: 16, cd: 50, d: 'Миттєвий промінь ріже все на лінії, три удари поспіль.' },
+            rain: { n: 'Злива', ic: '☄️', g: 'f', m: 1.6, mana: 24, cd: 72, d: 'П’ять ударів із неба по місцю під курсором. Мить на підготовку.' },
+            spikes: { n: 'Шипи', ic: '🔱', g: 'p', m: 1.45, mana: 16, cd: 48, d: 'Ряд шипів проривається з землі перед тобою.' }
+        };
+        const SPL_E = {
+            fire: { n: 'Вогонь', ic: '🔥', dm: 1.0, mx: 1.0, adj: ['вогняний', 'вогняна', 'вогняні'], d: 'Підпалює: 35% шкоди додатково за 3 секунди.' },
+            frost: { n: 'Лід', ic: '❄️', dm: 0.92, mx: 1.0, adj: ['крижаний', 'крижана', 'крижані'], d: 'Шанс 30% заморозити ворога на мить.' },
+            storm: { n: 'Буря', ic: '⚡', dm: 0.95, mx: 1.05, adj: ['грозовий', 'грозова', 'грозові'], d: 'Блискавка перестрибує ще на 2 ворогів (50% шкоди).' },
+            nature: { n: 'Природа', ic: '🍃', dm: 0.9, mx: 1.0, adj: ['лісовий', 'лісова', 'лісові'], d: 'Отрута: 45% шкоди за 4 секунди. Трохи лікує тебе.' },
+            void: { n: 'Порожнеча', ic: '🌑', dm: 1.12, mx: 1.1, adj: ['тіньовий', 'тіньова', 'тіньові'], d: 'Тягне ворогів до вогнища удару, +6% шанс крита.' }
+        };
+        const SPL_X = {
+            none: { n: 'Без ефекту', ic: '▫️', dm: 1, mx: 1, cd: 1, d: 'Чисте закляття.' },
+            pierce: { n: 'Пробиття', ic: '➶', dm: 0.88, mx: 1.1, cd: 1, d: 'Прошиває до 3 ворогів (промінь довший й ширший).' },
+            burst: { n: 'Вибух', ic: '💥', dm: 1, mx: 1.3, cd: 1.1, d: 'У точках влучання спалахує додатковий вибух.' },
+            echo: { n: 'Відлуння', ic: '🔁', dm: 1, mx: 1.35, cd: 1.15, d: 'Закляття повторюється двічі з 50% шкоди.' },
+            siphon: { n: 'Висмоктування', ic: '🩸', dm: 0.92, mx: 1.1, cd: 1, d: 'Лікує 5% завданої шкоди (до 2.5% здоров’я за закляття).' },
+            split: { n: 'Розкол', ic: '✳️', dm: 1, mx: 1.25, cd: 1.05, d: 'Розсипається на 3 уламки по 40% шкоди.' }
+        };
+        // рідкісні поєднання: форма|стихія|ефект
+        const SPL_RARE = {
+            'bolt|storm|pierce': 'Спис Громовиці', 'bolt|frost|split': 'Ожеледь', 'bolt|void|echo': 'Шепіт Безодні', 'bolt|fire|burst': 'Метеорит',
+            'nova|fire|burst': 'Сонячна корона', 'nova|frost|echo': 'Вічна мерзлота', 'nova|nature|siphon': 'Лісова благодать',
+            'beam|fire|pierce': 'Серце сонця', 'rain|storm|burst': 'Небесна кара', 'rain|nature|echo': 'Сезон дощів',
+            'spikes|void|burst': 'Прірва', 'spikes|nature|split': 'Терновий сад'
+        };
+        const SPL_RK = Object.keys(SPL_RARE);
+        // джерела рун: [тип, id, ймовірність, мобів, підказка]
+        const SPL_SRC = {
+            nova: [['construct'], 0.07, 'Кам’яні стражі Лабіринту Мудреця'], beam: [['medusa'], 0.05, 'Медузи затоплених храмів'],
+            rain: [['harvestghost', 'frostwraith'], 0.05, 'Привиди сезонних подій'], spikes: [['deadminer', 'specter'], 0.05, 'Мерці-шахтарі та привиди покинутих шахт'],
+            frost: [['frostwraith'], 0.06, 'Крижані примари (Хуртовина), нагорода зимової події'], storm: [['harpy', 'wisp'], 0.045, 'Мешканці Небесної цитаделі, нагорода літньої події'],
+            nature: [[], 0, 'Нагорода весняної події «Квітнева злива»'], void: [['ashfiend', 'cinder'], 0.04, 'Мешканці Горна безодні, боси'],
+            pierce: [['stalker', 'cavebat'], 0.03, 'Нічні сталкери та печерні кажани'], burst: [['cinder', 'magmaslime'], 0.045, 'Жарові велети та магмові слизи'],
+            echo: [['wisp', 'specter'], 0.035, 'Грозові іскри та привиди шахт'], siphon: [['stalker', 'harvestghost'], 0.04, 'Нічні сталкери, привиди жнив'],
+            split: [['harpy', 'medusa'], 0.035, 'Громові гарпії та медузи']
+        };
+        const SPL_START = { f: ['bolt'], e: ['fire'], x: ['none'] };
+        const splRuneKind = id => SPL_F[id] ? 'f' : SPL_E[id] ? 'e' : 'x';
+        const splFresh = () => ({ l: { f: ['bolt'], e: ['fire'], x: ['none'] }, sl: [{ f: 'bolt', e: 'fire', x: 'none' }, null, null, null], sel: 0, disc: {}, ms: 0 });
+        function splNorm(d) {
+            const o = splFresh(); if (!d || typeof d !== 'object') return o;
+            if (d.l) for (const k of ['f', 'e', 'x']) if (Array.isArray(d.l[k])) o.l[k] = [...new Set(o.l[k].concat(d.l[k].filter(i => (k === 'f' ? SPL_F : k === 'e' ? SPL_E : SPL_X)[i])))];
+            if (Array.isArray(d.sl)) o.sl = [0, 1, 2, 3].map(i => { const s = d.sl[i]; return s && SPL_F[s.f] && SPL_E[s.e] && SPL_X[s.x || 'none'] ? { f: s.f, e: s.e, x: s.x || 'none' } : null; });
+            o.sel = Math.max(0, Math.min(3, d.sel | 0)); if (d.disc && typeof d.disc === 'object') for (const k in d.disc) if (SPL_RARE[k]) o.disc[k] = 1; o.ms = d.ms | 0; return o;
+        }
+        RPG.sp = splFresh();
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); d.sp = RPG.sp; return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { RPG.sp = splNorm(d && d.sp); return o.apply(this, arguments); }; })(rpgLoad);
+        rpgNew = (function (o) { return function (cls, keepInv) { if (!ZP.keep && !keepInv) RPG.sp = splFresh(); return o.apply(this, arguments); }; })(rpgNew);
+        const splKey = s => s.f + '|' + s.e + '|' + (s.x || 'none');
+        const splRare = s => SPL_RARE[splKey(s)] || null;
+        function splName(s) {
+            const F = SPL_F[s.f], E = SPL_E[s.e], r = splRare(s); if (r) return r;
+            const gi = F.g === 'm' ? 0 : F.g === 'f' ? 1 : 2; let n = E.adj[gi] + ' ' + F.n.toLowerCase(); n = n[0].toUpperCase() + n.slice(1);
+            if (s.x && s.x !== 'none') n += ' · ' + SPL_X[s.x].n.toLowerCase(); return n;
+        }
+        const splGrim = () => { let b = null; for (const it of inventory) if (it && /^grimoire_[123]$/.test(it.id)) { const t = +it.id.slice(-1); if (!b || t > b) b = t; } return b; };
+        const splSlots = () => { const t = splGrim(); return t ? t + 1 : 1; };
+        function splCalc(s, gd) {
+            const F = SPL_F[s.f], E = SPL_E[s.e], X = SPL_X[s.x || 'none'], rare = splRare(s);
+            return { dmg: gd * F.m * E.dm * X.dm * (rare ? 1.18 : 1), mana: Math.max(4, Math.round(F.mana * E.mx * X.mx * (rare ? 0.9 : 1))), cd: Math.round(F.cd * X.cd), rare };
+        }
+        const splBase = () => { const w = (() => { for (const it of inventory.slice(selectedHotbarSlot, selectedHotbarSlot + 1)) if (it && WEAPONS[it.id] && WEAPONS[it.id].spl) return WEAPONS[it.id]; return null; })(); return w ? w.dmg : 55; };
+
+        // ---------- предмети: руни, гримуари, верстат ----------
+        {
+            const T = i => RPG_TIERS[i], S = itemSprites, F = zfFr, P = zfPoly, C = zfC;
+            const mk = (id, name, ti, type, desc, stat) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, desc }; if (stat) ITEM_METADATA[id].stat = stat; };
+            const glyph = (id, cx, col) => {
+                cx.strokeStyle = col; cx.lineWidth = 2; cx.lineCap = 'round'; cx.beginPath();
+                const g = {
+                    nova: () => { cx.arc(16, 16, 6, 0, 7); cx.moveTo(16, 6); cx.lineTo(16, 10); cx.moveTo(16, 22); cx.lineTo(16, 26); cx.moveTo(6, 16); cx.lineTo(10, 16); cx.moveTo(22, 16); cx.lineTo(26, 16); },
+                    beam: () => { cx.moveTo(7, 22); cx.lineTo(25, 10); cx.moveTo(7, 16); cx.lineTo(25, 16); },
+                    rain: () => { for (const x of [9, 16, 23]) { cx.moveTo(x, 8); cx.lineTo(x - 2, 14); cx.moveTo(x - 1, 17); cx.lineTo(x - 3, 25); } },
+                    spikes: () => { cx.moveTo(7, 25); cx.lineTo(11, 10); cx.lineTo(15, 25); cx.lineTo(19, 8); cx.lineTo(23, 25); },
+                    frost: () => { for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; cx.moveTo(16 + Math.cos(a) * 9, 16 + Math.sin(a) * 9); cx.lineTo(16 - Math.cos(a) * 9, 16 - Math.sin(a) * 9); } },
+                    storm: () => { cx.moveTo(19, 6); cx.lineTo(11, 17); cx.lineTo(17, 17); cx.lineTo(13, 27); },
+                    nature: () => { cx.moveTo(9, 24); cx.quadraticCurveTo(8, 9, 24, 8); cx.quadraticCurveTo(25, 23, 9, 24); cx.moveTo(10, 23); cx.lineTo(20, 13); },
+                    void: () => { cx.arc(16, 16, 8, 0, 7); cx.moveTo(16, 4); cx.lineTo(16, 28); },
+                    pierce: () => { cx.moveTo(6, 16); cx.lineTo(25, 16); cx.moveTo(20, 11); cx.lineTo(25, 16); cx.lineTo(20, 21); },
+                    burst: () => { for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; cx.moveTo(16 + Math.cos(a) * 4, 16 + Math.sin(a) * 4); cx.lineTo(16 + Math.cos(a) * 10, 16 + Math.sin(a) * 10); } },
+                    echo: () => { cx.arc(16, 16, 4, 0, 7); cx.moveTo(26, 16); cx.arc(16, 16, 10, 0, 7); },
+                    siphon: () => { cx.moveTo(16, 6); cx.quadraticCurveTo(25, 17, 16, 26); cx.quadraticCurveTo(7, 17, 16, 6); },
+                    split: () => { cx.moveTo(16, 24); cx.lineTo(16, 15); cx.lineTo(8, 7); cx.moveTo(16, 15); cx.lineTo(24, 7); cx.moveTo(16, 15); cx.lineTo(16, 6); }
+                }[id]; if (g) g(); cx.stroke();
+            };
+            const all = [['f', 'nova'], ['f', 'beam'], ['f', 'rain'], ['f', 'spikes'], ['e', 'frost'], ['e', 'storm'], ['e', 'nature'], ['e', 'void'], ['x', 'pierce'], ['x', 'burst'], ['x', 'echo'], ['x', 'siphon'], ['x', 'split']];
+            for (const [k, id] of all) {
+                const D = (k === 'f' ? SPL_F : k === 'e' ? SPL_E : SPL_X)[id], col = k === 'e' ? SPL_COL[id][0] : k === 'f' ? '#c8a8ff' : '#ffd24a', ti = k === 'e' ? 3 : k === 'f' ? 3 : 3;
+                mk('rn_' + id, 'Руна «' + D.n + '»', ti, '🔮 Руна', (k === 'f' ? 'Руна форми. ' : k === 'e' ? 'Руна стихії. ' : 'Руна ефекту. ') + D.d + ' Вивчається на Рунному верстаті.');
+                S['rn_' + id] = generateSprite(cx => { P(cx, [[16, 3], [27, 9], [27, 23], [16, 29], [5, 23], [5, 9]], '#2a2440', '#0c0818'); P(cx, [[16, 6], [24, 11], [24, 21], [16, 26], [8, 21], [8, 11]], '#3a3258', null); cx.fillStyle = 'rgba(255,255,255,.08)'; cx.fillRect(9, 8, 14, 3); cx.shadowColor = col; cx.shadowBlur = 5; glyph(id, cx, col); cx.shadowBlur = 0; });
+            }
+            // верстат
+            BLOCKS[106] = { name: 'Рунний верстат', solid: false, item: 'rune_table', hardness: 60, color: '#6a4aa8' }; MAP_COL[106] = '#6a4aa8'; V34_LC[106] = [170, 130, 255]; V34_LI[106] = 0.5;
+            mk('rune_table', 'Рунний верстат', 3, '📜 Меблі', 'Постав і клацни ПКМ: тут вивчаються руни та збирається власне закляття з Форми, Стихії й Ефекту.');
+            S.rune_table = generateSprite(cx => { F(cx, '#2a1a4a', [[3, 14, 26, 5]]); F(cx, '#4a3278', [[3, 14, 26, 3]]); F(cx, '#1c1230', [[5, 19, 4, 11], [23, 19, 4, 11]]); F(cx, '#6a4aa8', [[6, 19, 3, 11], [23, 19, 3, 11]]); P(cx, [[7, 13], [16, 9], [25, 13], [16, 16]], '#e8dcc0', '#8a7a5a'); cx.strokeStyle = '#7a5aff'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(16, 6, 4, 0, 7); cx.stroke(); C(cx, 16, 6, 1.6, '#d8c8ff'); });
+            recipes.push({ result: 'rune_table', count: 1, req: { wood: 20, iron_ingot: 6, gold_ingot: 3, mana_potion: 3 }, lvl: 8 });
+            // гримуари (рядки WROWS додаються в patch_v380.py); тут лише позначки
+            ['grimoire_1', 'grimoire_2', 'grimoire_3'].forEach((id, i) => { if (WEAPONS[id]) { WEAPONS[id].spl = 1; WEAPONS[id].cd = 20; } });
+            recipes.push({ result: 'grimoire_1', count: 1, req: { wood: 10, iron_ingot: 4, mana_potion: 2 }, lvl: 6 });
+            recipes.push({ result: 'grimoire_2', count: 1, req: { grimoire_1: 1, gold_ingot: 8, crystal_ingot: 5, rune_core: 1 }, lvl: 16 });
+            recipes.push({ result: 'grimoire_3', count: 1, req: { grimoire_2: 1, cosmic_ingot: 6, bloom_essence: 1, storm_glass: 1, ember_leaf: 1, frost_heart: 1 }, lvl: 26 });
+            ACC.mage_talisman = ['Талісман чародія', 3, { rmp: 0.8, crit: 0.05, hp: 20 }, 'Нагорода тому, хто розгадав таємниці рун.', 'amulet', '#d8b8ff', '#4a2a8a'];
+            mk('mage_talisman', 'Талісман чародія', 4, '💍 Аксесуар', 'Нагорода за відкриття рідкісних заклять: +0.8 мани/с, +5% крит, +20 здоров’я.', '+0.8 мани/с, +5% крит, +20 здоров’я');
+            S.mage_talisman = generateSprite(cx => { cx.strokeStyle = '#4a2a8a'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(6, 4); cx.quadraticCurveTo(16, 16, 26, 4); cx.stroke(); P(cx, [[16, 10], [24, 19], [16, 29], [8, 19]], '#d8b8ff', '#4a2a8a'); P(cx, [[16, 14], [20, 19], [16, 25], [12, 19]], '#7a4aff', null); C(cx, 16, 19, 1.6, '#fff'); });
+        }
+
+        // ---------- симуляція закляттів ----------
+        const splRoof = () => false;
+        function splMkEnv() {
+            return {
+                vis: false, solid: (bx, by) => isSolid(bx, by), targets: () => rpgTargets(), spark: (x, y, col, n, sp, sz, life) => createParticles(x, y, col, n, sp || 2.5, sz || 3, life || 22),
+                hit(t, d, cs, e) {
+                    if (cs.vis) { createParticles(t.x, t.y, cs.col, 5, 2.5, 3, 20); return; }
+                    const crit = Math.random() < RPG.st.crit + cs.critB; let dd = Math.round(d * (RPG.st.mult.magic || 1) * (RPG.cls === 'mage' ? 1.1 : 1) * (0.93 + Math.random() * 0.14) * (crit ? 2 : 1)); if (dd < 1) dd = 1;
+                    const dir = t.x > e.x ? 1 : -1; rpgHit(t, dd, { crit, kb: cs.kb, col: crit ? '#ffd84a' : cs.col, dir, pcol: cs.col }); cs.dealt += dd; cs.hits++;
+                    if (cs.el === 'fire') splDot(t.o, 'burn', Math.max(1, Math.round(dd * 0.35 / 6)), 6, '#ff9a3a');
+                    else if (cs.el === 'nature') { splDot(t.o, 'psn', Math.max(1, Math.round(dd * 0.45 / 8)), 8, '#8ee05a'); if (!cs.nh) { cs.nh = 1; const h = Math.max(1, Math.round(player.maxHealth * 0.012)); player.health = Math.min(player.maxHealth, player.health + h); floatingTexts.push({ x: player.x + 4, y: player.y - 10, text: '+' + h, color: '#7dff9a', life: 28 }); } }
+                    else if (cs.el === 'frost') { if (t.k === 'mob' && Math.random() < 0.3 * (cs.fz || 1)) { try { v19FreezeMob(t.o, 55, 1); } catch (e2) { } createParticles(t.x, t.y, '#eefcff', 8, 2, 3, 24); } }
+                    else if (cs.el === 'void') { if (t.k === 'mob' || t.k === 'lmob') t.o.vx += (e.x - t.x > 0 ? 1 : -1) * 2.2; }
+                    if (cs.el === 'storm' && !e.noChain && cs.chains < 6) {
+                        let from = t, n = 0; const used = new Set([t.o]);
+                        while (n < 2 && cs.chains < 6) { let best = null, bd = 200; for (const u of rpgTargets()) { if (used.has(u.o) || u.o.hp <= 0) continue; const dd2 = Math.hypot(u.x - from.x, u.y - from.y); if (dd2 < bd) { bd = dd2; best = u; } } if (!best) break; used.add(best.o); cs.chains++; n++; splArcAdd(cs.sim, from.x, from.y, best.x, best.y); const d2 = Math.round(dd * 0.5); rpgHit(best, d2, { kb: 1, col: '#9fd0ff', pcol: '#9fd0ff', dir: best.x > from.x ? 1 : -1 }); cs.dealt += d2; from = best; }
+                    }
+                    if (cs.fx.siphon && cs.healed < player.maxHealth * 0.025) { const h = Math.min(player.maxHealth * 0.025 - cs.healed, dd * 0.05); if (h > 0.4) { cs.healed += h; player.health = Math.min(player.maxHealth, player.health + h); if (cs.hits % 2 === 1) floatingTexts.push({ x: player.x + 4, y: player.y - 10, text: '+' + Math.round(h) + '🩸', color: '#ff6a7a', life: 26 }); } }
+                }
+            };
+        }
+        const splNewSim = env => ({ ents: [], parts: [], t: 0, env: env || splMkEnv() });
+        const splDots = [];
+        function splDot(o, k, tick, n, col) { if (!o || o.hp <= 0) return; let d = splDots.find(q => q.o === o && q.k === k); if (!d) { d = { o, k, tick, left: n, cd: 30, col }; splDots.push(d); } else { d.tick = Math.max(d.tick, tick); d.left = n; d.col = col; } }
+        function splDotTick() {
+            if (!splDots.length) return; for (let i = splDots.length - 1; i >= 0; i--) { const d = splDots[i]; if (d.o.hp <= 0 || d.left <= 0) { splDots.splice(i, 1); continue; } d.cd--; if (d.cd > 0) continue; d.cd = 30; d.left--; const t = rpgTargets().find(q => q.o === d.o); if (!t) { splDots.splice(i, 1); continue; } rpgHit(t, d.tick, { kb: 0, col: d.col, pcol: d.col, dir: 1 }); createParticles(t.x, t.y - t.r * 0.5, d.col, 2, 1.2, 2.5, 18); }
+        }
+        const splEnt = (sim, e) => { e.t = 0; sim.ents.push(e); return e; };
+        function splArcAdd(sim, x1, y1, x2, y2) { splEnt(sim, { k: 'arc', x: x1, y: y1, x2, y2, life: 9, el: 'storm' }); sim.env.spark(x2, y2, '#fff6a8', 5, 2.5, 3, 16); }
+        const splAoe = (sim, cs, x, y, R, d, delay, noChain) => splEnt(sim, { k: 'aoe', x, y, R, d, delay: delay || 0, life: 16, cs, el: cs.el, noChain: noChain !== false });
+        function splShards(sim, cs, x, y, a0, n, d) {
+            for (let i = 0; i < n; i++) { const a = a0 + (i - (n - 1) / 2) * 0.85; splEnt(sim, { k: 'bolt', x, y, vx: Math.cos(a) * 7.5, vy: Math.sin(a) * 7.5, life: 22, r: 7, d, pierce: 0, hit: new Set(), cs, el: cs.el, a, shard: 1, sz: 0.6 }); }
+        }
+        function splImpact(sim, e, x, y) {
+            const cs = e.cs; sim.env.spark(x, y, SPL_COL[cs.el][0], 8, 3, 3.5, 26); sim.env.spark(x, y, SPL_COL[cs.el][1], 4, 2, 2.5, 20);
+            if (e.shard) return;
+            if (cs.fx.burst) splAoe(sim, cs, x, y, 95 * cs.aoe, cs.d * 0.55, 0);
+            if (cs.fx.split && !cs.splitDone) { cs.splitDone = 1; splShards(sim, cs, x, y, e.a || 0, 3, cs.d * 0.4); }
+            if (cs.el === 'void' && !cs.vis) for (const t of sim.env.targets()) { const dd = Math.hypot(t.x - x, t.y - y); if (dd < 150 && (t.k === 'mob' || t.k === 'lmob')) t.o.vx += (x - t.x) / (dd || 1) * 3; }
+        }
+        // створення форми; mult — множник шкоди (для відлуння)
+        function splForm(sim, cs, ox, oy, a, tx, ty, mult) {
+            const d = cs.d * mult, c = Math.cos(a), s = Math.sin(a), pr = cs.fx.pierce;
+            if (cs.f === 'bolt') splEnt(sim, { k: 'bolt', x: ox + c * 24, y: oy + s * 24, vx: c * 9.5, vy: s * 9.5, life: 75, r: 10, d, pierce: pr ? 3 : 0, hit: new Set(), cs, el: cs.el, a, sz: 1 });
+            else if (cs.f === 'nova') {
+                splEnt(sim, { k: 'ring', x: ox, y: oy + 6, R: 190 * cs.aoe, life: 28, d, hit: new Set(), cs, el: cs.el, burstDone: 0 });
+                if (cs.fx.split && mult === 1) splShards(sim, cs, ox, oy, a, 3, cs.d * 0.4);
+            }
+            else if (cs.f === 'beam') {
+                let len = pr ? 640 : 520, x = ox, y = oy; for (let i = 0; i < len; i += 16) { x = ox + c * i; y = oy + s * i; if (sim.env.solid(Math.floor(x / 32), Math.floor(y / 32))) { len = i; break; } }
+                splEnt(sim, { k: 'beam', x: ox, y: oy, a, len, w: pr ? 34 : 22, life: 26, d: d * 0.45, hit: new Set(), cs, el: cs.el, mult });
+            }
+            else if (cs.f === 'rain') {
+                let gx = tx, gy = ty; const dd = Math.hypot(tx - ox, ty - oy); if (dd > 460) { gx = ox + (tx - ox) / dd * 460; gy = oy + (ty - oy) / dd * 460; }
+                for (let i = 0; i < 5; i++) splEnt(sim, { k: 'rs', x: gx + (i - 2) * 52 + (((i * 37) % 11) - 5), y: gy + (((i * 53) % 9) - 4), delay: i * 9, tele: 22, d: d * 0.32, R: 66 * cs.aoe, cs, el: cs.el, last: i === 4, a: -1.57 });
+            }
+            else if (cs.f === 'spikes') {
+                const dir = c >= 0 ? 1 : -1;
+                for (let i = 0; i < 6; i++) {
+                    const x = ox + dir * (46 + i * 44); let by = Math.floor((oy + 20) / 32), n = 0; while (!sim.env.solid(Math.floor(x / 32), by) && n < 9) { by++; n++; } if (n >= 9) continue; if (sim.env.solid(Math.floor(x / 32), by - 1)) { by--; n++; }
+                    splEnt(sim, { k: 'sp', x, gy: by * 32, delay: i * 4, d: d * 0.24, cs, el: cs.el, last: i === 5, dir, fired: 0 });
+                }
+            }
+            if (cs.fx.echo && mult === 1) {
+                for (const dl of [20, 40]) splEnt(sim, { k: 'echo', delay: dl, ox, oy, a, tx, ty, cs: Object.assign({}, cs, { fx: {}, echo: 1 }), life: 2 });
+            }
+        }
+        function splCast(sim, sp, gd, ox, oy, a, tx, ty, vis) {
+            const q = splCalc(sp, gd), el = sp.e, x = sp.x || 'none';
+            const cs = { sim, vis: !!vis, f: sp.f, el, col: SPL_COL[el][0], d: q.dmg, fx: { [x]: 1 }, aoe: RPG && RPG.st && RPG.st.aoe ? Math.min(1.6, RPG.st.aoe) : 1, kb: el === 'void' ? 2 : 4, critB: el === 'void' ? 0.06 : 0, dealt: 0, hits: 0, healed: 0, chains: 0, fz: 1 };
+            splForm(sim, cs, ox, oy, a, tx, ty, 1); return cs;
+        }
+        function splCol(e) { return SPL_COL[e.el || 'fire']; }
+        function splTick(sim) {
+            sim.t++; const env = sim.env;
+            for (let i = sim.ents.length - 1; i >= 0; i--) {
+                const e = sim.ents[i]; e.t++; let dead = false, cs = e.cs;
+                if (e.k === 'echo') { if (e.t >= e.delay) { splForm(sim, e.cs, e.ox, e.oy, e.a, e.tx, e.ty, 0.5); dead = true; } }
+                else if (e.k === 'bolt') {
+                    if (e.t > 1) {
+                        const steps = Math.max(1, Math.ceil(Math.hypot(e.vx, e.vy) / 7));
+                        for (let s = 0; s < steps && !dead; s++) {
+                            e.x += e.vx / steps; e.y += e.vy / steps;
+                            if (env.solid(Math.floor(e.x / 32), Math.floor(e.y / 32))) { splImpact(sim, e, e.x - e.vx / steps, e.y - e.vy / steps); dead = true; break; }
+                            for (const t of env.targets()) { if (t.o.hp <= 0 || e.hit.has(t.o)) continue; if (Math.hypot(t.x - e.x, t.y - e.y) <= t.r + e.r) { env.hit(t, e.d, cs, e); e.hit.add(t.o); if (e.pierce > 0) { e.pierce--; env.spark(e.x, e.y, splCol(e)[0], 5, 2.5, 3, 18); } else { splImpact(sim, e, e.x, e.y); dead = true; break; } } }
+                        }
+                    }
+                    if (!dead && e.t >= e.life) { env.spark(e.x, e.y, splCol(e)[0], 5, 2, 3, 20); dead = true; }
+                    if (!dead && e.t % 2 === 0) env.spark(e.x, e.y, splCol(e)[e.t % 4 ? 0 : 1], 1, 0.6, e.shard ? 2 : 3, 16);
+                }
+                else if (e.k === 'ring') {
+                    const p = Math.min(1, e.t / e.life), R = e.R * (1 - Math.pow(1 - Math.min(1, p * 1.25), 3)); e.cr = R;
+                    for (const t of env.targets()) { if (t.o.hp <= 0 || e.hit.has(t.o)) continue; if (Math.hypot(t.x - e.x, t.y - e.y) <= R + t.r) { e.hit.add(t.o); env.hit(t, e.d, cs, e); } }
+                    if (e.t % 2 === 0) { const a = Math.random() * 6.283; env.spark(e.x + Math.cos(a) * R, e.y + Math.sin(a) * R, splCol(e)[Math.random() < 0.5 ? 0 : 1], 1, 1, 3, 18); }
+                    if (e.t >= e.life) { if (cs.fx.burst && !cs.echo) for (let k = 0; k < 4; k++) splAoe(sim, cs, e.x + Math.cos(k * 1.5708 + 0.785) * e.R * 0.75, e.y + Math.sin(k * 1.5708 + 0.785) * e.R * 0.75, 80 * cs.aoe, cs.d * 0.4, k * 3); dead = true; }
+                }
+                else if (e.k === 'beam') {
+                    const ticks = [2, 10, 18]; if (ticks.includes(e.t)) {
+                        const c = Math.cos(e.a), s = Math.sin(e.a); e.hit.clear(); let hitAny = false;
+                        for (const t of env.targets()) { if (t.o.hp <= 0) continue; const px = t.x - e.x, py = t.y - e.y, pr = Math.max(0, Math.min(e.len, px * c + py * s)), dd = Math.hypot(px - c * pr, py - s * pr); if (dd <= t.r + e.w / 2) { env.hit(t, e.d, cs, e); hitAny = true; } }
+                        shakeSafe(1.2); if (e.t === 18) { const ex = e.x + c * e.len, ey = e.y + s * e.len; if (cs.fx.burst && e.mult === 1) splAoe(sim, cs, ex, ey, 85 * cs.aoe, cs.d * 0.5, 0); if (cs.fx.split && e.mult === 1) splShards(sim, cs, ex, ey, e.a, 3, cs.d * 0.4); }
+                    }
+                    if (e.t % 3 === 0) { const q = Math.random() * e.len; env.spark(e.x + Math.cos(e.a) * q, e.y + Math.sin(e.a) * q, splCol(e)[0], 1, 1.2, 2.5, 16); }
+                    if (e.t >= e.life) dead = true;
+                }
+                else if (e.k === 'rs') {
+                    if (e.t === e.delay + e.tele) {
+                        env.spark(e.x, e.y, splCol(e)[0], 12, 4, 3.5, 28); const R = e.R;
+                        for (const t of env.targets()) { if (t.o.hp <= 0) continue; if (Math.hypot(t.x - e.x, t.y - e.y) <= R + t.r) env.hit(t, e.d, cs, e); }
+                        if (cs.fx.burst && !cs.echo) splAoe(sim, cs, e.x, e.y, 70 * cs.aoe, cs.d * 0.25, 0); if (cs.fx.split && e.last && !cs.echo) splShards(sim, cs, e.x, e.y, -1.57, 3, cs.d * 0.4); shakeSafe(2);
+                        if (cs.el === 'void' && !cs.vis) for (const t of env.targets()) { const dd = Math.hypot(t.x - e.x, t.y - e.y); if (dd < 130 && (t.k === 'mob' || t.k === 'lmob')) t.o.vx += (e.x - t.x) / (dd || 1) * 2; }
+                    }
+                    if (e.t >= e.delay + e.tele + 14) dead = true;
+                }
+                else if (e.k === 'sp') {
+                    if (e.t === e.delay && !e.fired) {
+                        e.fired = 1; env.spark(e.x, e.gy, splCol(e)[0], 10, 3.5, 3.5, 26); shakeSafe(1.5);
+                        for (const t of env.targets()) { if (t.o.hp <= 0) continue; if (Math.abs(t.x - e.x) < 30 + t.r && t.y > e.gy - 100 && t.y < e.gy + 34) env.hit(t, e.d, cs, e); }
+                        if (e.last && !cs.echo) { if (cs.fx.burst) splAoe(sim, cs, e.x, e.gy - 20, 100 * cs.aoe, cs.d * 0.6, 0); if (cs.fx.split) splShards(sim, cs, e.x, e.gy - 30, -1.57, 3, cs.d * 0.4); }
+                    }
+                    if (e.t >= e.delay + 24) dead = true;
+                }
+                else if (e.k === 'aoe') {
+                    if (e.t === e.delay) { env.spark(e.x, e.y, splCol(e)[0], 12, 4, 3.5, 28); for (const t of env.targets()) { if (t.o.hp <= 0) continue; if (Math.hypot(t.x - e.x, t.y - e.y) <= e.R + t.r) env.hit(t, e.d * (1 - 0.35 * Math.min(1, Math.hypot(t.x - e.x, t.y - e.y) / (e.R + t.r))), cs, Object.assign({ noChain: true, x: e.x }, {})); } shakeSafe(1.5); }
+                    if (e.t >= e.delay + e.life) dead = true;
+                }
+                else if (e.k === 'arc') { if (e.t >= e.life) dead = true; }
+                if (dead) sim.ents.splice(i, 1);
+            }
+            for (let i = sim.parts.length - 1; i >= 0; i--) { const p = sim.parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.l--; if (p.l <= 0) sim.parts.splice(i, 1); }
+        }
+        const shakeSafe = v => { try { if (!SPL.pv) shake = Math.max(shake, v); } catch (e) { } };
+        // ---------- малювання ----------
+        function splGlow(c, x, y, r, col, a) { c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(x, y, 1, x, y, r); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0)); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); }
+        function splDrawBolt(c, x, y, ang, el, t, sz, seed) {
+            const [c1, c2] = SPL_COL[el]; sz = sz || 1; c.save(); c.translate(x, y); splGlow(c, 0, 0, 24 * sz, c1, 0.55);
+            if (el === 'fire') { c.rotate(ang); c.fillStyle = c1; c.beginPath(); c.moveTo(11 * sz, 0); c.quadraticCurveTo(0, -8 * sz, -16 * sz - Math.sin(t * 0.8 + seed) * 3, 0); c.quadraticCurveTo(0, 8 * sz, 11 * sz, 0); c.fill(); c.fillStyle = c2; c.beginPath(); c.moveTo(8 * sz, 0); c.quadraticCurveTo(0, -4 * sz, -8 * sz, 0); c.quadraticCurveTo(0, 4 * sz, 8 * sz, 0); c.fill(); }
+            else if (el === 'frost') { c.rotate(t * 0.15 + seed); c.fillStyle = c1; c.strokeStyle = c2; c.lineWidth = 1.5; c.beginPath(); for (let i = 0; i < 6; i++) { const a = i * 1.0472, r = (i % 2 ? 6 : 11) * sz; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 3 * sz, 0, 7); c.fill(); }
+            else if (el === 'storm') { c.fillStyle = c2; c.beginPath(); c.arc(0, 0, 5 * sz, 0, 7); c.fill(); c.strokeStyle = c1; c.lineWidth = 2; for (let i = 0; i < 3; i++) { let a = ((t * 7 + i * 2.1 + seed * 3) % 6.28), px = 0, py = 0; c.beginPath(); c.moveTo(0, 0); for (let k = 0; k < 3; k++) { a += Math.sin(t + k * 5 + i) * 0.8; px += Math.cos(a) * 5 * sz; py += Math.sin(a) * 5 * sz; c.lineTo(px, py); } c.stroke(); } }
+            else if (el === 'nature') { c.rotate(t * 0.12 + seed); c.fillStyle = c1; for (let i = 0; i < 4; i++) { c.rotate(1.5708); c.beginPath(); c.ellipse(6 * sz, 0, 6 * sz, 2.8 * sz, 0, 0, 7); c.fill(); } c.fillStyle = c2; c.beginPath(); c.arc(0, 0, 3 * sz, 0, 7); c.fill(); }
+            else { c.fillStyle = '#12041f'; c.beginPath(); c.arc(0, 0, 7 * sz, 0, 7); c.fill(); c.strokeStyle = c1; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 8.5 * sz, 0, 7); c.stroke(); for (let i = 0; i < 4; i++) { const a = t * 0.2 + i * 1.5708 + seed, r = (11 + ((t * 0.5 + i * 3) % 8)) * sz; c.fillStyle = c1; c.beginPath(); c.arc(Math.cos(a) * r, Math.sin(a) * r, 1.6, 0, 7); c.fill(); } }
+            c.restore();
+        }
+        function splDrawEnt(c, e, sim) {
+            const t = sim.t, el = e.el, [c1, c2] = SPL_COL[el || 'fire'], a = 1;
+            if (e.k === 'bolt') splDrawBolt(c, e.x, e.y, e.a, el, e.t, e.sz, e.x * 0.01);
+            else if (e.k === 'ring') {
+                const R = e.cr || 1, p = Math.min(1, e.t / e.life), al = 1 - p * 0.7; c.save(); c.translate(e.x, e.y); c.globalCompositeOperation = 'lighter';
+                const g = c.createRadialGradient(0, 0, R * 0.55, 0, 0, R); g.addColorStop(0, rgba(c1, 0)); g.addColorStop(1, rgba(c1, 0.35 * al)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
+                c.strokeStyle = rgba(c2, 0.9 * al); c.lineWidth = 3; c.beginPath(); c.arc(0, 0, R, 0, 7); c.stroke(); c.strokeStyle = rgba(c1, 0.8 * al); c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, R * 0.9, 0, 7); c.stroke();
+                const n = el === 'fire' ? 3 : el === 'frost' ? 6 : el === 'storm' ? 4 : el === 'nature' ? 5 : 8; c.rotate(e.t * 0.06); c.beginPath(); for (let i = 0; i <= n; i++) { const an = i / n * 6.283; c.lineTo(Math.cos(an) * R * 0.78, Math.sin(an) * R * 0.78); } c.stroke();
+                for (let i = 0; i < 16; i++) { const an = i / 16 * 6.283; c.beginPath(); c.moveTo(Math.cos(an) * R * 0.94, Math.sin(an) * R * 0.94); c.lineTo(Math.cos(an) * R * 1.0, Math.sin(an) * R * 1.0); c.stroke(); }
+                c.restore();
+            }
+            else if (e.k === 'beam') {
+                const p = e.t / e.life, w = e.w * Math.sin(Math.min(1, p * 1.1) * Math.PI) * 0.5 + 2; c.save(); c.translate(e.x, e.y); c.rotate(e.a); c.globalCompositeOperation = 'lighter';
+                const g = c.createLinearGradient(0, -w, 0, w); g.addColorStop(0, rgba(c1, 0)); g.addColorStop(0.5, rgba(c2, 0.95)); g.addColorStop(1, rgba(c1, 0)); c.fillStyle = g;
+                if (el === 'storm') { c.strokeStyle = rgba(c2, 0.95); c.lineWidth = 3; c.beginPath(); c.moveTo(0, 0); for (let x = 14; x <= e.len; x += 18) c.lineTo(x, Math.sin(x * 0.7 + e.t * 3.1 + x * x * 0.01) * w * 0.55); c.stroke(); c.strokeStyle = rgba(c1, 0.5); c.lineWidth = 9; c.stroke(); }
+                else if (el === 'nature') { c.strokeStyle = rgba(c1, 0.9); c.lineWidth = Math.max(2, w * 0.35); c.beginPath(); for (let x = 0; x <= e.len; x += 10) c.lineTo(x, Math.sin(x * 0.09 - e.t * 0.5) * w * 0.4); c.stroke(); c.strokeStyle = rgba(c2, 0.8); c.lineWidth = 1.5; c.stroke(); }
+                else if (el === 'frost') { c.fillRect(0, -w, e.len, w * 2); c.fillStyle = rgba('#ffffff', 0.7); for (let x = 12; x < e.len; x += 38) { c.beginPath(); c.moveTo(x, -w * 0.5); c.lineTo(x + 8, 0); c.lineTo(x, w * 0.5); c.lineTo(x - 8, 0); c.fill(); } }
+                else if (el === 'void') { c.fillStyle = 'rgba(8,0,18,.85)'; c.globalCompositeOperation = 'source-over'; c.fillRect(0, -w * 0.45, e.len, w * 0.9); c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba(c1, 0.9); c.lineWidth = 2; c.strokeRect(0, -w * 0.5, e.len, w); }
+                else { c.fillRect(0, -w, e.len, w * 2); c.fillStyle = rgba('#ffffff', 0.85); c.fillRect(0, -w * 0.25, e.len, w * 0.5); }
+                c.restore(); splGlow(c, e.x, e.y, 28, c1, 0.6 * (1 - p));
+            }
+            else if (e.k === 'rs') {
+                const tt = e.t - e.delay; if (tt < 0) return;
+                if (tt < e.tele) { const q = tt / e.tele; c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba(c1, 0.35 + 0.5 * q); c.lineWidth = 2; c.beginPath(); c.ellipse(e.x, e.y + 8, e.R * (1 - q * 0.15), e.R * 0.28, 0, 0, 7); c.stroke(); c.fillStyle = rgba(c1, 0.07 + 0.12 * q); c.fill(); c.strokeStyle = rgba(c2, 0.6 * q); c.beginPath(); c.ellipse(e.x, e.y + 8, e.R * q, e.R * 0.28 * q, 0, 0, 7); c.stroke(); c.restore(); const fy = e.y - 320 * (1 - q) * (1 - q) - 6; if (q > 0.45) splDrawBolt(c, e.x, fy, 1.57, el, tt, 1, e.x * 0.02); }
+            }
+            else if (e.k === 'sp') {
+                const tt = e.t - e.delay; if (tt < 0 || tt > 24) return; const q = tt / 24, h = Math.sin(Math.min(1, tt / 6) * 1.5708) * (1 - Math.max(0, (q - 0.5) * 2)) * 74; c.save(); c.translate(e.x, e.gy); c.globalAlpha = 1 - Math.max(0, q - 0.7) / 0.3;
+                if (el === 'fire') { for (let i = 0; i < 3; i++) { c.fillStyle = i ? c2 : c1; c.beginPath(); c.moveTo(-14 + i * 9, 0); c.quadraticCurveTo(-8 + i * 9 + Math.sin(tt + i) * 4, -h * (1 - i * 0.2), -9 + i * 9, -h * (1 - i * 0.2) - 6); c.quadraticCurveTo(-2 + i * 9, -h * 0.4, -2 + i * 9, 0); c.fill(); } splGlow(c, 0, -h * 0.5, 34, c1, 0.4); }
+                else if (el === 'frost') { for (const [dx, k] of [[-12, 0.7], [0, 1], [12, 0.8]]) { c.fillStyle = c1; c.strokeStyle = c2; c.lineWidth = 1.4; c.beginPath(); c.moveTo(dx - 7, 0); c.lineTo(dx, -h * k); c.lineTo(dx + 7, 0); c.closePath(); c.fill(); c.stroke(); } }
+                else if (el === 'storm') { c.strokeStyle = c2; c.lineWidth = 3; c.beginPath(); c.moveTo(0, 0); let y = 0; while (y > -h) { y -= 12; c.lineTo(Math.sin(y * 0.8 + tt) * 7, y); } c.stroke(); c.strokeStyle = rgba(c1, 0.5); c.lineWidth = 8; c.stroke(); splGlow(c, 0, -h * 0.5, 30, c1, 0.4); }
+                else if (el === 'nature') { c.strokeStyle = '#2f8a3a'; c.lineWidth = 4; c.beginPath(); c.moveTo(0, 0); for (let y = 0; y > -h; y -= 6) c.lineTo(Math.sin(y * 0.12 + tt * 0.3) * 8, y); c.stroke(); c.fillStyle = c1; for (let y = -10; y > -h; y -= 14) { c.beginPath(); c.moveTo(Math.sin(y * 0.12 + tt * 0.3) * 8, y); c.lineTo(Math.sin(y * 0.12 + tt * 0.3) * 8 + (y % 28 ? 9 : -9), y - 6); c.lineTo(Math.sin(y * 0.12 + tt * 0.3) * 8, y - 3); c.fill(); } }
+                else { c.fillStyle = '#12041f'; c.strokeStyle = c1; c.lineWidth = 2; c.beginPath(); c.moveTo(-9, 0); c.quadraticCurveTo(-4 + Math.sin(tt * 0.5) * 5, -h * 0.6, 4 * Math.sin(tt * 0.4), -h); c.quadraticCurveTo(4, -h * 0.5, 9, 0); c.closePath(); c.fill(); c.stroke(); splGlow(c, 0, -h * 0.4, 28, c1, 0.3); }
+                c.restore();
+            }
+            else if (e.k === 'aoe') {
+                const tt = e.t - e.delay; if (tt < 0) return; const q = tt / e.life, R = e.R * (0.35 + 0.65 * Math.sqrt(q)); c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(e.x, e.y, 1, e.x, e.y, R); g.addColorStop(0, rgba(c2, 0.8 * (1 - q))); g.addColorStop(0.6, rgba(c1, 0.45 * (1 - q))); g.addColorStop(1, rgba(c1, 0)); c.fillStyle = g; c.beginPath(); c.arc(e.x, e.y, R, 0, 7); c.fill(); c.strokeStyle = rgba(c2, 0.8 * (1 - q)); c.lineWidth = 2; c.beginPath(); c.arc(e.x, e.y, R, 0, 7); c.stroke(); c.restore();
+            }
+            else if (e.k === 'arc') {
+                const al = 1 - e.t / e.life; c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba('#ffffff', al); c.lineWidth = 2.5; c.beginPath(); c.moveTo(e.x, e.y); const n = 6, dx = (e.x2 - e.x) / n, dy = (e.y2 - e.y) / n; for (let i = 1; i < n; i++) c.lineTo(e.x + dx * i + (Math.random() - 0.5) * 16, e.y + dy * i + (Math.random() - 0.5) * 16); c.lineTo(e.x2, e.y2); c.stroke(); c.strokeStyle = rgba(c1, al * 0.6); c.lineWidth = 7; c.stroke(); c.restore();
+            }
+        }
+        function splDraw(c, sim) { for (const e of sim.ents) splDrawEnt(c, e, sim); }
+
+        // ---------- світ: ініціалізація, цикл, мережа ----------
+        SPL.sim = splNewSim();
+        function splGotoSpell() { return RPG.sp.sl[RPG.sp.sel] || null; }
+        const splMP = () => { try { return typeof zlMP === 'function' && zlMP(); } catch (e) { return false; } };
+        function splLearned(k, id) { return RPG.sp.l[k].includes(id); }
+        function splHasRune(id) { return hasItemCount('rn_' + id, 1); }
+        function splDiscover(s) {
+            const key = splKey(s); if (!SPL_RARE[key] || RPG.sp.disc[key]) return; RPG.sp.disc[key] = 1; const n = Object.keys(RPG.sp.disc).length;
+            try {
+                v26Banner('✨ Відкрито: «' + SPL_RARE[key] + '»', 'Рідкісне поєднання ' + n + '/' + SPL_RK.length + ' · шкода +18%, мана −10%'); zlTone('triangle', 440, 1760, 1, 0.12); zlTone('sine', 330, 990, 1.2, 0.08);
+                for (let i = 0; i < 46; i++) createParticles(player.x + 12 + (Math.random() - 0.5) * 120, player.y - Math.random() * 80, SPL_COL[s.e][i % 2], 1, 3.5, 4, 50);
+            } catch (e) { }
+            const ms = RPG.sp.ms | 0;
+            if (n >= 4 && ms < 1) { RPG.sp.ms = 1; giveItem('crystal_ingot', 5); giveItem('life_potion', 3); try { floatingTexts.push({ x: player.x, y: player.y - 40, text: '🎁 Мітка кодексу 4: кришталеві злитки', color: '#ffd88a', life: 90 }); } catch (e) { } }
+            if (n >= 8 && ms < 2) { RPG.sp.ms = 2; giveItem('mage_talisman', 1); try { floatingTexts.push({ x: player.x, y: player.y - 40, text: '🎁 Мітка кодексу 8: Талісман чародія!', color: '#ffd88a', life: 90 }); } catch (e) { } }
+            if (n >= 12 && ms < 3) { RPG.sp.ms = 3; giveItem('cosmic_ingot', 4); giveItem('gold_coin', 400); try { v26Banner('📖 Кодекс завершено!', 'Усі рідкісні закляття відкрито'); } catch (e) { } }
+            updateInventoryUI();
+        }
+        function splDoCast() {
+            const sp = splGotoSpell(); if (!sp) { floatingTexts.push({ x: player.x - 10, y: player.y - 16, text: 'Порожня сторінка — запиши закляття на Рунному верстаті', color: '#d8b8ff', life: 50 }); return false; }
+            const gd = splBase(), q = splCalc(sp, gd);
+            if (RPG.mana < q.mana) { rpgNoMana(); player.atkCD = 16; return false; }
+            RPG.mana -= q.mana; RPG.manaT = 50; const A = aimInfo(), tx = mouse.worldX, ty = mouse.worldY;
+            const cs = splCast(SPL.sim, sp, gd, A.px, A.py, A.a, tx, ty, false); SPL.setCd = q.cd; SPL.cdMax = q.cd; SPL.cdv = q.cd;
+            try { classSound('tome'); zlTone(sp.e === 'fire' ? 'sawtooth' : sp.e === 'frost' ? 'sine' : sp.e === 'storm' ? 'square' : sp.e === 'nature' ? 'triangle' : 'sine', sp.e === 'frost' ? 1300 : sp.e === 'void' ? 180 : 520, sp.e === 'frost' ? 500 : sp.e === 'void' ? 50 : 180, 0.28, 0.07); } catch (e) { }
+            for (let i = 0; i < 8; i++) createParticles(A.px + A.c * 20, A.py + A.s * 20, SPL_COL[sp.e][i % 2], 1, 3, 3, 22);
+            if (splMP()) mpSend({ t: 'x_sp', k: 'c', f: sp.f, e: sp.e, x: sp.x, ox: Math.round(A.px), oy: Math.round(A.py), a: +A.a.toFixed(3), tx: Math.round(tx), ty: Math.round(ty), gd });
+            splDiscover(sp); return true;
+        }
+        const KINDS_tome0 = KINDS.tome;
+        KINDS.tome = function (W, A, ab, am, it) { if (W.spl) return splDoCast() ? undefined : false; return KINDS_tome0.apply(this, arguments); };
+        weaponUse = (function (o) { return function () { const r = o.apply(this, arguments); try { if (SPL.setCd > 0) { player.atkCD = Math.max(3, Math.round(SPL.setCd * RPG.st.atkSpd)); SPL.setCd = 0; } } catch (e) { } return r; }; })(weaponUse);
+        mpOnMsg = (function (o) {
+            return function (m) {
+                if (m && m.t === 'x_sp') { try { if (m.k === 'c' && SPL_F[m.f] && SPL_E[m.e] && SPL_X[m.x || 'none']) { const P = MP.players && MP.players[m.id]; if (P) splCast(SPL.sim, { f: m.f, e: m.e, x: m.x }, +m.gd || 55, +m.ox, +m.oy, +m.a, +m.tx, +m.ty, true); } } catch (e) { } return; }
+                return o.apply(this, arguments);
+            };
+        })(mpOnMsg);
+        // перемикання сторінок: X
+        document.addEventListener('keydown', e => {
+            if (e.code !== 'KeyX' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || gameState !== 'PLAYING' || SPL.open || (e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) return;
+            const it = inventory[selectedHotbarSlot]; if (!it || !WEAPONS[it.id] || !WEAPONS[it.id].spl) return;
+            const n = splSlots(); let i = RPG.sp.sel; for (let k = 0; k < 4; k++) { i = (i + 1) % n; if (RPG.sp.sl[i]) { RPG.sp.sel = i; break; } }
+            try { playSound('pickup'); } catch (e2) { } SPL.hf = 0;
+        });
+
+        // ---------- drops рун ----------
+        function splOwned(id) { return splLearned(splRuneKind(id), id) || hasItemCount('rn_' + id, 1); }
+        function splGiveRune(id, why) {
+            if (!id || splOwned(id)) return false; giveItem('rn_' + id, 1);
+            try { v26Banner('🔮 Руна «' + (SPL_F[id] || SPL_E[id] || SPL_X[id]).n + '»', (why || 'Здобуто') + ' · вивчи її на Рунному верстаті'); zlTone('triangle', 600, 1500, 0.6, 0.1); for (let i = 0; i < 18; i++) createParticles(player.x + 12 + (Math.random() - 0.5) * 60, player.y - Math.random() * 50, '#c8a8ff', 1, 2.5, 3.5, 40); } catch (e) { }
+            return true;
+        }
+        const splUnowned = () => Object.keys(SPL_SRC).filter(id => !splOwned(id));
+        rpgKill = (function (o) {
+            return function (kind, x, y) {
+                try {
+                    if (!V364.noProf && gameState === 'PLAYING') {
+                        if (typeof kind === 'string') {
+                            for (const id in SPL_SRC) { const S = SPL_SRC[id]; if (S[0].includes(kind) && Math.random() < S[1] * (1 + Math.min(1, RPG.level / 60) * 0.3)) { splGiveRune(id, 'Випала з ворога'); break; } }
+                            if (Math.random() < 0.0004) { const u = splUnowned(); if (u.length) splGiveRune(u[Math.random() * u.length | 0], 'Рідкісна знахідка'); }
+                        } else if (typeof kind === 'number' && Math.random() < 0.35) { const u = splUnowned(); if (u.length) splGiveRune(u[Math.random() * u.length | 0], 'Трофей боса'); }
+                    }
+                } catch (e) { } return o.apply(this, arguments);
+            };
+        })(rpgKill);
+        window.__splEventRune = function (k) { const id = { sp: 'nature', su: 'storm', au: 'echo', wi: 'frost' }[k]; if (id && Math.random() < 0.3) splGiveRune(id, 'Нагорода події'); };
+
+        // ---------- ПКМ по верстату + UI ----------
+        {
+            const st = document.createElement('style');
+            st.textContent = `#spl-ui{position:fixed;inset:0;z-index:75;display:none;align-items:center;justify-content:center;background:rgba(8,5,18,.66);backdrop-filter:blur(3px)}
+#spl-ui .sp-p{width:min(940px,96vw);max-height:94vh;overflow:auto;background:linear-gradient(#241a40,#120c24);border:3px solid #7a5aff;border-radius:14px;box-shadow:0 0 50px #4a2aaa88;padding:14px 18px;color:#ece4ff;font:600 13px "Segoe UI",sans-serif;animation:splIn .3s ease-out}
+@keyframes splIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+#spl-ui h2{margin:0;font:800 20px "Segoe UI",sans-serif;color:#d8b8ff;letter-spacing:1px}
+#spl-ui .sp-hd{display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap}#spl-ui .sp-x{margin-left:auto;cursor:pointer;background:#0006;border:1px solid #7a5aff;border-radius:8px;padding:4px 12px;color:#ece4ff;font-weight:800}
+#spl-ui .sp-tb button{background:#1a1230;border:1px solid #5a3aaa;color:#bfa8ff;border-radius:8px;padding:5px 14px;margin-right:6px;cursor:pointer;font:800 12px "Segoe UI"}#spl-ui .sp-tb button.on{background:#4a2aaa;color:#fff;box-shadow:0 0 10px #7a5aff}
+#spl-ui .sp-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:8px 0}
+#spl-ui .sp-c h4{margin:0 0 5px;font:800 12px "Segoe UI";color:#ffd88a;letter-spacing:1px}
+#spl-ui .sp-r{display:flex;align-items:center;gap:8px;background:#150e28;border:2px solid #3a2a68;border-radius:9px;padding:5px 8px;margin-bottom:5px;cursor:pointer;transition:.15s}
+#spl-ui .sp-r:hover{border-color:#8a6aff}#spl-ui .sp-r.on{border-color:var(--rc,#b388ff);box-shadow:0 0 12px var(--rc,#b388ff);background:#241a44}#spl-ui .sp-r.lk{opacity:.5;cursor:help}
+#spl-ui .sp-r i{font-style:normal;font-size:20px;width:26px;text-align:center}#spl-ui .sp-r small{display:block;font-weight:500;color:#a99ad0;font-size:11px;line-height:1.2}
+#spl-ui .sp-pv{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;background:#0d0820;border:2px solid #4a2aaa;border-radius:10px;padding:10px}
+#spl-ui canvas{position:static!important;background:linear-gradient(#0c0a1e,#1a1236);border-radius:8px;border:1px solid #5a3aaa}
+#spl-ui .sp-st{flex:1;min-width:230px}#spl-ui .sp-st h3{margin:0 0 4px;font:800 17px "Segoe UI";color:#fff}#spl-ui .sp-st b{color:#ffd88a}
+#spl-ui .sp-b{display:inline-block;background:#3a2a8a;border:1px solid #8a6aff;border-radius:8px;padding:5px 11px;margin:4px 5px 0 0;cursor:pointer;font:800 12px "Segoe UI";color:#fff}#spl-ui .sp-b:hover{background:#5a3acc}#spl-ui .sp-b.off{opacity:.4;cursor:not-allowed}
+#spl-ui .sp-sl{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}#spl-ui .sp-sl div{min-width:140px;flex:1;background:#150e28;border:2px solid #3a2a68;border-radius:8px;padding:5px 8px;font-size:12px}
+#spl-ui .sp-msg{min-height:18px;color:#ffd88a;margin-top:6px;font-weight:800}
+#spl-ui .sp-k{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:8px}#spl-ui .sp-k div{background:#150e28;border:2px solid #3a2a68;border-radius:9px;padding:8px 10px}#spl-ui .sp-k .ok{border-color:#ffd88a;box-shadow:0 0 10px #ffd88a55}
+#spl-hud{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:6;display:none;gap:6px;pointer-events:none}
+#spl-hud div{min-width:118px;background:linear-gradient(#1c1236ee,#0e0820ee);border:2px solid #4a3a8a;border-radius:9px;padding:3px 8px 5px;color:#d8ccff;font:700 11px "Segoe UI",sans-serif;text-align:center;position:relative;overflow:hidden}
+#spl-hud div.on{border-color:var(--sc,#b388ff);box-shadow:0 0 12px var(--sc,#b388ff);color:#fff}#spl-hud div.em{opacity:.35}#spl-hud div.lk{opacity:.25}
+#spl-hud s{position:absolute;left:0;bottom:0;height:3px;background:var(--sc,#b388ff);text-decoration:none}`;
+            document.head.appendChild(st);
+            const u = document.createElement('div'); u.id = 'spl-ui'; document.body.appendChild(u); SPL.ui = u; u.addEventListener('mousedown', e => { if (e.target === u) splClose(); });
+            const h = document.createElement('div'); h.id = 'spl-hud'; document.body.appendChild(h); SPL.hud = h;
+        }
+        ZL.act[106] = function (bx, by) { SPL.bx = bx * 32; SPL.by = by * 32; SPL.open = true; SPL.msg = ''; SPL.ui.style.display = 'flex'; splRender(); splPvStart(); zlTone('triangle', 260, 520, 0.2, 0.06); return true; };
+        function splClose() { SPL.open = false; SPL.ui.style.display = 'none'; cancelAnimationFrame(SPL.raf); SPL.pv = null; }
+        function splRuneCard(k, id) {
+            const D = (k === 'f' ? SPL_F : k === 'e' ? SPL_E : SPL_X)[id], known = splLearned(k, id), on = SPL.pick[k] === id, col = k === 'e' ? SPL_COL[id][0] : k === 'f' ? '#b388ff' : '#ffd24a';
+            if (!known) return `<div class="sp-r lk" title="Руна не вивчена. Де шукати: ${(SPL_SRC[id] || [0, 0, ''])[2]}"><i>🔒</i><div>${D.n}<small>Де шукати: ${(SPL_SRC[id] || [0, 0, ''])[2]}</small></div></div>`;
+            return `<div class="sp-r${on ? ' on' : ''}" data-k="${k}" data-id="${id}" style="--rc:${col}"><i>${D.ic}</i><div>${D.n}<small>${D.d}</small></div></div>`;
+        }
+        function splRender() {
+            const sp = SPL.pick, S = { f: sp.f, e: sp.e, x: sp.x }, q = splCalc(S, splBase0()), name = splName(S), rare = splRare(S), slots = splSlots(), gt = splGrim();
+            let h = `<div class="sp-p"><div class="sp-hd"><h2>📖 РУННИЙ ВЕРСТАТ</h2><div class="sp-tb"><button data-tab="0" class="${SPL.tab === 0 ? 'on' : ''}">Конструктор</button><button data-tab="1" class="${SPL.tab === 1 ? 'on' : ''}">Руни в сумці</button><button data-tab="2" class="${SPL.tab === 2 ? 'on' : ''}">Кодекс ${Object.keys(RPG.sp.disc).length}/${SPL_RK.length}</button></div><div class="sp-x" data-close="1">✕ Закрити</div></div>`;
+            if (SPL.tab === 0) {
+                h += `<div class="sp-g"><div class="sp-c"><h4>ФОРМА</h4>${Object.keys(SPL_F).map(i => splRuneCard('f', i)).join('')}</div><div class="sp-c"><h4>СТИХІЯ</h4>${Object.keys(SPL_E).map(i => splRuneCard('e', i)).join('')}</div><div class="sp-c"><h4>ЕФЕКТ</h4>${Object.keys(SPL_X).map(i => splRuneCard('x', i)).join('')}</div></div>`;
+                h += `<div class="sp-pv"><canvas id="spl-cv" width="330" height="190"></canvas><div class="sp-st"><h3 style="color:${rare ? '#ffd88a' : '#fff'}">${rare ? '✨ ' : ''}${name}</h3><div>Шкода: <b>${Math.round(q.dmg)}</b> <small>(з Гримуаром ${gt ? 'ур. ' + gt : '— немає'})</small></div><div>Мана: <b>${q.mana}</b> · Перезарядка: <b>${(q.cd / 60).toFixed(2)} с</b></div><div style="margin-top:4px;color:#b8a8e8;font-weight:500">${SPL_F[sp.f].d}<br>${SPL_E[sp.e].d}<br>${sp.x !== 'none' ? SPL_X[sp.x].d : ''}</div>${rare ? '<div style="color:#ffd88a;margin-top:4px">Рідкісне поєднання: шкода +18%, мана −10%</div>' : ''}`;
+                h += `<div>${[0, 1, 2, 3].map(i => `<span class="sp-b${i >= slots ? ' off' : ''}" data-save="${i}">${i >= slots ? '🔒' : '✎'} Сторінка ${i + 1}</span>`).join('')}</div></div></div>`;
+                h += `<div class="sp-sl">${[0, 1, 2, 3].map(i => { const s = RPG.sp.sl[i]; return `<div style="${i >= slots ? 'opacity:.35' : ''}">${i + 1}. ${i >= slots ? '🔒 потрібен вищий Гримуар' : s ? (splRare(s) ? '✨ ' : '') + splName(s) + ` <small>${Math.round(splCalc(s, splBase0()).mana)} мани</small>` : '<small>порожня</small>'}${s && i < slots ? ` <span class="sp-b" style="padding:1px 6px;margin:0 0 0 4px" data-clr="${i}">✕</span>` : ''}</div>`; }).join('')}</div>`;
+                h += `<div style="margin-top:6px;color:#9a8cc8;font-weight:500">${gt ? 'Тримай Гримуар у руках: ЛКМ — закляття, <b>X</b> — наступна сторінка.' : 'Потрібен Гримуар (створюється з дерева, залізних злитків і зілля мани). Кількість сторінок залежить від його рівня.'}</div>`;
+            } else if (SPL.tab === 1) {
+                const items = []; for (const it of inventory) if (it && /^rn_/.test(it.id)) items.push(it);
+                h += `<div style="margin:6px 0 10px;color:#b8a8e8;font-weight:500">Руни випадають з рідкісних ворогів, босів і нагород сезонних подій. Вивчена руна лишається назавжди.</div>`;
+                h += items.length ? items.map(it => { const id = it.id.slice(3), D = SPL_F[id] || SPL_E[id] || SPL_X[id], k = splRuneKind(id); return `<div class="sp-r" style="--rc:#b388ff"><i>🔮</i><div>Руна «${D.n}» ×${it.count}<small>${D.d}</small></div><span class="sp-b" data-learn="${id}" style="margin-left:auto">Вивчити</span></div>`; }).join('') : '<div style="padding:16px;color:#a99ad0">У сумці немає нерозпізнаних рун. Подивись у конструкторі, де шукати кожну (🔒).</div>';
+            } else {
+                h += `<div style="margin:6px 0;color:#b8a8e8;font-weight:500">Деякі поєднання — рідкісні: вони мають власні назви й бонус. Відкриваються при першому застосуванні. За 4, 8 та 12 відкриттів — нагороди.</div><div class="sp-k">` + SPL_RK.map(k => { const ok = RPG.sp.disc[k], [f, e, x] = k.split('|'); return `<div class="${ok ? 'ok' : ''}"><b>${ok ? '✨ ' + SPL_RARE[k] : '❓ Невідоме поєднання'}</b><br><small style="color:#a99ad0">${ok ? SPL_F[f].ic + ' ' + SPL_F[f].n + ' + ' + SPL_E[e].ic + ' ' + SPL_E[e].n + ' + ' + SPL_X[x].ic + ' ' + SPL_X[x].n : 'Форма: ' + (Object.keys(RPG.sp.disc).length >= 6 ? SPL_F[f].ic + ' ' + SPL_F[f].n : '???') + ' · Стихія: ' + (Object.keys(RPG.sp.disc).length >= 3 ? SPL_E[e].ic + ' ' + SPL_E[e].n : '???') + ' · Ефект: ???'}</small></div>`; }).join('') + '</div>';
+            }
+            h += `<div class="sp-msg">${SPL.msg || ''}</div></div>`; SPL.ui.innerHTML = h;
+            SPL.ui.querySelectorAll('[data-k]').forEach(el => el.onclick = () => { SPL.pick[el.dataset.k] = el.dataset.id; SPL.msg = ''; splRender(); splPvStart(); });
+            SPL.ui.querySelectorAll('[data-tab]').forEach(el => el.onclick = () => { SPL.tab = +el.dataset.tab; SPL.msg = ''; splRender(); if (SPL.tab === 0) splPvStart(); });
+            SPL.ui.querySelectorAll('[data-close]').forEach(el => el.onclick = splClose);
+            SPL.ui.querySelectorAll('[data-save]').forEach(el => el.onclick = () => { const i = +el.dataset.save; if (i >= splSlots()) { SPL.msg = 'Потрібен Гримуар вищого рівня'; splRender(); splPvStart(); return; } RPG.sp.sl[i] = { f: SPL.pick.f, e: SPL.pick.e, x: SPL.pick.x }; SPL.msg = '✔ Записано на сторінку ' + (i + 1) + ': ' + splName(SPL.pick); try { zlTone('triangle', 500, 900, 0.25, 0.08); } catch (e) { } if (!splGrim()) SPL.msg += ' (потрібен Гримуар, щоб читати закляття)'; splRender(); splPvStart(); });
+            SPL.ui.querySelectorAll('[data-clr]').forEach(el => el.onclick = () => { RPG.sp.sl[+el.dataset.clr] = null; if (RPG.sp.sel === +el.dataset.clr) RPG.sp.sel = Math.max(0, RPG.sp.sl.findIndex(Boolean)); splRender(); splPvStart(); });
+            SPL.ui.querySelectorAll('[data-learn]').forEach(el => el.onclick = () => {
+                const id = el.dataset.learn, k = splRuneKind(id); if (!hasItemCount('rn_' + id, 1)) return; consumeItemCount('rn_' + id, 1); if (!RPG.sp.l[k].includes(id)) RPG.sp.l[k].push(id);
+                SPL.msg = '✨ Руну «' + (SPL_F[id] || SPL_E[id] || SPL_X[id]).n + '» вивчено!'; try { zlTone('triangle', 400, 1600, 0.6, 0.1); updateInventoryUI(); } catch (e) { } splRender();
+            });
+        }
+        const splBase0 = () => { const t = splGrim(); return t ? [55, 100, 150][t - 1] : 55; };
+        // анімований попередній перегляд
+        function splPvStart() {
+            cancelAnimationFrame(SPL.raf); const cv = document.getElementById('spl-cv'); if (!cv) { SPL.pv = null; return; }
+            const env = { vis: true, solid: (bx, by) => by * 32 >= 160, targets: () => [PV.dummy], spark: (x, y, col, n, sp, sz, life) => { for (let i = 0; i < n; i++) PV.sim.parts.push({ x, y, vx: (Math.random() - 0.5) * (sp || 2.5), vy: (Math.random() - 0.5) * (sp || 2.5), l: life || 22, ml: life || 22, col, sz: sz || 3 }); }, hit(t, d, cs) { PV.dummy.fl = 8; PV.sim.parts.push({ x: t.x, y: t.y - 24, vx: 0, vy: -0.5, l: 22, ml: 22, col: '#fff', txt: Math.round(d * (RPG.st.mult.magic || 1)) + '' }); env.spark(t.x, t.y, cs.col, 6, 3, 3, 20); } };
+            const PV = SPL.pv = { sim: splNewSim(env), dummy: { o: { hp: 1e9, vx: 0 }, k: 'mob', x: 262, y: 138, r: 20, fl: 0 }, t: 0, cs: null };
+            const sp = { f: SPL.pick.f, e: SPL.pick.e, x: SPL.pick.x }, c = cv.getContext('2d');
+            const loop = () => {
+                if (!SPL.open || SPL.pv !== PV || !document.getElementById('spl-cv')) return; PV.t++;
+                if (PV.t % 100 === 1) splCast(PV.sim, sp, splBase0(), 52, 128, 0, 262, 140, true);
+                splTick(PV.sim); PV.dummy.o.vx = 0; if (PV.dummy.fl > 0) PV.dummy.fl--;
+                c.clearRect(0, 0, 330, 190); const g = c.createLinearGradient(0, 0, 0, 190); g.addColorStop(0, '#0c0a1e'); g.addColorStop(1, '#1a1236'); c.fillStyle = g; c.fillRect(0, 0, 330, 190);
+                c.fillStyle = '#2a1e4a'; c.fillRect(0, 160, 330, 30); c.fillStyle = '#4a3a8a'; c.fillRect(0, 160, 330, 2);
+                // маг
+                c.fillStyle = '#5a3aaa'; c.fillRect(44, 118, 16, 34); c.fillStyle = '#e8c8a0'; c.fillRect(46, 108, 12, 11); c.fillStyle = '#3a2a7a'; c.fillRect(42, 104, 16, 6); splGlow(c, 62, 128, 16 + Math.sin(PV.t * 0.1) * 2, SPL_COL[sp.e][0], 0.5);
+                // опудало
+                const dm = PV.dummy; c.fillStyle = dm.fl ? '#ffffff' : '#a88a5a'; c.fillRect(257, 128, 10, 32); c.fillRect(246, 134, 32, 5); c.fillStyle = dm.fl ? '#fff' : '#caa66e'; c.beginPath(); c.arc(262, 122, 8, 0, 7); c.fill();
+                splDraw(c, PV.sim);
+                for (const p of PV.sim.parts) { c.globalAlpha = Math.max(0, p.l / p.ml); if (p.txt) { c.fillStyle = '#fff'; c.font = '800 12px Segoe UI'; c.fillText(p.txt, p.x - 8, p.y); } else { c.fillStyle = p.col; c.fillRect(p.x, p.y, p.sz, p.sz); } } c.globalAlpha = 1;
+                SPL.raf = requestAnimationFrame(loop);
+            };
+            SPL.raf = requestAnimationFrame(loop);
+        }
+        // ---------- малювання у світі + HUD ----------
+        drawBossesAll = (function (o) { return function (t) { o.apply(this, arguments); try { if (SPL.sim.ents.length) { ctx.save(); splDraw(ctx, SPL.sim); ctx.restore(); } } catch (e) { } }; })(drawBossesAll);
+        drawBlockTile = (function (o) {
+            return function (bId, x, y, t) {
+                o.apply(this, arguments);
+                if (bId === 106) { try { const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(150,110,255,${0.12 + 0.06 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.arc(px + 16, py + 8, 14 + Math.sin(t * 2) * 2, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(200,170,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(px + 16, py + 4 - Math.sin(t * 2) * 3, 8, 3, t * 0.8, 0, 7); ctx.stroke(); ctx.restore(); } catch (e) { } }
+            };
+        })(drawBlockTile);
+        updateGame = (function (o) {
+            return function () {
+                const r = o.apply(this, arguments);
+                try {
+                    if (gameState !== 'PLAYING') return r; SPL.f++;
+                    if (SPL.sim.ents.length) splTick(SPL.sim); if (SPL.sim.parts.length) SPL.sim.parts.length = 0; splDotTick();
+                    if (SPL.cdv > 0) SPL.cdv--;
+                    if (SPL.f % 3 === 0) splHud();
+                    if (SPL.open && Math.hypot(player.x + 12 - (SPL.bx + 16), player.y + 22 - (SPL.by + 16)) > 260) splClose();
+                } catch (e) { }
+                return r;
+            };
+        })(updateGame);
+        function splHud() {
+            const it = inventory[selectedHotbarSlot], on = it && WEAPONS[it.id] && WEAPONS[it.id].spl, el = SPL.hud;
+            if (!on) { if (el.style.display !== 'none') el.style.display = 'none'; return; }
+            const n = splSlots(), sig = RPG.sp.sel + '|' + RPG.sp.sl.map(s => s ? splKey(s) : '-').join(',') + n + (SPL.cdv > 0 ? 'c' : '') + Math.round(RPG.mana / 5);
+            el.style.display = 'flex'; if (sig === SPL.hsig && SPL.cdv <= 0) return; SPL.hsig = sig;
+            el.innerHTML = [0, 1, 2, 3].map(i => { const s = RPG.sp.sl[i], lk = i >= n, q = s ? splCalc(s, splBase()) : null; return `<div class="${lk ? 'lk' : s ? (i === RPG.sp.sel ? 'on' : '') : 'em'}" style="--sc:${s ? SPL_COL[s.e][0] : '#8a6aff'}">${lk ? '🔒' : s ? SPL_E[s.e].ic + SPL_F[s.f].ic + (s.x !== 'none' ? SPL_X[s.x].ic : '') : '—'}<br>${s && !lk ? (splRare(s) ? '✨' : '') + splName(s) + '<br><span style="color:' + (RPG.mana >= q.mana ? '#8fd0ff' : '#ff8a8a') + '">' + q.mana + ' мани</span>' : lk ? 'вищий Гримуар' : 'порожньо'}${i === RPG.sp.sel && SPL.cdv > 0 ? `<s style="width:${SPL.cdv / SPL.cdMax * 100}%"></s>` : ''}</div>`; }).join('');
+        }
+        window.__spl = { SPL, SPL_F, SPL_E, SPL_X, SPL_RARE, splCast, splTick, splCalc, splName, splGiveRune, splDoCast };
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['41.4', 'Мегаструктури й контракти', 'new'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['41.8', 'Конструктор заклять', 'new'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '41.8': [
+                ['#b388ff', '📖 Конструктор заклять', 'Постав <b>Рунний верстат</b> і клацни по ньому ПКМ. Закляття збирається з трьох рун: <b>Форма</b> (снаряд, хвиля, промінь, злива, шипи), <b>Стихія</b> (вогонь, лід, буря, природа, порожнеча) та <b>Ефект</b> (пробиття, вибух, відлуння, висмоктування, розкол). Поруч — анімований перегляд закляття, шкода, мана й перезарядка.'],
+                ['#ffd88a', '✨ Гримуар і рідкісні поєднання', 'Закляття записуються на сторінки <b>Гримуара</b> (2–4 сторінки залежно від рівня). Тримай книгу в руках: ЛКМ — каст, <b>X</b> — наступна сторінка. 12 поєднань рідкісні: мають власні імена, бонус до шкоди й знижену ману; їх відкриває лише експеримент. У Кодексі є нагороди за 4, 8 та 12 відкриттів.'],
+                ['#c8a8ff', '🔮 Руни — надовго', 'Окрім стартових (Снаряд, Вогонь), усі руни здобуваються поволі: з рідкісних ворогів споруд, босів і подій пір року. Підказка, де шукати, видна біля кожної закритої руни. Найкращий Гримуар вимагає матеріалів усіх чотирьох сезонів.']
+            ],
+            '41.7': [
+                ['#ff9ad0', '🌸 Пори року', 'Світ змінюється кожні <b>6 днів</b>: Весна, Літо, Осінь, Зима. Змінюються трава, листя й погода (пелюстки, світлячки, листопад, сніг). Кожна пора дає невеликий бонус: весна — відновлення здоров’я, літо — швидкість, осінь — досвід, зима — мана. Поточна пора видно біля годинника.'],
+                ['#ffd54a', '⛈ Події пір року', 'На <b>третій день</b> кожної пори — подія: <b>Квітнева злива</b> (збирай пелюстки), <b>Літня гроза</b> (ухиляйся від блискавок, збирай іскри), <b>Ніч привидів</b> і <b>Хуртовина</b> (перемагай привидів і примар). За виконання — рідкісний матеріал сезону. Прогрес у кожного гравця свій.'],
+                ['#9fdcff', '🥶 Холод і обереги', 'Взимку вночі й у хуртовину накопичується <b>холод</b>: сховайся під дах, стань біля вогню чи вдягни броню. З матеріалів подій куються <b>обереги пір року</b> — вони сильніші у «свою» пору.']
+            ],
+            '41.6': [
+                ['#9fd4ff', '📅 Щоденні завдання', 'Клавіша <b>Z</b> (або кнопка під Журналом) відкриває <b>3 завдання на день</b>: здобути ресурс, перемогти ворогів (інколи лише вночі чи під землею) та ще одне — виготовити предмети, спуститись глибше, дістатися Серця землі чи виконати мисливський контракт. Нагороди: монети, жетони мисливця й досвід.'],
+                ['#ffe08a', '🔥 Серія днів', 'Виконай усі три завдання — отримаєш <b>бонус</b> (зілля життя, золоті злитки, а з серії 3 дні — кришталевий злиток, з 7 — космічний). Кожен день поспіль додає <b>+10% до нагород</b> (максимум +50%); пропущений день скидає серію.']
+            ],
+            '41.5': [
+                ['#ff9a4a', '⛏ Світ став майже вдвічі глибшим', 'Під старим дном з’явилося ще <b>130 рядків</b>: <b>Глибокі печери</b>, <b>Серце землі</b> (базальт, лава, магмова руда) і <b>Безодня</b> з лавовим морем та непробивною Корінною породою. Це працює і в нових, і в уже створених світах — глибину додасть автоматично при завантаженні.'],
+                ['#ffd24a', '💎 Багаті жили', 'Залізо, золото, вугілля, кришталева руда й магмова руда тут <b>густіші</b>, ніж угорі. Великі печери-зали зі світними кристалами, грибами, водою й озерами лави та довгі звивисті тунелі.'],
+                ['#c8c2b4', '🗝 Глибокі шахти й камери', 'Під землею ховаються <b>глибокі шахти</b> з візками й привидами та десятки <b>кам’яних камер</b> зі скарбами: стрільниці, плити тиску, вогнеплюї й шипи охороняють скрині. Чим глибше — тим цінніша здобич (космічні злитки, Рунні ядра, самоцвіти).'],
+                ['#ff6a4a', '⚠ Небезпеки глибин', 'У Серці землі й Безодні тече лава — без броні Горна довго в ній не вистоїш. Тут бродять привиди шахтарів, а в Безодні — попелясті біси й жарові велетні. Бери зілля, смолоскипи й будуй мости над лавою.']
+            ],
             '41.4': [
                 ['#7fe8ff', '🏛 Затоплений храм', 'Під землею лежить <b>храм припливу</b>: зала з колонами під водою, бульбашки повітря, бічні кімнати з жертовниками. Запали <b>три жертовники</b> (ПКМ) — кожен викликає хвилі медуз, — і Рунні ворота сховища відкриються. Всередині — Тризуб припливу й Перлина припливу (дихання під водою).'],
                 ['#ffc86a', '⛏ Покинута шахта', 'Довгий тунель із <b>вагонетками на рейках</b> (ПКМ по візку, A/D — рух, S — гальмо, Пробіл — зіскочити). Провал із шипами перекриває міст — тягни <b>важелі</b> з обох боків. Хиткі дошки обвалюють стелю, а в кінці за завалом чекає контора шахтаря з Лампою шахтаря. Тут блукають привиди.'],
