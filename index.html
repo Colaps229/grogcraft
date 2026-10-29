@@ -1107,7 +1107,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             ['magma_staff', 'Посох Розлому', 'magic', 'staff', 'magma', 170, 26, 4, { mana: 16, orb: 'solar', aoe: 150 }, 'Магмова куля ламає землю вибухом. Куєтся з Ядра Магми.'],
             ['grimoire_1', 'Гримуар учня', 'magic', 'tome', 'solar', 55, 20, 1, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 2 сторінки. Збирай закляття на Рунному верстаті; X — наступна сторінка.'],
             ['grimoire_2', 'Гримуар чародія', 'magic', 'tome', 'astral', 100, 20, 3, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 3 сторінки й більша шкода.'],
-            ['grimoire_3', 'Гримуар Чотирьох Пір', 'magic', 'tome', 'nebula', 150, 20, 4, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 4 сторінки. Переплетена матеріалами всіх чотирьох сезонів.']
+            ['grimoire_3', 'Гримуар Чотирьох Пір', 'magic', 'tome', 'nebula', 150, 20, 4, { radius: 0, nova: 'rune' }, 'Книга власних заклять: 4 сторінки. Переплетена матеріалами всіх чотирьох сезонів.'],
+            ['bloom_blade', 'Клинок квітневої зливи', 'melee', 'sword', 'verdant', 160, 20, 3, {}, 'Влучні удари повільно лікують власника, а з леза злітають пелюстки.'],
+            ['storm_reaver', 'Громобій', 'melee', 'sword', 'tempest', 178, 20, 4, {}, 'Удар перескакує блискавкою на двох ворогів поруч.'],
+            ['ember_scythe', 'Серп жнив', 'melee', 'dagger', 'ember', 98, 7, 4, {}, 'Швидкий жаркий серп: кожен удар підпалює ворога.'],
+            ['frost_lance', 'Спис зимової вахти', 'melee', 'spear', 'frost', 170, 22, 4, { reach: 168 }, 'Довгий крижаний спис: влучання можуть заморозити ворога.'],
+            ['wildbloom_bow', 'Лук дикого цвіту', 'ranged', 'bow', 'verdant', 92, 16, 4, { ammo: 'arrow', multi: 3 }, 'Потребує стріл. Віяло з трьох стріл, що пахнуть весною.'],
+            ['stormglass_crossbow', 'Арбалет грозового скла', 'ranged', 'crossbow', 'tempest', 152, 30, 4, { ammo: 'bolt', pierce: 4 }, 'Потребує болтів. Болти пронизують чотирьох ворогів.'],
+            ['winter_staff', 'Посох зимової королеви', 'magic', 'staff', 'frost', 128, 26, 4, { mana: 15, orb: 'stardust', aoe: 135 }, 'Крижана куля вибухає великою хмарою.'],
+            ['harvest_wand', 'Жезл осіннього врожаю', 'magic', 'wand', 'ember', 76, 7, 4, { mana: 4, orb: 'solar', homing: 1 }, 'Самонавідні вогняні насінини.']
         ];
         WROWS.forEach(r => { WEAPONS[r[0]] = Object.assign({ name: r[1], t: r[2], k: r[3], pal: r[4], dmg: r[5], cd: r[6], tier: r[7], desc: r[9] }, r[8]); });
         Object.keys(WEAPONS).forEach(id => { const W = WEAPONS[id]; W.aim = W.aim || (W.k !== 'sword' && W.k !== 'dagger' ? 1 : 0); });
@@ -11321,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '41.8', GAME_VER_NAME = 'Конструктор заклять';
+        const GAME_VER = '41.9', GAME_VER_NAME = 'Скарбниця Чотирьох Пір';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -32174,16 +32182,237 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             el.innerHTML = [0, 1, 2, 3].map(i => { const s = RPG.sp.sl[i], lk = i >= n, q = s ? splCalc(s, splBase()) : null; return `<div class="${lk ? 'lk' : s ? (i === RPG.sp.sel ? 'on' : '') : 'em'}" style="--sc:${s ? SPL_COL[s.e][0] : '#8a6aff'}">${lk ? '🔒' : s ? SPL_E[s.e].ic + SPL_F[s.f].ic + (s.x !== 'none' ? SPL_X[s.x].ic : '') : '—'}<br>${s && !lk ? (splRare(s) ? '✨' : '') + splName(s) + '<br><span style="color:' + (RPG.mana >= q.mana ? '#8fd0ff' : '#ff8a8a') + '">' + q.mana + ' мани</span>' : lk ? 'вищий Гримуар' : 'порожньо'}${i === RPG.sp.sel && SPL.cdv > 0 ? `<s style="width:${SPL.cdv / SPL.cdMax * 100}%"></s>` : ''}</div>`; }).join('');
         }
         window.__spl = { SPL, SPL_F, SPL_E, SPL_X, SPL_RARE, splCast, splTick, splCalc, splName, splGiveRune, splDoCast };
+        // ================= 🪝 v41.9: НОВА ЕКІПІРОВКА (крюки, зброя з ефектами, артефакти) =================
+        const ZV = { f: 0, cd: {}, cur: null, hits: [], prev: null, trail: new Set(), hk: null };
+        RPG.zv = { pt: 0 }; // pt — мітка часу, до якої Перо фенікса перезаряджається
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); d.zv = RPG.zv; if (player.hookEq) d.hk = player.hookEq; return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { RPG.zv = { pt: d && d.zv && Number.isFinite(d.zv.pt) ? d.zv.pt : 0 }; const r = o.apply(this, arguments); try { if (player.hookEq && !(player.hookEq.id === 'hook' || ZV_HK[player.hookEq.id])) player.hookEq = { id: 'hook', count: 1 }; v364HookUi(); } catch (e) { } return r; }; })(rpgLoad);
+        rpgNew = (function (o) { return function (cls, keepInv) { if (!ZP.keep && !keepInv) RPG.zv = { pt: 0 }; return o.apply(this, arguments); }; })(rpgNew);
+        const zvHas = id => { try { return !!(player.acc && player.acc.some(it => it && it.id === id)); } catch (e) { return false; } };
+        const zvCd = (k, n) => { if ((ZV.cd[k] || 0) > ZV.f) return false; ZV.cd[k] = ZV.f + n; return true; };
+        const zvNearest = (x, y, R, n, ex) => rpgTargets().filter(t => t.o.hp > 0 && (!ex || !ex.has(t.o)) && Math.hypot(t.x - x, t.y - y) <= R + t.r).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).slice(0, n);
+        const zvDmg = (k, m) => Math.max(1, Math.round((30 + RPG.level * 4) * m * (RPG.st.mult[k] || 1)));
+
+        // ---------- КРЮКИ ----------
+        const ZV_HK = {
+            hook_iron: { n: 'Залізний якір', ti: 2, rng: 560, sp: 18, c1: '#cfd6de', c2: '#5a6672', ab: '', d: 'Довший кидок і швидше підтягування.' },
+            hook_vine: { n: 'Лоза весни', ti: 3, rng: 540, sp: 17, c1: '#7ae08a', c2: '#2a6a34', ab: 'Прибувши, лікує 3% здоров’я й дає регенерацію (раз на 10 с).', d: 'Живий гак, що проростає у здобутку.' },
+            hook_storm: { n: 'Грозовий гарпун', ti: 3, rng: 620, sp: 22, c1: '#ffe36b', c2: '#3a4a9a', ab: 'Прибувши, б’є блискавкою до 3 ворогів поруч (раз на 6 с).', d: 'Найшвидший і найдальший із простих.' },
+            hook_ember: { n: 'Жарка кішка', ti: 3, rng: 560, sp: 19, c1: '#ff9a3a', c2: '#7a2a0a', ab: 'Підпалює ворогів, повз яких летиш, і вибухає жаром при прибутті (раз на 5 с).', d: 'Розпечений метал залишає вогняний слід.' },
+            hook_frost: { n: 'Крижаний якір', ti: 3, rng: 560, sp: 19, c1: '#bfeaff', c2: '#2a5a9a', ab: 'Прибувши, випускає морозну хвилю: шкода й шанс заморозити (раз на 7 с).', d: 'Іній вкриває канат.' },
+            hook_void: { n: 'Гак Безодні', ti: 4, rng: 700, sp: 24, c1: '#b070ff', c2: '#1a0a34', ab: 'Прибувши, дає швидкість і коротку невразливість (раз на 10 с).', d: 'Тягне крізь простір майже миттєво.' }
+        };
+        {
+            const T = i => RPG_TIERS[i], S = itemSprites, F = zfFr, P = zfPoly, C = zfC;
+            const mk = (id, name, ti, type, desc, stat) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, desc }; if (stat) ITEM_METADATA[id].stat = stat; };
+            for (const id in ZV_HK) {
+                const H = ZV_HK[id];
+                mk(id, H.n, H.ti, '🪝 Крюк', H.d + (H.ab ? ' ' + H.ab : '') + ' Постав у слот «Крюк».', 'Досяжність: ' + Math.round(H.rng / 32) + ' бл. · швидкість ' + H.sp);
+                S[id] = generateSprite(cx => {
+                    cx.lineCap = 'round'; cx.strokeStyle = H.c2; cx.lineWidth = 4.4; cx.beginPath(); cx.moveTo(16, 24); cx.lineTo(16, 13); cx.stroke();
+                    for (const s of [-1, 1]) { cx.strokeStyle = H.c2; cx.lineWidth = 4.4; cx.beginPath(); cx.moveTo(16, 13); cx.quadraticCurveTo(16 + s * 11, 12, 16 + s * 9, 3); cx.stroke(); cx.strokeStyle = H.c1; cx.lineWidth = 2.4; cx.beginPath(); cx.moveTo(16, 13); cx.quadraticCurveTo(16 + s * 11, 12, 16 + s * 9, 3); cx.stroke(); }
+                    cx.strokeStyle = H.c1; cx.lineWidth = 2.4; cx.beginPath(); cx.moveTo(16, 24); cx.lineTo(16, 12); cx.stroke(); cx.strokeStyle = H.c2; cx.lineWidth = 2.4; cx.beginPath(); cx.arc(16, 27, 3.2, 0, 7); cx.stroke(); C(cx, 16, 13, 2.2, '#ffffff'); C(cx, 16, 13, 1.2, H.c1);
+                });
+            }
+            const R = (id, req, lvl) => recipes.push({ result: id, count: 1, req, lvl });
+            R('hook_iron', { iron_ingot: 12, gold_ingot: 4 }, 10);
+            R('hook_vine', { iron_ingot: 8, bloom_essence: 2, gold_ingot: 4 }, 14);
+            R('hook_storm', { iron_ingot: 8, storm_glass: 2, crystal_ingot: 3 }, 16);
+            R('hook_ember', { iron_ingot: 8, ember_leaf: 2, gold_ingot: 5 }, 14);
+            R('hook_frost', { iron_ingot: 8, frost_heart: 2, crystal_ingot: 3 }, 16);
+            R('hook_void', { cosmic_ingot: 5, rune_core: 2, bloom_essence: 1, storm_glass: 1, ember_leaf: 1, frost_heart: 1 }, 28);
+        }
+        // слот «Крюк» приймає всі крюки
+        {
+            const el = document.getElementById('hook-equip');
+            const ok = id => id === 'hook' || !!ZV_HK[id];
+            const click = function () {
+                playSound('click'); hideTooltip();
+                if (draggedSlotIndex !== null) {
+                    const it = inventory[draggedSlotIndex]; if (!it || !ok(it.id)) { homeToast('🪝 Сюди кладуть тільки крюк'); return; }
+                    const old = player.hookEq; let free = -1; if (it.count > 1 && old) { free = inventory.findIndex(q => !q); if (free < 0) { homeToast('🎒 Немає місця'); return; } }
+                    if (it.count > 1) { it.count--; if (old) inventory[free] = old; } else inventory[draggedSlotIndex] = old || null;
+                    player.hookEq = { id: it.id, count: 1 }; draggedSlotIndex = null; activeHook = null; updateInventoryUI();
+                } else if (player.hookEq) {
+                    const i = inventory.findIndex(s => !s); if (i < 0) { homeToast('🎒 Немає місця'); return; } inventory[i] = player.hookEq; player.hookEq = null; activeHook = null; updateInventoryUI();
+                }
+            };
+            if (el) el.onclick = click;
+            v364HookUi = (function (o) { return function () { o.apply(this, arguments); try { const e2 = document.getElementById('hook-equip'), it = player.hookEq; if (e2 && it && it.id !== 'hook' && ZV_HK[it.id]) { e2.innerHTML = `<img src="${itemSprites[it.id]}" alt="" style="width:34px;height:34px;image-rendering:pixelated">`; e2.title = ZV_HK[it.id].n + '. ' + ZV_HK[it.id].ab + ' Клік — зняти'; } } catch (e) { } }; })(v364HookUi);
+        }
+        const zvHk = () => (player.hookEq && ZV_HK[player.hookEq.id]) || null;
+        v377HookRay = function () {
+            const H = zvHk(), R = H ? H.rng : 480, pcx = player.x + player.width / 2, pcy = player.y + player.height / 2 - 2;
+            let dx = mouse.worldX - pcx, dy = mouse.worldY - pcy; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d; const W = currentWorld.width, Hh = currentWorld.height;
+            for (let s = 14; s <= R; s += 4) {
+                const x = pcx + dx * s, y = pcy + dy * s, bx = Math.floor(x / 32), by = Math.floor(y / 32);
+                if (bx < 0 || by < 0 || bx >= W || by >= Hh) return { x: pcx + dx * (s - 4), y: pcy + dy * (s - 4), hit: false, d: s - 4 };
+                const id = worldMap[by][bx]; if (!id) continue; const b = BLOCKS[id];
+                if (b && (b.liquid || id === 13 || id === 68 || id === 69)) continue;
+                return { x, y, hit: true, d: s };
+            }
+            return { x: pcx + dx * R, y: pcy + dy * R, hit: false, d: R };
+        };
+        v364HookFire = (function (o) { return function () { const had = !!activeHook; const r = o.apply(this, arguments); try { if (!had && activeHook && player.hookEq && ZV_HK[player.hookEq.id]) activeHook.hk = player.hookEq.id; } catch (e) { } return r; }; })(v364HookFire);
+        // відображення: потрібний спрайт крюка й слід
+        drawGrapple = (function (o) {
+            return function (t) {
+                const h = activeHook && activeHook.hk, H = h && ZV_HK[h]; let saved;
+                if (H) { saved = spriteCache.hook; spriteCache.hook = spriteOf(h); }
+                try { o.apply(this, arguments); } finally { if (H) spriteCache.hook = saved; }
+                if (H && activeHook && gameState === 'PLAYING') {
+                    const pcx = player.x + player.width / 2, pcy = player.y + player.height / 2 - 2, prog = activeHook.miss ? 0 : Math.min(1, activeHook.timer / 5), ease = 1 - Math.pow(1 - prog, 3), hx = pcx + (activeHook.x - pcx) * ease, hy = pcy + (activeHook.y - pcy) * ease;
+                    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = rgba(H.c1, 0.5); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(pcx, pcy); ctx.lineTo(hx, hy); ctx.stroke(); const g = ctx.createRadialGradient(hx, hy, 1, hx, hy, 18); g.addColorStop(0, rgba(H.c1, 0.7)); g.addColorStop(1, rgba(H.c1, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(hx, hy, 18, 0, 7); ctx.fill(); ctx.restore();
+                }
+            };
+        })(drawGrapple);
+        const zvFree = (x, y) => { const w = player.width, h = player.height; for (const [cx, cy] of [[x + 1, y + 1], [x + w - 1, y + 1], [x + 1, y + h - 1], [x + w - 1, y + h - 1], [x + w / 2, y + h / 2]]) if (isSolid(Math.floor(cx / 32), Math.floor(cy / 32))) return false; return true; };
+        function zvArrive(id, x, y, own) {
+            const H = ZV_HK[id]; if (!H) return; const px = player.x + player.width / 2, py = player.y + player.height / 2, col = H.c1;
+            if (!own) { for (let i = 0; i < 16; i++) createParticles(x, y, col, 1, 4, 3.5, 30); if (id === 'hook_storm') for (let i = 0; i < 3; i++) splArcAdd(SPL.sim, x, y - 120, x + (Math.random() - 0.5) * 200, y + (Math.random() - 0.5) * 60); return; }
+            let fx = false;
+            if (id === 'hook_vine') { if (zvCd('hv', 600)) { fx = true; const h = Math.max(2, Math.round(player.maxHealth * 0.03)); player.health = Math.min(player.maxHealth, player.health + h); floatingTexts.push({ x: px - 8, y: py - 30, text: '+' + h, color: '#7dff9a', life: 34 }); try { v377Add('regen', 180); } catch (e) { } for (let i = 0; i < 18; i++) createParticles(px + (Math.random() - 0.5) * 40, py + (Math.random() - 0.5) * 40, i % 2 ? '#ff9ad0' : '#7ae08a', 1, 2.5, 3.5, 36); } }
+            else if (id === 'hook_storm') { if (zvCd('hs', 360)) { fx = true; const T = zvNearest(px, py, 250, 3); for (const t of T) { splArcAdd(SPL.sim, px, py, t.x, t.y); rpgHit(t, zvDmg('magic', 0.9), { col: '#9fd0ff', pcol: '#9fd0ff', kb: 2, dir: t.x > px ? 1 : -1 }); } if (!T.length) splArcAdd(SPL.sim, px, py - 140, px, py); zlTone('square', 900, 120, 0.3, 0.08); shake = Math.max(shake, 4); } }
+            else if (id === 'hook_ember') { if (zvCd('he', 300)) { fx = true; const d = zvDmg('melee', 0.8); for (const t of zvNearest(px, py, 110, 8)) { rpgHit(t, d, { col: '#ff9a3a', pcol: '#ff9a3a', kb: 4, dir: t.x > px ? 1 : -1 }); splDot(t.o, 'burn', Math.max(1, Math.round(d * 0.3 / 6)), 6, '#ff9a3a'); } for (let i = 0; i < 24; i++) createParticles(px, py, i % 2 ? '#ff9a3a' : '#ffd36a', 1, 5, 4, 30); zlTone('sawtooth', 300, 90, 0.3, 0.08); } }
+            else if (id === 'hook_frost') { if (zvCd('hf', 420)) { fx = true; const d = zvDmg('magic', 0.7); for (const t of zvNearest(px, py, 150, 10)) { rpgHit(t, d, { col: '#bfeaff', pcol: '#bfeaff', kb: 3, dir: t.x > px ? 1 : -1 }); if (t.k === 'mob' && Math.random() < 0.35) { try { v19FreezeMob(t.o, 50, 1); } catch (e) { } } } for (let i = 0; i < 26; i++) { const a = i / 26 * 6.283; createParticles(px + Math.cos(a) * 30, py + Math.sin(a) * 30, '#d8f4ff', 1, 4, 3, 30); } zlTone('sine', 1300, 500, 0.35, 0.08); } }
+            else if (id === 'hook_void') { if (zvCd('hx', 600)) { fx = true; try { v377Add('swift', 240); } catch (e) { } player.damageCooldown = Math.max(player.damageCooldown || 0, 36); for (let i = 0; i < 20; i++) createParticles(px, py, i % 2 ? '#b070ff' : '#e8d0ff', 1, 4, 3, 28); zlTone('sine', 200, 900, 0.3, 0.07); } }
+            if (fx && typeof zlMP === 'function' && zlMP()) mpSend({ t: 'x_hk', k: 'a', h: id, x: Math.round(px), y: Math.round(py) });
+        }
+        mpOnMsg = (function (o) { return function (m) { if (m && m.t === 'x_hk') { try { if (m.k === 'a' && ZV_HK[m.h] && MP.players && MP.players[m.id]) zvArrive(m.h, +m.x, +m.y, false); } catch (e) { } return; } return o.apply(this, arguments); }; })(mpOnMsg);
+        function zvHookTick() {
+            const ah = activeHook, H = ah && ah.hk && ZV_HK[ah.hk];
+            if (H && !ah.miss) {
+                // додаткова швидкість
+                const px = player.x + player.width / 2, py = player.y + player.height / 2, dx = ah.x - px, dy = ah.y - py, dist = Math.hypot(dx, dy), extra = H.sp - 16;
+                if (extra > 0 && dist > extra + 30) { const nx = player.x + dx / dist * extra, ny = player.y + dy / dist * extra; if (zvFree(nx, ny)) { player.x = nx; player.y = ny; } }
+                if (ZV.f % 2 === 0) createParticles(player.x + 12, player.y + 22, H.c1, 1, 1.5, 3, 18);
+                if (ah.hk === 'hook_ember') { for (const t of zvNearest(px, py, 40, 6)) { if (!ZV.trail.has(t.o)) { ZV.trail.add(t.o); const d = zvDmg('melee', 0.35); rpgHit(t, d, { col: '#ff9a3a', pcol: '#ff9a3a', kb: 2, dir: t.x > px ? 1 : -1 }); splDot(t.o, 'burn', Math.max(1, Math.round(d * 0.5 / 6)), 6, '#ff9a3a'); } } }
+            }
+            if (ZV.prev && ZV.prev !== ah) {
+                const p = ZV.prev; ZV.trail.clear();
+                if (p.hk && !p.miss && Math.hypot(player.x + player.width / 2 - p.x, player.y + player.height / 2 - p.y) < 46) { try { zvArrive(p.hk, p.x, p.y, true); } catch (e) { rpgErr(e); } }
+            }
+            ZV.prev = ah;
+        }
+
+        // ---------- АРТЕФАКТИ ----------
+        const ZV_ACC = {
+            phoenix_feather: ['Перо фенікса', 4, { hp: 40, rhp: 0.6 }, 'Той, хто носить перо, не вмирає з першого разу: ти воскресаєш з 40% здоров’я. Перезарядка 20 хвилин.', 'amulet', '#ff9a3a', '#7a2a0a', 'Воскресіння (раз на 20 хв), +40 здоров’я, +0.6 відновлення'],
+            storm_ring: ['Кільце бурі', 3, { crit: 0.04, spd: 0.04 }, 'Коли тебе б’ють, кільце відповідає блискавками по трьох найближчих ворогах (раз на 4 с).', 'ring', '#ffe36b', '#3a4a9a', 'Блискавки у відповідь, +4% крит, +4% швидкості'],
+            thorn_charm: ['Терновий оберіг', 3, { hp: 30, def: 4 }, 'Той, хто вдарив тебе, отримує шипи назад: частина шкоди й отрута. Рідко.', 'amulet', '#7ae08a', '#2a5a2a', 'Відбиває частину шкоди з отрутою, +30 здоров’я, +4 захисту'],
+            reaper_chalice: ['Кубок жнеця', 3, { hp: 20, rhp: 0.3 }, 'Кожен переможений ворог повертає тобі трохи життя.', 'core', '#ff6a7a', '#5a0a1a', 'З кожного вбивства +2.5% здоров’я'],
+            mana_prism: ['Призма мани', 3, { rmp: 0.4 }, 'Переможені вороги розсипаються променями мани.', 'core', '#8fd0ff', '#2a4a9a', 'З кожного вбивства +8 мани, +0.4 мани/с'],
+            windwalker_boots: ['Чоботи вітру', 3, { spd: 0.10, jump: 0.18 }, 'Вітер сам несе тебе далі й вище.', 'boots', '#e6f0ff', '#4a7ab8', '+10% швидкості, вищий стрибок'],
+            titan_belt: ['Пояс титана', 3, { hp: 70, def: 5 }, 'Важкий пояс із кування гірських велетнів.', 'cloak', '#c8a070', '#5a3a18', '+70 здоров’я, +5 захисту'],
+            starcaller_ring: ['Перстень зоряного кликуна', 4, { magic: 0.12, crit: 0.04, rmp: 0.3 }, 'Зорі слухають того, хто носить його.', 'ring', '#d8b8ff', '#4a2a8a', '+12% магічної шкоди, +4% крит'],
+            hunter_quiver: ['Сагайдак мисливця', 3, { ranged: 0.12, crit: 0.04 }, 'Стріли самі шукають ціль.', 'core', '#c8a070', '#3a2a18', '+12% шкоди дальнього бою'],
+            berserk_band: ['Браслет берсерка', 3, { melee: 0.12, aspd: 0.05 }, 'Холодний метал, що гріє кров.', 'ring', '#ff7a5a', '#5a1a0a', '+12% ближньої шкоди, швидші удари']
+        };
+        {
+            const T = i => RPG_TIERS[i], S = itemSprites, P = zfPoly, C = zfC;
+            for (const id in ZV_ACC) {
+                const [nm, ti, st, desc, shape, c1, c2, stat] = ZV_ACC[id];
+                ACC[id] = [nm, ti, st, desc, shape, c1, c2]; ITEM_METADATA[id] = { name: nm, rarity: T(ti).r, color: T(ti).c, type: '💍 Аксесуар', desc, stat };
+                S[id] = generateSprite(cx => {
+                    cx.strokeStyle = c2; cx.lineWidth = 2; cx.lineCap = 'round';
+                    if (shape === 'ring') { cx.beginPath(); cx.arc(16, 19, 8, 0, 7); cx.stroke(); cx.strokeStyle = c1; cx.lineWidth = 3.4; cx.beginPath(); cx.arc(16, 19, 8, 0, 7); cx.stroke(); P(cx, [[16, 5], [21, 10], [16, 14], [11, 10]], c1, c2); C(cx, 16, 9.5, 1.4, '#ffffff'); }
+                    else if (shape === 'boots') { P(cx, [[8, 6], [18, 6], [18, 18], [27, 21], [27, 27], [8, 27]], c1, c2); P(cx, [[8, 22], [27, 22], [27, 27], [8, 27]], c2, null); cx.fillStyle = '#fff'; cx.fillRect(10, 8, 6, 2); }
+                    else if (shape === 'cloak') { P(cx, [[5, 11], [27, 11], [27, 21], [5, 21]], c1, c2); P(cx, [[13, 9], [19, 9], [19, 23], [13, 23]], c2, '#000'); P(cx, [[14.5, 12], [17.5, 12], [17.5, 20], [14.5, 20]], '#ffd24a', null); }
+                    else if (shape === 'core') { P(cx, [[16, 4], [26, 12], [23, 26], [9, 26], [6, 12]], c1, c2); P(cx, [[16, 8], [22, 13], [20, 22], [12, 22], [10, 13]], 'rgba(255,255,255,.35)', null); C(cx, 16, 16, 3, '#fff'); }
+                    else { cx.beginPath(); cx.moveTo(6, 4); cx.quadraticCurveTo(16, 16, 26, 4); cx.stroke(); P(cx, [[16, 10], [24, 17], [20, 28], [12, 28], [8, 17]], c1, c2); P(cx, [[16, 14], [20, 18], [18, 24], [14, 24], [12, 18]], 'rgba(255,255,255,.4)', null); }
+                });
+            }
+            const R = (id, req, lvl) => recipes.push({ result: id, count: 1, req, lvl });
+            R('phoenix_feather', { ember_leaf: 4, magma_core: 2, cosmic_ingot: 8, life_potion: 5 }, 30);
+            R('storm_ring', { storm_glass: 3, crystal_ingot: 6, gold_ingot: 6 }, 18);
+            R('thorn_charm', { bloom_essence: 3, gold_ingot: 8, crystal_ingot: 4 }, 16);
+            R('starcaller_ring', { cosmic_ingot: 4, crystal_ingot: 6, rune_core: 1, frost_heart: 1 }, 24);
+            R('berserk_band', { ember_leaf: 2, gold_ingot: 10, iron_ingot: 10 }, 14);
+            // мисливська крамниця (жетони): рідкісні артефакти
+            try {
+                for (const s of [{ id: 'windwalker_boots', n: 1, c: 45, lim: 1, rk: 4, once: 1 }, { id: 'mana_prism', n: 1, c: 60, lim: 1, rk: 5, once: 1 }, { id: 'hunter_quiver', n: 1, c: 55, lim: 1, rk: 5, once: 1 }, { id: 'titan_belt', n: 1, c: 75, lim: 1, rk: 6, once: 1 }, { id: 'reaper_chalice', n: 1, c: 95, lim: 1, rk: 7, once: 1 }]) ZH.SHOP.push(s);
+            } catch (e) { }
+        }
+        // реакції на пошкодження
+        function zvOnHurt(d) {
+            if (d < 1) return; const px = player.x + 12, py = player.y + 22;
+            if (zvHas('storm_ring') && zvCd('sr', 240)) { const T = zvNearest(px, py, 270, 3); for (const t of T) { splArcAdd(SPL.sim, px, py, t.x, t.y); rpgHit(t, zvDmg('magic', 1.0), { col: '#9fd0ff', pcol: '#9fd0ff', kb: 3, dir: t.x > px ? 1 : -1 }); } if (T.length) { zlTone('square', 900, 150, 0.25, 0.07); if (typeof zlMP === 'function' && zlMP()) mpSend({ t: 'x_hk', k: 'a', h: 'hook_storm', x: Math.round(px), y: Math.round(py) }); } }
+            if (zvHas('thorn_charm') && zvCd('tc', 60)) { const t = zvNearest(px, py, 150, 1)[0]; if (t) { rpgHit(t, Math.max(8, Math.round(d * 0.5 + RPG.level * 2)), { col: '#7ae08a', pcol: '#7ae08a', kb: 3, dir: t.x > px ? 1 : -1 }); splDot(t.o, 'psn', Math.max(1, Math.round(d * 0.2 / 6)), 6, '#8ee05a'); createParticles(t.x, t.y, '#7ae08a', 8, 3, 3, 24); } }
+        }
+        rpgHurt = (function (o) { return function () { const h0 = player.health, r = o.apply(this, arguments); try { if (r && h0 - player.health >= 1) zvOnHurt(h0 - player.health); } catch (e) { } return r; }; })(rpgHurt);
+        bHurt = (function (o) { return function () { const h0 = player.health, r = o.apply(this, arguments); try { if (h0 - player.health >= 1) zvOnHurt(h0 - player.health); } catch (e) { } return r; }; })(bHurt);
+        killPlayer = (function (o) {
+            return function (cause) {
+                try {
+                    if (gameState === 'PLAYING' && zvHas('phoenix_feather') && Date.now() >= (RPG.zv.pt || 0)) {
+                        RPG.zv.pt = Date.now() + 20 * 60 * 1000; player.health = Math.max(1, Math.round(player.maxHealth * 0.4)); player.damageCooldown = 150; player.vx = 0; player.vy = Math.min(player.vy, 0);
+                        const px = player.x + 12, py = player.y + 22; for (let i = 0; i < 60; i++) createParticles(px, py, i % 2 ? '#ff9a3a' : '#ffe36b', 1, 7, 5, 55);
+                        for (const t of zvNearest(px, py, 200, 12)) rpgHit(t, zvDmg('magic', 1.5), { col: '#ff9a3a', pcol: '#ff9a3a', kb: 8, dir: t.x > px ? 1 : -1 });
+                        v26Banner('🔥 Феникс відроджує тебе!', 'Перо відпочиватиме 20 хвилин'); zlTone('triangle', 300, 1500, 1, 0.12); shake = Math.max(shake, 10);
+                        if (typeof zlMP === 'function' && zlMP()) mpSend({ t: 'x_hk', k: 'a', h: 'hook_ember', x: Math.round(px), y: Math.round(py) });
+                        return;
+                    }
+                } catch (e) { }
+                return o.apply(this, arguments);
+            };
+        })(killPlayer);
+        rpgKill = (function (o) {
+            return function (kind, x, y) {
+                try {
+                    if (typeof kind === 'string' && !V364.noProf && gameState === 'PLAYING') {
+                        if (zvHas('reaper_chalice') && zvCd('rc', 30)) { const h = Math.max(2, Math.round(player.maxHealth * 0.025)); if (player.health < player.maxHealth) { player.health = Math.min(player.maxHealth, player.health + h); floatingTexts.push({ x: player.x + 4, y: player.y - 12, text: '+' + h + ' 🩸', color: '#ff6a7a', life: 30 }); } createParticles(player.x + 12, player.y + 20, '#ff6a7a', 6, 2, 3, 22); }
+                        if (zvHas('mana_prism') && zvCd('mp', 15) && RPG.mana < RPG.maxMana) { RPG.mana = Math.min(RPG.maxMana, RPG.mana + 8); createParticles(player.x + 12, player.y + 20, '#8fd0ff', 6, 2, 3, 22); }
+                    }
+                } catch (e) { } return o.apply(this, arguments);
+            };
+        })(rpgKill);
+
+        // ---------- ЗБРОЯ З ЕФЕКТАМИ ----------
+        {
+            const A = { bloom_blade: 'bloom', storm_reaver: 'chain', ember_scythe: 'burn', frost_lance: 'freeze' };
+            for (const id in A) if (WEAPONS[id]) WEAPONS[id].proc = A[id];
+            const R = (id, req, lvl) => recipes.push({ result: id, count: 1, req, lvl });
+            R('bloom_blade', { bloom_essence: 3, gold_ingot: 8, crystal_ingot: 4 }, 15);
+            R('storm_reaver', { storm_glass: 3, crystal_ingot: 6, cosmic_ingot: 2 }, 18);
+            R('ember_scythe', { ember_leaf: 3, gold_ingot: 8, rune_core: 1 }, 17);
+            R('frost_lance', { frost_heart: 3, crystal_ingot: 6, iron_ingot: 10 }, 18);
+            R('wildbloom_bow', { bloom_essence: 3, cosmic_ingot: 3, gold_ingot: 6 }, 20);
+            R('stormglass_crossbow', { storm_glass: 3, cosmic_ingot: 4, crystal_ingot: 6 }, 22);
+            R('winter_staff', { frost_heart: 3, cosmic_ingot: 4, rune_core: 1 }, 22);
+            R('harvest_wand', { ember_leaf: 3, cosmic_ingot: 3, gold_ingot: 6 }, 20);
+        }
+        rpgHit = (function (o) { return function (t, dmg, opt) { const r = o.apply(this, arguments); if (ZV.cur && r) ZV.hits.push({ t, dmg }); return r; }; })(rpgHit);
+        weaponUse = (function (o) {
+            return function () {
+                const it = inventory[selectedHotbarSlot], W = it && WEAPONS[it.id]; if (!W || !W.proc) return o.apply(this, arguments);
+                ZV.cur = W; ZV.hits = []; let r; try { r = o.apply(this, arguments); } finally { ZV.cur = null; }
+                try { zvProc(W, ZV.hits); } catch (e) { rpgErr(e); } ZV.hits = []; return r;
+            };
+        })(weaponUse);
+        function zvProc(W, hits) {
+            if (!hits.length) return; const h = hits[0], t = h.t, px = player.x + 12, py = player.y + 22;
+            if (W.proc === 'bloom') { if (zvCd('wb', 24) && player.health < player.maxHealth) { const v = Math.max(1, Math.round(player.maxHealth * 0.004)); player.health = Math.min(player.maxHealth, player.health + v); floatingTexts.push({ x: px - 6, y: py - 34, text: '+' + v, color: '#7dff9a', life: 26 }); } for (let i = 0; i < 4; i++) createParticles(t.x, t.y, '#ff9ad0', 1, 2.5, 3, 26); }
+            else if (W.proc === 'chain') { if (zvCd('ws', 45)) { const used = new Set(hits.map(q => q.t.o)); const T = zvNearest(t.x, t.y, 230, 2, used); let from = t; for (const u of T) { splArcAdd(SPL.sim, from.x, from.y, u.x, u.y); rpgHit(u, Math.max(1, Math.round(h.dmg * 0.45)), { col: '#9fd0ff', pcol: '#9fd0ff', kb: 1, dir: u.x > from.x ? 1 : -1 }); from = u; } } }
+            else if (W.proc === 'burn') { for (const q of hits) splDot(q.t.o, 'burn', Math.max(1, Math.round(q.dmg * 0.3 / 6)), 6, '#ff9a3a'); createParticles(t.x, t.y, '#ff9a3a', 3, 2, 3, 22); }
+            else if (W.proc === 'freeze') { for (const q of hits) if (q.t.k === 'mob' && Math.random() < 0.22) { try { v19FreezeMob(q.t.o, 45, 1); } catch (e) { } createParticles(q.t.x, q.t.y, '#eefcff', 8, 2, 3, 24); } }
+        }
+        updateGame = (function (o) { return function () { const r = o.apply(this, arguments); try { if (gameState === 'PLAYING') { ZV.f++; zvHookTick(); } } catch (e) { rpgErr(e); } return r; }; })(updateGame);
+        window.__zv = { ZV, ZV_HK, ZV_ACC, zvArrive, zvProc };
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['41.8', 'Конструктор заклять', 'new'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['41.9', 'Скарбниця Чотирьох Пір', 'new'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '41.9': [
+                ['#7ad7ff', '🪝 Нові крюки', 'Шість крюків у слот «Крюк» (кнопка F): <b>Залізний якір</b> — далі й швидше; <b>Лоза весни</b> лікує, <b>Грозовий гарпун</b> б’є блискавками, <b>Жарка кішка</b> підпалює ворогів на шляху, <b>Крижаний якір</b> морозить, <b>Гак Безодні</b> дає швидкість і коротку невразливість. Ефекти спрацьовують при прибутті й мають перезарядку.'],
+                ['#ffd88a', '⚔ Зброя з ефектами', 'Вісім нових видів зброї: <b>Клинок квітневої зливи</b> лікує, <b>Громобій</b> б’є ланцюговою блискавкою, <b>Серп жнив</b> підпалює, <b>Спис зимової вахти</b> заморожує, а також лук, арбалет, посох і жезл. Створюються з матеріалів подій пір року.'],
+                ['#ff9a3a', '💍 Артефакти', '<b>Перо фенікса</b> воскрешає раз на 20 хвилин, <b>Кільце бурі</b> відповідає блискавками на удар, <b>Терновий оберіг</b> відбиває шкоду з отрутою, <b>Кубок жнеця</b> лікує з вбивств, <b>Призма мани</b> повертає ману. Є й звичайні: чоботи вітру, пояс титана, перстень зоряного кликуна, сагайдак, браслет берсерка. Частина продається у Гільдії мисливців за жетони високих рангів. Усе це створюється довго — потрібні матеріали всіх пір року.']
+            ],
             '41.8': [
                 ['#b388ff', '📖 Конструктор заклять', 'Постав <b>Рунний верстат</b> і клацни по ньому ПКМ. Закляття збирається з трьох рун: <b>Форма</b> (снаряд, хвиля, промінь, злива, шипи), <b>Стихія</b> (вогонь, лід, буря, природа, порожнеча) та <b>Ефект</b> (пробиття, вибух, відлуння, висмоктування, розкол). Поруч — анімований перегляд закляття, шкода, мана й перезарядка.'],
                 ['#ffd88a', '✨ Гримуар і рідкісні поєднання', 'Закляття записуються на сторінки <b>Гримуара</b> (2–4 сторінки залежно від рівня). Тримай книгу в руках: ЛКМ — каст, <b>X</b> — наступна сторінка. 12 поєднань рідкісні: мають власні імена, бонус до шкоди й знижену ману; їх відкриває лише експеримент. У Кодексі є нагороди за 4, 8 та 12 відкриттів.'],
