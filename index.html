@@ -7608,13 +7608,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             if (mapOpen) { if (mapTimer % 6 === 0) mapDrawBig(); return; }
             if (mapTimer % 3) return;
             const cv = mm.firstElementChild, c = cv.getContext('2d'), S = 2, vw = cv.width / S, vh = cv.height / S; c.imageSmoothingEnabled = false; c.fillStyle = '#0d1520'; c.fillRect(0, 0, cv.width, cv.height);
-            const pcx = (player.x + 12) / 32, pcy = (player.y + 20) / 32; let sx = pcx - vw / 2, sy = pcy - vh / 2; sx = Math.max(0, Math.min(mapW - vw, sx)); sy = Math.max(0, Math.min(mapH - vh, sy));
+            const pcx = (player.x + 12) / 32, pcy = (player.y + 20) / 32; let sx = pcx - vw / 2, sy = window.mvY(pcy) - vh / 2; sx = Math.max(0, Math.min(mapW - vw, sx)); sy = Math.max(0, Math.min(mapH - vh, sy));
             c.drawImage(mapCv, sx, sy, vw, vh, 0, 0, cv.width, cv.height);
             const t = performance.now() / 1000;
             for (const p of mapPlayers()) { const x = (p.x / 32 - sx) * S, y = (p.y / 32 - sy) * S; if (x < -6 || y < -6 || x > cv.width + 6 || y > cv.height + 6) { /* стрілка до краю */ const ex = Math.max(8, Math.min(cv.width - 8, x)), ey = Math.max(8, Math.min(cv.height - 8, y)); c.fillStyle = p.col; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.arc(ex, ey, 4, 0, 7); c.fill(); c.stroke(); continue; }
                 const r = p.me ? 4 + Math.sin(t * 6) * 0.8 : 4; if (p.me) { c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(x, y, 9 + Math.sin(t * 3) * 2, 0, 7); c.fill(); }
                 c.fillStyle = p.col; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke(); if (!p.me) { c.font = 'bold 9px Segoe UI'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 2.5; c.strokeText(p.name, x, y - 7); c.fillText(p.name, x, y - 7); } }
-            const sh = zwSfAt(Math.floor(pcx), pcy, 0), dep = Math.round(pcy - sh); document.getElementById('mm-k').textContent = (dep > 0 ? '⬇ ' + dep : '⬆ ' + (-dep)) + ' · X ' + Math.round(pcx);
+            const sh = zwSfAt(Math.floor(pcx), pcy, 0), dep = window.mvDep(pcy, sh); document.getElementById('mm-k').textContent = (dep > 0 ? '⬇ ' + dep : '⬆ ' + (-dep)) + ' · X ' + Math.round(pcx);
         }
         // ---------- викидання предметів ----------
         function canTake(id) {
@@ -11259,7 +11259,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 else if (e.code === 'Digit0' || e.code === 'Numpad0') { e.preventDefault(); V19M.bz = 1; v19BigMe(); }
             }, true);
         }
-        function v19BigMe() { V19M.cx = (player.x + 12) / 32; V19M.cy = (player.y + 22) / 32; mapDrawBig(); }
+        function v19BigMe() { V19M.cx = (player.x + 12) / 32; V19M.cy = window.mvY((player.y + 22) / 32); mapDrawBig(); }
         function v19BigZoom(k, mx, my) {
             if (!mapGeo) return; const nz = Math.max(1, Math.min(16, V19M.bz * k)); if (nz === V19M.bz) return;
             const cv = document.getElementById('map-cv'); let ax = cv.width / 2, ay = cv.height / 2; if (mx !== undefined) { ax = mx; ay = my; }
@@ -11268,7 +11268,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }
         mapToggle = function () {
             if (gameState !== 'PLAYING' && !mapOpen) return; playSound('click'); mapOpen = !mapOpen; const el = document.getElementById('map-screen'); el.style.display = mapOpen ? 'flex' : 'none';
-            if (mapOpen) { v19MapUi(); mapBuild(); V19M.bz = 1; V19M.cx = (player.x + 12) / 32; V19M.cy = (player.y + 22) / 32; mapDrawBig(); }
+            if (mapOpen) { v19MapUi(); mapBuild(); V19M.bz = 1; V19M.cx = (player.x + 12) / 32; V19M.cy = window.mvY((player.y + 22) / 32); mapDrawBig(); }
         };
         mapDrawBig = function () {
             const cv = document.getElementById('map-cv'), W = currentWorld.width, H = currentWorld.height; if (!cv) return;
@@ -11278,7 +11278,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             V19M.cx = vw >= W ? W / 2 : Math.max(vw / 2, Math.min(W - vw / 2, V19M.cx)); V19M.cy = vh >= H ? H / 2 : Math.max(vh / 2, Math.min(H - vh / 2, V19M.cy));
             const sx = V19M.cx - vw / 2, sy = V19M.cy - vh / 2, c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, cw, ch);
             c.fillStyle = '#0a1018'; c.fillRect(0, 0, cw, ch);
-            c.drawImage(mapCv, Math.max(0, sx), Math.max(0, sy), Math.min(W, vw), Math.min(H, vh), Math.max(0, -sx) * sc, Math.max(0, -sy) * sc, Math.min(W, vw) * sc, Math.min(H, vh) * sc);
+            c.drawImage(window.mvCv(), Math.max(0, sx), Math.max(0, sy), Math.min(W, vw), Math.min(H, vh), Math.max(0, -sx) * sc, Math.max(0, -sy) * sc, Math.min(W, vw) * sc, Math.min(H, vh) * sc);
             const gs = V19M.bz > 4 ? 10 : (V19M.bz > 1.8 ? 25 : 50);
             c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 1; for (let x = Math.ceil(sx / gs) * gs; x <= sx + vw; x += gs) { c.beginPath(); c.moveTo((x - sx) * sc, 0); c.lineTo((x - sx) * sc, ch); c.stroke(); } for (let y = Math.ceil(sy / gs) * gs; y <= sy + vh; y += gs) { c.beginPath(); c.moveTo(0, (y - sy) * sc); c.lineTo(cw, (y - sy) * sc); c.stroke(); }
             const t = performance.now() / 1000, items = []; mapGeo = { sc, sc0, sx, sy, items };
@@ -11299,7 +11299,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         mapHover = function (e) {
             if (!mapGeo) return; const cv = e.target, rc = cv.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, tip = document.getElementById('map-tip'); if (V19M.drag && V19M.drag.moved) { tip.style.display = 'none'; return; }
             let best = null, bd = 18; for (const it of mapGeo.items) { const d = Math.hypot(it.x - x, it.y - y); if (d < bd) { bd = d; best = it; } }
-            const bx = Math.floor(x / mapGeo.sc + mapGeo.sx), by = Math.floor(y / mapGeo.sc + mapGeo.sy);
+            const bx = Math.floor(x / mapGeo.sc + mapGeo.sx), by = window.mvInv(Math.floor(y / mapGeo.sc + mapGeo.sy));
             tip.style.display = 'block'; tip.textContent = best ? best.label : `X ${bx} · Y ${by}${by >= (surfaceHeights[bx] || 0) ? ' · глибина ' + (by - (surfaceHeights[bx] || 0)) : ''}`; tip.style.left = Math.min(rc.width - 160, x + 14) + 'px'; tip.style.top = Math.max(4, y - 28) + 'px';
         };
         mapTick = function () {
@@ -11313,9 +11313,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             if (mapOpen) { if (mapTimer % 6 === 0) mapDrawBig(); return; }
             if (mapTimer % 3) return;
             const cv = mm.firstElementChild, c = cv.getContext('2d'), vw = cv.width / S, vh = cv.height / S; c.imageSmoothingEnabled = false; c.fillStyle = '#0d1520'; c.fillRect(0, 0, cv.width, cv.height);
-            let sx = pcx - vw / 2, sy = pcy - vh / 2; if (vw < W) sx = Math.max(0, Math.min(W - vw, sx)); else sx = (W - vw) / 2; if (vh < H) sy = Math.max(0, Math.min(H - vh, sy)); else sy = (H - vh) / 2;
+            let sx = pcx - vw / 2, sy = window.mvY(pcy) - vh / 2; if (vw < W) sx = Math.max(0, Math.min(W - vw, sx)); else sx = (W - vw) / 2; if (vh < H) sy = Math.max(0, Math.min(H - vh, sy)); else sy = (H - vh) / 2;
             const dx0 = Math.max(0, -sx), dy0 = Math.max(0, -sy);
-            c.drawImage(mapCv, Math.max(0, sx), Math.max(0, sy), Math.min(W, vw) - 0, Math.min(H, vh) - 0, dx0 * S, dy0 * S, Math.min(W, vw) * S, Math.min(H, vh) * S);
+            c.drawImage(window.mvCv(), Math.max(0, sx), Math.max(0, sy), Math.min(W, vw) - 0, Math.min(H, vh) - 0, dx0 * S, dy0 * S, Math.min(W, vw) * S, Math.min(H, vh) * S);
             const t = performance.now() / 1000;
             for (const p of mapPlayers()) {
                 const x = (p.x / 32 - sx) * S, y = (p.y / 32 - sy) * S;
@@ -11324,12 +11324,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 c.fillStyle = p.col; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke(); if (!p.me) { c.font = 'bold 9px Segoe UI'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 2.5; c.strokeText(p.name, x, y - 7); c.fillText(p.name, x, y - 7); }
             }
             for (const m of mapMarks()) { const x = (m.x / 32 - sx) * S, y = (m.y / 32 - sy) * S; if (x < 0 || y < 0 || x > cv.width || y > cv.height) continue; c.font = '11px Segoe UI'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.shadowColor = '#000'; c.shadowBlur = 3; c.fillText(m.ic, x, y + 4); c.shadowBlur = 0; }
-            const sh = zwSfAt(Math.floor(pcx), pcy, 0), dep = Math.round(pcy - sh); const mk = document.getElementById('mm-k'); if (mk) mk.textContent = (dep > 0 ? '⬇ ' + dep : '⬆ ' + (-dep)) + ' · X ' + Math.round(pcx) + ' · ×' + S;
+            const sh = zwSfAt(Math.floor(pcx), pcy, 0), dep = window.mvDep(pcy, sh); const mk = document.getElementById('mm-k'); if (mk) mk.textContent = (dep > 0 ? '⬇ ' + dep : '⬆ ' + (-dep)) + ' · X ' + Math.round(pcx) + ' · ×' + S;
         };
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '43.7', GAME_VER_NAME = 'Дрібні виправлення';
+        const GAME_VER = '43.8', GAME_VER_NAME = 'Карта неба';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -20082,7 +20082,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             };
         })(libOverlay);
         // ---------- велика мапа ----------
-        function v37Geo(m) { const g = mapGeo; return g ? { x: (m.x + 0.5 - g.sx) * g.sc, y: (m.y + 0.5 - g.sy) * g.sc } : null; }
+        function v37Geo(m) { const g = mapGeo; return g ? { x: (m.x + 0.5 - g.sx) * g.sc, y: (window.mvY(m.y) + 0.5 - g.sy) * g.sc } : null; }
         mapDrawBig = (function (o) {
             return function () {
                 o.apply(this, arguments);
@@ -20107,10 +20107,10 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 try {
                     if (mapOpen || mapTimer % 3 || gameState !== 'PLAYING') return; const mm = document.getElementById('minimap'); if (!mm || mm.style.display === 'none') return; const cv = mm.firstElementChild; if (!cv || !cv.getContext) return;
                     const c = cv.getContext('2d'), S = V19M.z, W = currentWorld.width, H = currentWorld.height, vw = cv.width / S, vh = cv.height / S, pcx = (player.x + 12) / 32, pcy = (player.y + 20) / 32;
-                    let sx = pcx - vw / 2, sy = pcy - vh / 2; if (vw < W) sx = Math.max(0, Math.min(W - vw, sx)); else sx = (W - vw) / 2; if (vh < H) sy = Math.max(0, Math.min(H - vh, sy)); else sy = (H - vh) / 2;
+                    let sx = pcx - vw / 2, sy = window.mvY(pcy) - vh / 2; if (vw < W) sx = Math.max(0, Math.min(W - vw, sx)); else sx = (W - vw) / 2; if (vh < H) sy = Math.max(0, Math.min(H - vh, sy)); else sy = (H - vh) / 2;
                     const t = performance.now() / 1000;
                     for (const m of v37AllMarks()) {
-                        let x = (m.x + 0.5 - sx) * S, y = (m.y + 0.5 - sy) * S, out = x < 6 || y < 6 || x > cv.width - 6 || y > cv.height - 6; const tr = V37.sel === m.id; if (out && !tr) continue;
+                        let x = (m.x + 0.5 - sx) * S, y = (window.mvY(m.y) + 0.5 - sy) * S, out = x < 6 || y < 6 || x > cv.width - 6 || y > cv.height - 6; const tr = V37.sel === m.id; if (out && !tr) continue;
                         x = Math.max(8, Math.min(cv.width - 8, x)); y = Math.max(8, Math.min(cv.height - 8, y));
                         c.save(); c.translate(x, y); if (tr) { c.strokeStyle = m.col; c.globalAlpha = 0.7 - 0.5 * ((t * 1.3) % 1); c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 6 + ((t * 1.3) % 1) * 9, 0, 7); c.stroke(); c.globalAlpha = 1; }
                         c.fillStyle = m.col; c.strokeStyle = '#0b0e13'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -7); c.lineTo(6, 0); c.lineTo(0, 7); c.lineTo(-6, 0); c.closePath(); c.fill(); c.stroke();
@@ -20189,7 +20189,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 e.preventDefault(); e.stopPropagation(); if (!mapGeo) return; const rc = cv.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top;
                 let hit = null, bd = 18; for (const it of mapGeo.items) if (it.mk) { const d = Math.hypot(it.x - x, it.y - y); if (d < bd) { bd = d; hit = it.mk; } }
                 if (hit) { const m = v37Marks().find(q => q.id === hit); if (m) { v37Pop(m); return; } }
-                v37Pop({ x: Math.floor(x / mapGeo.sc + mapGeo.sx), y: Math.floor(y / mapGeo.sc + mapGeo.sy) });
+                v37Pop({ x: Math.floor(x / mapGeo.sc + mapGeo.sx), y: window.mvInv(Math.floor(y / mapGeo.sc + mapGeo.sy)) });
             });
             cv.addEventListener('mousedown', e => { V37.dn = { x: e.clientX, y: e.clientY }; });
             cv.addEventListener('click', e => {
@@ -34489,16 +34489,59 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     })(updateGame);
     window.__zzw = { ZW, FW, HB, POT, pzGen, pzScan, pzCheck, hProg, seasonDays, fwLaunch, fwBurst, glyph, GL, RID };
 })();
+// ===== v43.8: КАРТА — небесна зона (кишеня) показується ЗВЕРХУ над поверхнею =====
+(function () {
+    const pk = () => { try { const Z = currentWorld && currentWorld.zf, p = Z && Z.sky && Z.sky.pk; return p && p.y0 > 0 && p.y0 < currentWorld.height ? p : null; } catch (e) { return null; } };
+    const P = () => { const p = pk(); return p ? currentWorld.height - p.y0 : 0; };
+    window.mvY = function (y) { const p = pk(); if (!p) return y; return y >= p.y0 ? y - p.y0 : y + P(); };
+    window.mvInv = function (v) { const p = pk(); if (!p) return v; const h = P(); return v < h ? v + p.y0 : v - h; };
+    window.mvDep = function (pcx, pcy, sh) { const p = pk(); if (!p || pcy < p.y0) return Math.round(pcy - sh); const s0 = (surfaceHeights && surfaceHeights[Math.floor(pcx)]) || 0; return -Math.round(s0 + (currentWorld.height - pcy)); };
+    const MV = { cv: null, W: 0, H: 0, d: null, key: '' };
+    mapBuild = (function (o) {
+        return function (x0, y0, x1, y1) {
+            const r = o.apply(this, arguments);
+            try {
+                if (!pk()) return r;
+                if (x0 === undefined) MV.d = { x0: 0, y0: 0, x1: 1e9, y1: 1e9 };
+                else if (MV.d) { MV.d.x0 = Math.min(MV.d.x0, x0); MV.d.y0 = Math.min(MV.d.y0, y0); MV.d.x1 = Math.max(MV.d.x1, x1); MV.d.y1 = Math.max(MV.d.y1, y1); }
+                else MV.d = { x0, y0, x1, y1 };
+            } catch (e) { }
+            return r;
+        };
+    })(mapBuild);
+    window.mvCv = function () {
+        try {
+            const p = pk(); if (!p || !mapCv) return mapCv;
+            const W = mapCv.width, H = mapCv.height, key = currentWorld.name + '|' + W + '|' + H + '|' + p.y0;
+            if (!MV.cv || MV.key !== key) { MV.cv = document.createElement('canvas'); MV.cv.width = W; MV.cv.height = H; MV.key = key; MV.d = { x0: 0, y0: 0, x1: 1e9, y1: 1e9 }; }
+            if (MV.d) {
+                const d = MV.d; MV.d = null; const x0 = Math.max(0, d.x0 | 0), x1 = Math.min(W - 1, d.x1 | 0), ya = Math.max(0, d.y0 | 0), yb = Math.min(H - 1, d.y1 | 0), h = P(), c = MV.cv.getContext('2d');
+                if (x1 >= x0) {
+                    const w = x1 - x0 + 1;
+                    if (yb >= p.y0) { const a = Math.max(ya, p.y0); c.clearRect(x0, a - p.y0, w, yb - a + 1); c.drawImage(mapCv, x0, a, w, yb - a + 1, x0, a - p.y0, w, yb - a + 1); }
+                    if (ya < p.y0) { const b = Math.min(yb, p.y0 - 1); c.clearRect(x0, ya + h, w, b - ya + 1); c.drawImage(mapCv, x0, ya, w, b - ya + 1, x0, ya + h, w, b - ya + 1); }
+                }
+            }
+            return MV.cv;
+        } catch (e) { return mapCv; }
+    };
+    const mapY = a => { const p = pk(); if (!p) return a; return a.map(q => Object.assign({}, q, { y: window.mvY(q.y / 32) * 32 })); };
+    mapPlayers = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapPlayers);
+    mapMarks = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapMarks);
+})();
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['43.7', 'Дрібні виправлення', 'new'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['43.8', 'Карта неба', 'new'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '43.8': [
+                ['#9fe8ff', '🗺 Карта неба', 'На карті світу та мінікарті небесна зона з островами тепер показується ЗВЕРХУ, над поверхнею, і твоя позначка літає вгорі, а не внизу. Мітки, підказки та висота (⬆) рахуються правильно.'],
+            ],
             '43.7': [
                 ['#9fe8ff', '🛠 Виправлення', 'Рунна скарбниця відкривається, навіть якщо двері пробито кіркою. Дія зілля скидається при завантаженні іншого збереження. Прискорено перевірки меблів у кожному кадрі.'],
             ],
