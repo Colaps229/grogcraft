@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '43.8', GAME_VER_NAME = 'Карта неба';
+        const GAME_VER = '44.0', GAME_VER_NAME = 'Лічильник онлайн';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -30554,155 +30554,14 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         v19Vx = (function (o) { return function (d, sp) { try { const sw = accSum('swim'); if (sw > 0 && v377WaterAt()) sp = sp * (1 + sw); } catch (e) { } return o.call(this, d, sp); }; })(v19Vx);
         minePower = (function (o) { return function () { const r = o.apply(this, arguments); try { if (r > 0) { const m = accSum('mine'); if (m > 0) return r * (1 + m); } } catch (e) { } return r; }; })(minePower);
         window.__zt = ZT;
-        // ================= ⛏ v41.4: ПОКИНУТА ШАХТА З ВІЗКАМИ =================
-        const ZO = { cd: 0, col: [], bq: [], rem: {}, hz: 0 };
-        const ZC = { on: false, x: 0, row: 0, v: 0, dir: 1, t: 0, y: 0, jmp: 0, ls: -1 };
-        function zlMine(w, h, rnd, pl0) {
-            const Lm = Math.max(130, Math.min(240, Math.floor(w * 0.2))), BH = 26; let L = Lm, pl = pl0 || null; if (pl0) L = pl0.L; else for (const f of [1, 0.85, 0.72, 0.6, 0.5]) { L = Math.max(96, Math.floor(Lm * f)); pl = zlPlace(w, h, L, BH, { rnd, dy: 4, dyr: 12, flat: 22, thr: 0.68, soft: 1 }); if (pl) break; } if (!pl) return;
-            const { x0, y0 } = pl, x1 = x0 + L - 1, yt = y0 + 12, Z = zlW(), S = zlSetB, R = rnd, ri = (a, b) => a + Math.floor(R() * (b - a + 1));
-            const ev = [[0.18, 1], [0.24, 1], [0.3, 1], [0.66, -1], [0.72, -1]].map(([f, d]) => [x0 + Math.floor(L * f), d]); const prof = [];
-            for (let x = x0; x <= x1; x++) { let o = 0; for (const [sx, d] of ev) if (x >= sx) o += d; prof.push(yt + o); }
-            const pf = x => prof[Math.max(0, Math.min(L - 1, x - x0))];
-            const gx0 = x0 + Math.floor(L * 0.58), gx1 = gx0 + 7, idx = (Z.mines = Z.mines || []).length;
-            const nearGap = (x, m) => x >= gx0 - (m || 1) && x <= gx1 + (m || 1);
-            // тунель
-            for (let x = x0; x <= x1; x++) { const p = pf(x); for (let y = p - 5; y <= p; y++) S(x, y, 0); S(x, p + 1, 22); if (!(x >= gx0 && x <= gx1)) S(x, p, 58); }
-            // балки, ліхтарі, павутиння
-            for (let x = x0 + 4; x <= x1 - 4; x += 7) { if (nearGap(x, 1)) continue; const p = pf(x); for (let dx = -1; dx <= 1; dx++) S(x + dx, p - 5, 22); for (let a = 1; a <= 4; a++) { S(x - 1, p - a, 59); S(x + 1, p - a, 59); } if ((x - x0) % 14 === 4) S(x, p - 4, 55); }
-            for (let x = x0 + 3; x <= x1 - 3; x++) { if (R() < 0.05 && !nearGap(x, 1)) S(x, pf(x) - 4 + ((R() * 2) | 0), 46); }
-            // провал із шипами та місток із важелями
-            for (let x = gx0; x <= gx1; x++) { const p = pf(x); for (let y = p + 1; y <= p + 10; y++) S(x, y, 0); S(x, p + 11, 47); S(x, p + 10, R() < 0.3 ? 48 : 0); }
-            const bridge = []; for (let x = gx0; x <= gx1; x++) bridge.push([x, pf(x)]);
-            const lvA = [gx0 - 2, pf(gx0 - 2)], lvB = [gx1 + 2, pf(gx1 + 2)]; S(lvA[0], lvA[1], 93); S(lvB[0], lvB[1], 93); S(gx0 - 1, pf(gx0 - 1) - 3, 55); S(gx1 + 1, pf(gx1 + 1) - 3, 55);
-            // рудні кімнати
-            const rooms = [], ml = [['iron_ingot', 3, 8, 0.8], ['gold_ingot', 1, 4, 0.55], ['torch', 6, 14, 0.7], ['gold_coin', 8, 22, 0.9], ['life_potion', 1, 2, 0.5], ['crystal_ingot', 1, 2, 0.25], ['iron_ore', 4, 9, 0.5], ['gold_ore', 2, 5, 0.3]]; let tries = 0;
-            while (rooms.length < 6 && tries++ < 80) {
-                const rx = x0 + 14 + ri(0, L - 44); if (nearGap(rx, 12) || rx > x1 - 22 || rooms.some(q => Math.abs(q - rx) < 20)) continue; rooms.push(rx); const p = pf(rx), up = rooms.length % 2 === 0;
-                let ya, yb, cy; if (up) { ya = p - 14; yb = p - 8; cy = p - 8; for (let y = p - 7; y <= p - 6; y++) S(rx, y, 0); for (let y = p - 8; y <= p - 5; y++) S(rx, y, 69); } else { ya = p + 4; yb = p + 9; cy = p + 9; for (let y = p + 1; y <= p + 3; y++) { S(rx, y, 0); } for (let y = p + 1; y <= p + 9; y++) S(rx, y, 69); }
-                for (let y = ya; y <= yb; y++) for (let x = rx - 4; x <= rx + 4; x++) { if (x === rx && (up ? y >= p - 8 : y <= p + 9)) { S(x, y, 69); continue; } S(x, y, 0); }
-                for (let y = ya - 1; y <= yb + 1; y++) for (let x = rx - 5; x <= rx + 5; x++) { if (!zlSolidB(zlGetB(x, y))) continue; const q = R(); if (q < 0.24) S(x, y, q < 0.09 ? 7 : q < 0.15 ? 6 : q < 0.2 ? 8 : 29); }
-                zlChest(rx + 2, cy, ml); S(rx - 2, ya + 1, 55); if (R() < 0.7) S(rx + 3, ya, 46); if (R() < 0.6) S(rx - 3, cy, 48);
-            }
-            // станції з візками
-            const st = [x0 + 9, gx0 - 12, gx1 + 14, x1 - 26].map(x => [x, pf(x)]); st.forEach(([x, y]) => { S(x, y, 92); S(x - 2, y - 3, 55); S(x + 2, y - 3, 55); });
-            // хитка дошка — пастка-обвал
-            const plates = []; for (let i = 0; i < 4; i++) { const x = x0 + 22 + Math.floor(((L - 70) / 4) * i + R() * ((L - 70) / 4)); if (nearGap(x, 8) || st.some(s2 => Math.abs(s2[0] - x) < 6) || x > x1 - 34 || ev.some(e => Math.abs(e[0] - x) < 3)) continue; S(x, pf(x), 95); plates.push([x, pf(x)]); }
-            // завал і контора в кінці
-            for (let x = x1 - 16; x <= x1 - 14; x++) for (let y = pf(x) - 5; y <= pf(x); y++) S(x, y, 103);
-            for (let x = x1 - 13; x <= x1 - 2; x++) S(x, pf(x), 0); S(x1 - 1, pf(x1) - 3, 59);
-            const ox = x1 - 7, oc = pf(ox), ol = u => [[u, 1, 1], ['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 25, 50], ['life_potion', 2, 4], ['crystal_ingot', 1, 3, 0.7], ['cosmic_ingot', 1, 2, 0.35]];
-            zlChest(ox - 3, oc, ol('miner_lantern')); zlChest(ox + 1, oc, [['iron_ingot', 6, 12], ['gold_ingot', 3, 7], ['gold_coin', 15, 30], ['torch', 10, 20], ['life_potion', 1, 3]]); S(ox - 1, oc - 3, 55); S(ox + 4, oc - 3, 55); S(ox + 3, oc, 48);
-            // входи з поверхні
-            const e1 = x0 + 6, e2 = x0 + Math.floor(L * 0.82); if (!pl0) { zlShaft(e1, pf(e1) - 1); zlShaft(e2, pf(e2) - 1); }
-            Z.mines.push({ x0, y0, x1, y1: y0 + BH - 1, gx0, gx1, bridge, lv: [lvA, lvB], plates, st, idx });
-            zlRegister('mine', x0, y0, x1, y0 + BH - 1, { x: x0 + (L >> 1), y: yt });
-        }
-        const zoMineAt = (x, y) => { const Z = zlW(); if (!Z || !Z.mines) return -1; for (let i = 0; i < Z.mines.length; i++) { const m = Z.mines[i]; if (x >= m.x0 && x <= m.x1 && y >= m.y0 && y <= m.y1) return i; } return -1; };
-        ZL.leverOn = (x, y) => { const i = zoMineAt(x, y); return i >= 0 ? !!zlSt()['br' + i] : false; };
-
-        // ---------- важіль-міст ----------
-        function zoBridge(i, on, anim) {
-            const m = zlW().mines[i]; if (!m) return; zlSt()['br' + i] = on ? 1 : 0;
-            const order = on ? m.bridge.slice() : m.bridge.slice().reverse();
-            order.forEach(([x, y], k) => ZO.bq.push({ t: 2 + k * 3, x, y, on, m: i }));
-            zlTone('square', 120, 60, 0.4, 0.09); try { shake = Math.max(shake, 2); } catch (e) { }
-        }
-        ZL.act[93] = function (bx, by) {
-            const i = zoMineAt(bx, by); if (i < 0 || ZO.cd > 0) return true; ZO.cd = 40; const on = !zlSt()['br' + i];
-            if (!v17Client() || true) { zoBridge(i, on); zlFlag('br' + i, on ? 1 : 0); zlSend({ k: 'bridge', i, on: on ? 1 : 0 }); }
-            zlTxt(on ? '⛓ Міст опущено' : '⛓ Міст піднято', on ? '#9fe8a8' : '#ffb07a'); return true;
-        };
-        zlHostMsg = (function (o) { return function (m) {
-            if (m.k === 'bridge') { zoBridgeFx(m.i, m.on); return; }
-            if (m.k === 'col') { zoCollapseFx(m.x, m.y); return; }
-            if (m.k === 'cart') { ZO.rem[m.id] = { on: m.on, at: performance.now() }; return; }
-            return o.apply(this, arguments);
-        }; })(zlHostMsg);
-        function zoBridgeFx(i, on) { zlSt()['br' + i] = on; zlTone('square', 120, 60, 0.4, 0.09); }
-        // (блоки моста змінює лише той, хто смикнув; решта бачить зміни через синхронізацію світу)
-
-        // ---------- обвал ----------
-        function zoCollapse(x, y) {
-            zlSend({ k: 'col', x, y }); zoCollapseFx(x, y, true);
-        }
-        function zoCollapseFx(x, y, own) { ZO.col.push({ x, y, t: 26, own: !!own }); try { zlTone('sawtooth', 90, 50, 0.6, 0.09); shake = Math.max(shake, 3); } catch (e) { } }
-        function zoTick() {
-            if (ZO.cd > 0) ZO.cd--;
-            // міст
-            for (let i = ZO.bq.length - 1; i >= 0; i--) { const q = ZO.bq[i]; if (--q.t > 0) continue; ZO.bq.splice(i, 1); zlSetB(q.x, q.y + 1, q.on ? 22 : 0); zlSetB(q.x, q.y, q.on ? 58 : 0); createParticles(q.x * 32 + 16, (q.y + 1) * 32 + 8, '#a8884a', 4, 2, 2, 20); if (ZL.t % 2 === 0) zlTone('square', 300 + Math.random() * 60, 200, 0.05, 0.03); }
-            // обвали
-            for (let i = ZO.col.length - 1; i >= 0; i--) {
-                const c = ZO.col[i]; c.t--; if (c.t > 4 && ZL.t % 2 === 0) { createParticles(c.x * 32 + (Math.random() - 0.5) * 120, (c.y - 4) * 32, '#8a847a', 2, 2, 3, 26); }
-                if (c.t === 14) { shake = Math.max(shake, 6); zlTone('sine', 80, 38, 0.7, 0.13); }
-                if (c.t <= 0) {
-                    if (c.own) for (let dx = -1; dx <= 1; dx++) for (let dy = 1; dy <= 3; dy++) { const bx = c.x + dx, by = c.y - dy; if (zlGetB(bx, by) === 0 || zlGetB(bx, by) === 55 || zlGetB(bx, by) === 59 || zlGetB(bx, by) === 46) zlSetB(bx, by, 103); }
-                    createParticles(c.x * 32 + 16, (c.y - 2) * 32, '#a8a298', 30, 6, 5, 40); shake = Math.max(shake, 10); zlTone('square', 70, 30, 0.5, 0.15);
-                    const px = (player.x + 12) / 32, py = (player.y + 22) / 32; if (Math.abs(px - c.x) < 2.6 && py > c.y - 5.5 && py < c.y + 1.6 && gameState === 'PLAYING') { bHurt(Math.round(player.maxHealth * 0.13) + 6, 'Вас завалило породою', '🪨', { col: '#a8a298', pc: '#a8a298' }); }
-                    ZO.col.splice(i, 1);
-                }
-            }
-            // хитка дошка
-            const Z = zlW(); if (Z && Z.mines && ZL.plateCd <= 0) {
-                const bx = Math.floor((player.x + 12) / 32), by = Math.floor((player.y + 40) / 32);
-                for (const m of Z.mines) { if (bx < m.x0 || bx > m.x1) continue; for (let k = 0; k < m.plates.length; k++) { const p = m.plates[k]; if (Math.abs(p[0] - bx) <= (ZC.on ? 1 : 0) && Math.abs(p[1] - by) <= 1 && zlGetB(p[0], p[1]) === 95) { zlSetB(p[0], p[1], 58); ZL.plateCd = 60; createParticles(p[0] * 32 + 16, p[1] * 32 + 28, '#b8a888', 10, 3, 3, 24); zlTone('square', 200, 90, 0.2, 0.08); zoCollapse(p[0] + (ZC.on ? ZC.dir * 3 : 0), p[1]); zlTxt('⚠ Хитка дошка!', '#ffb07a'); break; } } }
-            }
-            // шипи на дні провалу
-            if (ZO.hz-- <= 0) { const bx = Math.floor((player.x + 12) / 32), by = Math.floor((player.y + player.height - 2) / 32); if (zlGetB(bx, by) === 47 || zlGetB(bx, by + 1) === 47) { ZO.hz = 24; bHurt(Math.round(player.maxHealth * 0.1) + 5, 'Вас пронизали шипи', '🗡', { col: '#c8c8d8', pc: '#c8c8d8' }); } }
-        }
-
-        // ---------- їзда у візку ----------
-        const zoRail = (tx, r) => { const b = zlGetB(tx, r); return b === 58 || b === 95 || b === 92; };
-        function zoCartSend(on) { try { if (zlMP()) zlSend({ k: 'cart', on: on ? 1 : 0 }); } catch (e) { } }
-        ZL.act[92] = function (bx, by) {
-            if (ZC.on || ZO.cd > 0) return true; ZO.cd = 20; ZC.on = true; ZC.x = bx * 32 + 16; ZC.row = by; ZC.v = 0; ZC.dir = player.facing || 1; ZC.t = 0; ZC.y = (by + 1) * 32 - player.height - 5; ZC.jmp = 8;
-            player.x = ZC.x - 12; player.y = ZC.y; player.vy = 0; player.vx = 0; zlTxt('🛒 Поїхали! A/D — напрям, S — гальмо, Пробіл — вистрибнути', '#ffe08a'); zlTone('triangle', 200, 400, 0.2, 0.07); zoCartSend(true); return true;
-        };
-        function zoDismount(hop) { if (!ZC.on) return; ZC.on = false; if (hop) { player.vy = -7.5; player.vx = ZC.dir * Math.min(5, ZC.v * 0.7); } zoCartSend(false); }
-        function zoCrash(tx) {
-            const v = ZC.v; ZC.v = 0; zoDismount(false); player.vx = -ZC.dir * 2; player.vy = -3; try { shake = Math.max(shake, 8); } catch (e) { } createParticles(ZC.x + ZC.dir * 16, (ZC.row + 1) * 32 - 10, '#ffcf6a', 18, 5, 3, 24); zlTone('square', 120, 40, 0.35, 0.14);
-            if (v > 2.4) bHurt(Math.round(player.maxHealth * 0.045 * (v / 4)) + 3, 'Ви розбилися на візку', '🛒', { col: '#c9a14a', pc: '#c9a14a' }); zlTxt('💥 Візок зупинився', '#ffb07a');
-        }
-        function zoRide() {
-            if (!ZC.on) return; if (gameState !== 'PLAYING' || player.health <= 0) { ZC.on = false; zoCartSend(false); return; }
-            ZC.t++; const kA = keys['KeyA'] || keys['ArrowLeft'], kD = keys['KeyD'] || keys['ArrowRight'], kS = keys['KeyS'] || keys['ArrowDown'], want = kD ? 1 : kA ? -1 : 0;
-            if (ZC.jmp > 0) ZC.jmp--; else if (keys['Space']) { zoDismount(true); return; }
-            if (want && want !== ZC.dir) { ZC.v -= 0.3; if (ZC.v <= 0) { ZC.v = 0.3; ZC.dir = want; } } else ZC.v = Math.min(want === ZC.dir ? 6.4 : 3.6, ZC.v + (want === ZC.dir ? 0.1 : 0.06));
-            if (kS) ZC.v = Math.max(0, ZC.v - 0.2); if (!want && ZC.v > 3.6) ZC.v -= 0.04;
-            const nx = ZC.x + ZC.dir * ZC.v, tx = Math.floor(nx / 32); let rr = null;
-            if (tx !== Math.floor(ZC.x / 32) || true) { for (const r of [ZC.row, ZC.row - 1, ZC.row + 1]) { if (zoRail(tx, r) && !zlSolidB(zlGetB(tx, r - 1)) && !zlSolidB(zlGetB(tx, r - 2)) && !zlSolidB(zlGetB(tx, r))) { rr = r; break; } } }
-            if (rr === null) { if (ZC.v < 0.6) { ZC.v = 0; } else { zoCrash(tx); return; } }
-            else { if (rr !== ZC.row) { ZC.v += (rr < ZC.row ? -0.55 : 0.4) * (ZC.v > 0.6 ? 1 : 0); ZC.row = rr; try { shake = Math.max(shake, 1.2); } catch (e) { } } ZC.x = nx; }
-            ZC.y += (((ZC.row + 1) * 32 - player.height - 5) - ZC.y) * 0.5;
-            player.x = ZC.x - 12; player.y = ZC.y; player.vx = 0; player.vy = 0; player.onGround = true; player.facing = ZC.dir; player.fallDist = 0;
-            if (ZC.v > 2.5 && ZC.t % 2 === 0) createParticles(ZC.x - ZC.dir * 12, (ZC.row + 1) * 32 - 2, ZC.v > 4.5 ? '#ffe08a' : '#ffa850', 1, 2.4, 2, 12);
-            if (ZC.v > 1 && ZC.t % Math.max(5, Math.round(16 - ZC.v * 1.6)) === 0) zlTone('square', 110 + ZC.v * 14, 80, 0.05, 0.035);
-            if (ZC.ls !== 1 && ZC.t % 90 === 0) zoCartSend(true);
-        }
-        // ---------- малювання візка ----------
-        function zoDrawCart(cx, fy, face, v, t) {
-            ctx.save(); ctx.translate(cx, fy); ctx.scale(face, 1);
-            ctx.fillStyle = '#5a3e1c'; ctx.beginPath(); ctx.moveTo(-19, -20); ctx.lineTo(19, -20); ctx.lineTo(15, -4); ctx.lineTo(-15, -4); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a1606'; ctx.lineWidth = 2; ctx.stroke();
-            ctx.fillStyle = '#8a6a3a'; ctx.fillRect(-17, -19, 34, 4); ctx.fillStyle = '#6a4a22'; ctx.fillRect(-14, -12, 28, 2); ctx.fillStyle = '#9aa0ac'; ctx.fillRect(-20, -21, 40, 3);
-            for (const wx of [-10, 10]) { ctx.save(); ctx.translate(wx, -3); ctx.rotate(t * v * 0.55 * face); ctx.fillStyle = '#3a3a44'; ctx.beginPath(); ctx.arc(0, 0, 5.4, 0, 7); ctx.fill(); ctx.strokeStyle = '#a8a8b8'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.stroke(); ctx.restore(); }
-            ctx.restore();
-        }
-        drawBossesAll = (function (o) {
-            return function (t) {
-                o.apply(this, arguments);
-                try {
-                    if (ZC.on && gameState === 'PLAYING') { zoDrawCart(player.x + 12, player.y + player.height + 4, ZC.dir, ZC.v, ZL.t); const g = ctx.createRadialGradient(player.x + 12, player.y + 20, 2, player.x + 12, player.y + 20, 90); ctx.save(); ctx.globalCompositeOperation = 'lighter'; g.addColorStop(0, 'rgba(255,200,110,.22)'); g.addColorStop(1, 'rgba(255,160,60,0)'); ctx.fillStyle = g; ctx.fillRect(player.x - 80, player.y - 70, 184, 180); ctx.restore(); }
-                    if (zlMP()) for (const id in ZO.rem) { const r = ZO.rem[id], p = MP.players[id]; if (r && r.on && p && performance.now() - r.at < 4500 && !p.dead) zoDrawCart(p.x + 12, p.y + 48, p.f || 1, 3.5, ZL.t); }
-                } catch (e) { }
-            };
-        })(drawBossesAll);
-        updateGame = (function (o) {
-            return function () {
-                const riding = ZC.on && gameState === 'PLAYING';
-                o.apply(this, arguments); if (gameState !== 'PLAYING') { ZC.on = false; return; }
-                try { if (riding) zoRide(); zoTick(); } catch (e) { rpgErr(e); }
-            };
-        })(updateGame);
-        window.__zo = { ZO, ZC, zoMineAt };
+// v44.0 — лічильник гравців онлайн (сигнал раз на хвилину)
+(() => {
+    const ZO_URL = 'https://grogcount.kazume2020.workers.dev';
+    if (!/^https:\/\//.test(ZO_URL)) return;
+    let id = ''; try { id = localStorage.getItem('zo_id') || ''; if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('zo_id', id); } } catch (e) { id = Math.random().toString(36).slice(2); }
+    const ping = () => { try { if (typeof gameState !== 'undefined' && gameState === 'PLAYING') fetch(ZO_URL + '/ping?id=' + encodeURIComponent(id), { mode: 'no-cors', keepalive: true }).catch(() => { }); } catch (e) { } };
+    setTimeout(ping, 4000); setInterval(ping, 60000);
+})();
         // ================= 🌀 v41.4: ЛАБІРИНТ МУДРЕЦЯ (пастки, рунна головоломка, страж, сховище) =================
         const ZQ = { pr: [], dw: {}, cd: {}, door: [], sol: 0, hz: 0, tab: 0, vq: [] };
         ZL.dartW = ZQ.dw;
@@ -31558,7 +31417,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             if (ev.prog >= ev.need) ztDone();
         }
         function ztDone() {
-            const ev = ZSN.ev; if (!ev || ev.done) return; ev.done = true; const E = ZSN_EV[ev.k]; RPG.sn.c[ev.k] = ev.day; RPG.sn.n++;
+            const ev = ZSN.ev; if (!ev || ev.done) return; ev.done = true; ev.hide = 420; ZSN.pet.length = 0; ZSN.sparks.length = 0; const E = ZSN_EV[ev.k]; RPG.sn.c[ev.k] = ev.day; RPG.sn.n++;
             const coin = Math.round((60 + RPG.level * 6) / 5) * 5, n = 1 + (Math.random() < 0.25 ? 1 : 0);
             giveItem('gold_coin', coin); giveItem(E.item, n); try { if (window.__splEventRune) __splEventRune(ev.k); } catch (e) { } try { rpgOrbsAt(player.x + 12, player.y, Math.round(xpNeed(RPG.level) * 0.12)); } catch (e) { }
             if (Math.random() < 0.4) giveItem('life_potion', 1);
@@ -31566,12 +31425,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         const ztOutdoor = () => !ztUnder();
         function ztEvTick() {
-            const ev = ZSN.ev; if (!ev) return; ev.t++;
+            const ev = ZSN.ev; if (!ev) return; ev.t++; if (ev.done) { if (ev.hide > 0) ev.hide--; if (ZSN.pet.length) ZSN.pet.length = 0; }
             const px = player.x + 12, py = player.y + 22, out = ztOutdoor();
-            if (ev.k === 'sp' && !ev.done && out) {
-                if (ZSN.pet.length < 7 && Math.random() < 0.045) ZSN.pet.push({ x: px + (Math.random() - 0.5) * 760, y: py - 340 - Math.random() * 120, ph: Math.random() * 6, l: 0 });
+            if (ev.k === 'sp' && !ev.done) {
+                if (out && ZSN.pet.length < 7 && Math.random() < 0.045) ZSN.pet.push({ x: px + (Math.random() - 0.5) * 760, y: py - 340 - Math.random() * 120, ph: Math.random() * 6, l: 0 });
                 for (let i = ZSN.pet.length - 1; i >= 0; i--) {
-                    const p = ZSN.pet[i]; p.l++; p.y += 0.85; p.x += Math.sin(p.l * 0.05 + p.ph) * 0.9; const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32);
+                    const p = ZSN.pet[i]; if (!p) continue; p.l++; p.y += 0.85; p.x += Math.sin(p.l * 0.05 + p.ph) * 0.9; const bx = Math.floor(p.x / 32), by = Math.floor(p.y / 32);
                     if (Math.hypot(p.x - px, p.y - py) < 30) { ZSN.pet.splice(i, 1); ztProg(1); createParticles(p.x, p.y, '#ffb0dc', 10, 2, 3, 24); zlTone('sine', 880 + Math.random() * 300, 1500, 0.12, 0.06); if (ev.prog % 5 === 0) { try { v377Add('regen', 240); } catch (e) { } } }
                     else if (p.l > 900 || isSolid(bx, by)) ZSN.pet.splice(i, 1);
                 }
@@ -31685,9 +31544,9 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const s = ztSeason(), S = ZSN_S[s], dis = ztDis(), ev = ZSN.ev;
             if (ZSN.hud) { ZSN.hud.textContent = S.ic + ' ' + S.n + ' · ' + (dis + 1) + '/6'; ZSN.hud.style.setProperty('--zc', S.col); ZSN.hud.title = S.d; }
             let bg = ZSN_OV[s][0];
-            if (ev && !ev.done || ev) { if (ev.k === 'su') bg = 'rgba(15,20,50,.30)'; else if (ev.k === 'au') bg = 'rgba(120,40,10,.20)'; else if (ev.k === 'wi') bg = 'rgba(210,235,255,.24)'; else bg = 'rgba(255,150,210,.08)'; }
+            if (ev && !ev.done) { if (ev.k === 'su') bg = 'rgba(15,20,50,.30)'; else if (ev.k === 'au') bg = 'rgba(120,40,10,.20)'; else if (ev.k === 'wi') bg = 'rgba(210,235,255,.24)'; else bg = 'rgba(255,150,210,.08)'; }
             ZSN.ovl.style.background = ZSN.flash > 0.02 ? `rgba(255,255,255,${0.55 * ZSN.flash})` : bg; ZSN.ovl.style.transition = ZSN.flash > 0.02 ? 'none' : 'background 2.5s';
-            const el = ZSN.evEl; if (ev) { const E = ZSN_EV[ev.k], pr = ev.done ? 100 : Math.round(ev.prog / ev.need * 100); const sig = ev.k + ev.done + ev.prog; if (el.dataset.sig !== sig) { el.dataset.sig = sig; el.style.setProperty('--zc', E.col); el.innerHTML = `<b>${E.ic} ${E.n}</b><br>${ev.done ? '✔ Виконано — нагороду отримано' : E.txt + ' · ' + ev.prog + '/' + ev.need}<i><s style="width:${pr}%"></s></i>`; } el.style.display = 'block'; } else { el.style.display = 'none'; el.dataset.sig = ''; }
+            const el = ZSN.evEl; if (ev && (!ev.done || ev.hide > 0)) { const E = ZSN_EV[ev.k], pr = ev.done ? 100 : Math.round(ev.prog / ev.need * 100); const sig = ev.k + ev.done + ev.prog; if (el.dataset.sig !== sig) { el.dataset.sig = sig; el.style.setProperty('--zc', E.col); el.innerHTML = `<b>${E.ic} ${E.n}</b><br>${ev.done ? '✔ Виконано — нагороду отримано' : E.txt + ' · ' + ev.prog + '/' + ev.need}<i><s style="width:${pr}%"></s></i>`; } el.style.display = 'block'; } else { el.style.display = 'none'; el.dataset.sig = ''; }
         }
         updateGame = (function (o) {
             return function () {
@@ -34529,16 +34388,30 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     mapPlayers = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapPlayers);
     mapMarks = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapMarks);
 })();
+// v44.0 — лічильник гравців онлайн (сигнал раз на хвилину)
+(() => {
+    const ZO_URL = 'https://grogcount.kazume2020.workers.dev';
+    if (!/^https:\/\//.test(ZO_URL)) return;
+    let id = ''; try { id = localStorage.getItem('zo_id') || ''; if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('zo_id', id); } } catch (e) { id = Math.random().toString(36).slice(2); }
+    const ping = () => { try { if (typeof gameState !== 'undefined' && gameState === 'PLAYING') fetch(ZO_URL + '/ping?id=' + encodeURIComponent(id), { mode: 'no-cors', keepalive: true }).catch(() => { }); } catch (e) { } };
+    setTimeout(ping, 4000); setInterval(ping, 60000);
+})();
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['43.8', 'Карта неба', 'new'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['44.0', 'Лічильник онлайн', 'new'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '44.0': [
+                ['#7dffb0', '🟢 Гравці онлайн', 'Гра повідомляє, що ти зараз граєш, а в лаунчері під кнопкою «ГРАТИ» видно, скільки людей грає просто зараз.'],
+            ],
+            '43.9': [
+                ['#ffb0dc', '🌧 Квітнева злива', 'Після виконання події сповіщення зникає за кілька секунд, а пелюстки, що ще летіли, зникають і не лишаються на землі.'],
+            ],
             '43.8': [
                 ['#9fe8ff', '🗺 Карта неба', 'На карті світу та мінікарті небесна зона з островами тепер показується ЗВЕРХУ, над поверхнею, і твоя позначка літає вгорі, а не внизу. Мітки, підказки та висота (⬆) рахуються правильно.'],
             ],
