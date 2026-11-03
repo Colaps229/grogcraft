@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '44.5', GAME_VER_NAME = 'Світло рятунку';
+        const GAME_VER = '44.6', GAME_VER_NAME = 'Голос і мітки';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -34728,7 +34728,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 else { ic.innerHTML = spriteImg(i); tx.textContent = EMO[i][1]; hub.style.setProperty('--c', EMO[i][2]); hub.classList.remove('pulse'); void hub.offsetWidth; hub.classList.add('pulse'); try { playSound('click'); } catch (e) { } }
             }
             function wheelOpen(sticky) {
-                if (Z.em.open) return; wheelBuild(); Z.em.open = 1; Z.em.sticky = sticky ? 1 : 0; Z.em.sel = -2; wheelSel(-1);
+                if (Z.em.open) return; wheelBuild(); Z.em.open = 1; Z.em.sticky = sticky ? 1 : 0; Z.em.mx = sticky ? null : mouse.x; Z.em.my = sticky ? null : mouse.y; Z.em.sel = -2; wheelSel(-1);
                 wheel.classList.remove('show'); void wheel.offsetWidth; wheel.classList.add('show');
                 wheel.querySelector('.hint').style.display = sticky ? 'none' : '';
             }
@@ -34736,7 +34736,51 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             function emote(i) {
                 const now = performance.now(); if (now - Z.em.last < 1100 || !EMO[i]) return; Z.em.last = now;
                 bubble('me', i); sfx(i, .85);
-                if (on()) { mpSend({ t: 'x_em', i }); try { mpChatAdd(MP.name, EMO[i][0] + ' ' + EMO[i][1], true); } catch (e) { } }
+                let px, py;
+                if (i === 6) { // «Сюди!» — мітка там, куди вказує курсор
+                    let wx = Z.em.mx != null ? Z.em.mx + camera.x : NaN, wy = Z.em.my != null ? Z.em.my + camera.y : NaN;
+                    if (!isFinite(wx) || !isFinite(wy) || Math.hypot(wx - player.x, wy - player.y) > 1400) { wx = player.x + 12 + 44 * (player.facing >= 0 ? 1 : -1); wy = player.y + player.height; }
+                    px = Math.round(wx); py = Math.round(wy); addPing('me', px, py);
+                }
+                if (on()) { mpSend({ t: 'x_em', i, px, py }); try { mpChatAdd(MP.name, EMO[i][0] + ' ' + EMO[i][1], true); } catch (e) { } }
+            }
+            // ---------- мітка «Сюди!» ----------
+            const PING_LIFE = 14000; Z.pings = {};
+            function addPing(key, x, y) {
+                let name, c; if (key === 'me') { name = (MP && MP.name) || 'Ти'; c = '#6fe0a0'; } else { const p = MP && MP.players && MP.players[key]; name = p ? p.name : '?'; c = col(key).shirt; }
+                Z.pings[key] = { x, y, name, c, t0: performance.now(), gone: 0 };
+                try { createParticles(x, y, '#6fe0a0', 18, 4, 3, 40); createParticles(x, y, '#ffffff', 6, 3, 2, 26); } catch (e) { }
+            }
+            function drawPings(now) {
+                const W = canvas.width, H = canvas.height;
+                for (const k in Z.pings) {
+                    const g = Z.pings[k], age = now - g.t0; let fade = 1;
+                    if (g.gone) { fade = 1 - (now - g.gone) / 500; if (fade <= 0) { delete Z.pings[k]; continue; } }
+                    else if (age > PING_LIFE) { delete Z.pings[k]; continue; }
+                    else if (age > PING_LIFE - 1500) fade = (PING_LIFE - age) / 1500;
+                    const dist = Math.hypot(g.x - (player.x + 12), g.y - (player.y + 20)), sx = g.x - camera.x, sy = g.y - camera.y;
+                    if (!g.gone && dist < 54 && age > 900) { g.gone = now; try { createParticles(g.x, g.y, '#6fe0a0', 26, 5, 4, 46); createParticles(g.x, g.y, '#ffffff', 8, 3, 3, 30); playSound('pickup'); } catch (e) { } }
+                    const inside = sx > 34 && sx < W - 34 && sy > 60 && sy < H - 30, lbl = g.name + ' · ' + Math.round(dist / 32) + ' м';
+                    ctx.save(); ctx.globalAlpha = fade;
+                    if (inside) {
+                        for (let i = 0; i < 3; i++) { const ph = ((age / 1500) + i / 3) % 1; ctx.globalAlpha = fade * (1 - ph) * 0.85; ctx.strokeStyle = '#6fe0a0'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.ellipse(g.x, g.y, 6 + ph * 38, 2.4 + ph * 14, 0, 0, 7); ctx.stroke(); }
+                        ctx.globalAlpha = fade; const bg = ctx.createLinearGradient(0, g.y, 0, g.y - 100); bg.addColorStop(0, 'rgba(111,224,160,.5)'); bg.addColorStop(1, 'rgba(111,224,160,0)'); ctx.fillStyle = bg; ctx.fillRect(g.x - 3, g.y - 100, 6, 100);
+                        const bounce = Math.abs(Math.sin(age / 280)) * 9, sp = spriteCanvas(6), sc = 3.2, w = sp.width * sc, h = sp.height * sc;
+                        ctx.imageSmoothingEnabled = false; ctx.shadowColor = 'rgba(111,224,160,.9)'; ctx.shadowBlur = 12; ctx.drawImage(sp, g.x - w / 2, g.y - 18 - h - bounce, w, h); ctx.shadowBlur = 0;
+                        ctx.font = '700 12px "Segoe UI",sans-serif'; const tw = ctx.measureText(lbl).width, ly = g.y - 18 - h - bounce - 18;
+                        ctx.fillStyle = 'rgba(12,22,38,.88)'; rr(ctx, g.x - tw / 2 - 9, ly - 11, tw + 18, 22, 8); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = g.c; ctx.stroke();
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#eafff3'; ctx.fillText(lbl, g.x, ly + 1);
+                    } else {
+                        const cxw = camera.x + W / 2, cyw = camera.y + H / 2, ang = Math.atan2(g.y - cyw, g.x - cxw);
+                        const ex = Math.max(40, Math.min(W - 40, sx)), ey = Math.max(70, Math.min(H - 56, sy)), wx = camera.x + ex, wy = camera.y + ey, pulse = 1 + 0.08 * Math.sin(now / 200);
+                        ctx.translate(wx, wy);
+                        ctx.save(); ctx.rotate(ang); ctx.translate(30 * pulse, 0); ctx.fillStyle = '#6fe0a0'; ctx.shadowColor = '#6fe0a0'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -7); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill(); ctx.restore();
+                        ctx.scale(pulse, pulse); ctx.fillStyle = 'rgba(12,22,38,.9)'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = g.c; ctx.stroke();
+                        const sp = spriteCanvas(6); ctx.imageSmoothingEnabled = false; ctx.drawImage(sp, -sp.width * 1.1, -sp.height * 1.1 - 2, sp.width * 2.2, sp.height * 2.2);
+                        ctx.font = '700 11px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)'; const dt = Math.round(dist / 32) + ' м'; ctx.strokeText(dt, 0, 32); ctx.fillStyle = '#eafff3'; ctx.fillText(dt, 0, 32);
+                    }
+                    ctx.restore();
+                }
             }
             function bubble(key, i) {
                 const e = EMO[i]; if (!e) return; Z.em.b[key] = { i, t0: performance.now() };
@@ -34851,6 +34895,10 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 // аура на землі
                 ctx.save(); ctx.globalAlpha = 0.5 + 0.3 * pulse; const gr = ctx.createRadialGradient(cx, fy, 2, cx, fy, 46); gr.addColorStop(0, 'rgba(120,255,180,.75)'); gr.addColorStop(1, 'rgba(120,255,180,0)');
                 ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(cx, fy, 46, 12, 0, 0, 7); ctx.fill(); ctx.restore();
+                // піксельна тінь під тілом
+                ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(cx - 20, fy - 3, 40, 3); ctx.fillRect(cx - 14, fy, 28, 3); ctx.fillRect(cx - 8, fy + 3, 16, 2);
+                // предмет, що випав із рук
+                if (p.it) { try { const sp = spriteOf(p.it); if (sp) { const sd = p.f < 0 ? 1 : -1; ctx.save(); ctx.translate(cx + sd * 32, fy - 8 + Math.sin(now / 420) * 0.8); ctx.rotate(sd * 0.85); ctx.imageSmoothingEnabled = false; ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 3; ctx.drawImage(sp, -10, -10, 20, 20); ctx.restore(); } } catch (e) { } }
                 // тіло, що лежить
                 ctx.save(); ctx.globalAlpha = 0.92; ctx.shadowColor = 'rgba(125,255,176,' + (0.6 + 0.35 * pulse).toFixed(2) + ')'; ctx.shadowBlur = 8 + 6 * pulse;
                 ctx.translate(cx, fy - 9); ctx.rotate(-Math.PI / 2 * (p.f < 0 ? -1 : 1)); ctx.translate(-cx, -fy);
@@ -35080,7 +35128,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             mpOnMsg = (function (o) {
                 return function (m) {
                     try {
-                        if (m && m.t === 'x_em') { const k = String(m.id); bubble(k, m.i); const p = MP.players[m.id], e = EMO[m.i]; if (p && e) { try { mpChatAdd(p.name, e[0] + ' ' + e[1], false); } catch (er) { } } try { const pp = MP.players[m.id], dd = pp ? Math.hypot(pp.x - player.x, pp.y - player.y) : 600; sfx(m.i, Math.max(0.25, 1 - dd / 1000)); } catch (er) { } return; }
+                        if (m && m.t === 'x_em') { const k = String(m.id); bubble(k, m.i); if (m.i === 6 && isFinite(m.px) && isFinite(m.py)) addPing(k, +m.px, +m.py); const p = MP.players[m.id], e = EMO[m.i]; if (p && e) { try { mpChatAdd(p.name, e[0] + ' ' + e[1], false); } catch (er) { } } try { const pp = MP.players[m.id], dd = pp ? Math.hypot(pp.x - player.x, pp.y - player.y) : 600; sfx(m.i, Math.max(0.25, 1 - dd / 1000)); } catch (er) { } return; }
                         if (m && m.t === 'x_rv') { rvMsg(m); return; }
                     } catch (e) { try { rpgErr(e); } catch (_) { } }
                     return o.apply(this, arguments);
@@ -35092,7 +35140,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     const was = gameState === 'PLAYING', r = o.apply(this, arguments);
                     try {
                         if (was && gameState === 'DEAD') {
-                            DEATH_MS = on() ? DEATH_MP : 10000; Z.rv.mine = null; wheelClose();
+                            DEATH_MS = on() ? DEATH_MP : 10000; Z.rv.mine = null; Z.hb = 0; wheelClose();
                             Z.noRv = !!(typeof V35 !== 'undefined' && V35 && V35.hc);
                             const tip = $('zm-rv-tip'); if (tip) tip.style.display = on() && !Z.noRv ? '' : 'none';
                             if (on()) mpSend({ t: 'x_rv', k: 'dn', x: Math.round(player.x), y: Math.round(player.y), nr: Z.noRv ? 1 : 0 });
@@ -35110,6 +35158,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     try {
                         const now = performance.now(), dt = Z.frz ? Math.min(250, now - Z.frz) : 0; Z.frz = now;
                         const R = Z.rv; if (R.mine && now - R.mine.t < 700 && R.mine.p > 0 && deathInfo && !deathInfo.done) deathInfo.start += dt;
+                        // биття серця: що менше часу лишилось, то частіше
+                        if (on() && deathInfo && !deathInfo.done && now >= (Z.hb || 0)) {
+                            const left = Math.max(0, Math.min(1, 1 - (now - deathInfo.start) / DEATH_MS)); Z.hb = now + 520 + 640 * left;
+                            if (snd()) { tone('sine', 74, 42, .17, .6, { lp: 230 }); tone('sine', 64, 38, .15, .42, { delay: .19, lp: 210 }); }
+                            shake = Math.max(shake, 1.6 + (1 - left) * 1.4);
+                        }
                     } catch (e) { }
                     return o.apply(this, arguments);
                 };
@@ -35129,6 +35183,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                         }
                         drawBeams(now);
                         drawFx(now);
+                        drawPings(now);
                         for (const k in Z.em.b) {
                             const b = Z.em.b[k]; let cx, ty;
                             if (k === 'me') { if (gameState === 'DEAD') { delete Z.em.b[k]; continue; } cx = player.x + 12; ty = player.y - 22; }
@@ -35139,9 +35194,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 };
             })(mpDraw);
 
+            // мітки «Сюди!» на міні-карті та великій карті
+            mapMarks = (function (o) { return function () { const m = o.apply(this, arguments); try { for (const k in Z.pings) { const g = Z.pings[k]; if (!g.gone) m.push({ x: g.x, y: g.y, ic: '📍', n: 'Мітка: ' + g.name }); } } catch (e) { } return m; }; })(mapMarks);
+
             mpOpen = (function (o) { return function (from) { const r = o.apply(this, arguments); try { mpScreen(); const row = $('zm-code-row'); if (row) { row.style.display = from === 'pause-menu' ? 'none' : ''; codeStatus(''); const i = $('zm-code'); if (i) i.value = ''; recentRender(); } } catch (e) { } return r; }; })(mpOpen);
             mpJoinWorld = (function (o) { return function (m) { const r = o.apply(this, arguments); try { remember(); } catch (e) { } return r; }; })(mpJoinWorld);
-            mpLeave = (function (o) { return function () { try { invClose(); wheelClose(); Z.rv.hold = 0; Z.rv.mine = null; Z.rv.vis = {}; Z.inv.pubTried = 0; } catch (e) { } return o.apply(this, arguments); }; })(mpLeave);
+            mpLeave = (function (o) { return function () { try { invClose(); wheelClose(); Z.rv.hold = 0; Z.rv.mine = null; Z.rv.vis = {}; Z.inv.pubTried = 0; Z.pings = {}; Z.em.b = {}; } catch (e) { } return o.apply(this, arguments); }; })(mpLeave);
 
             setInterval(() => { try { mineUi(); } catch (e) { } }, 60);
             setInterval(() => {
@@ -35155,6 +35213,459 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 } catch (e) { }
             }, 1000);
             try { guide.adviceList.push('Утримуй Tab і наведи мишку на емоцію — друзі побачать її над твоєю головою.', 'Якщо союзник упав, стань поруч і утримуй F — він підведеться з 50% здоров’я.'); } catch (e) { }
+        })();
+        // ================= 🎙 v44.6: ГОЛОСОВИЙ ЧАТ — «поруч» (об'ємний звук за відстанню) або «рація» =================
+        // Мікрофон → Opus (WebCodecs) або запасний µ-law 16 кГц → повідомлення x_vc через звичайний сервер гри → декодер → 3D-мікс.
+        (() => {
+            const $ = id => document.getElementById(id);
+            const on = () => !!(typeof MP !== 'undefined' && MP && MP.sh && MP.ws && MP.ws.readyState === 1);
+            const typing = e => { const t = e && e.target, g = t && t.tagName; return g === 'INPUT' || g === 'TEXTAREA' || g === 'SELECT' || (t && t.isContentEditable); };
+            const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const col = id => MP_COLORS[(+id || 0) % MP_COLORS.length];
+            const SR = 48000, RANGE = 1100, NEAR = 260, JIT = 0.09, LS = 'zv_cfg_v1';
+            const D = { enabled: 0, dev: '', mode: 'ptt', key: 'k:Backquote', gain: 100, vol: 100, vad: 45, ec: 1, ns: 1, agc: 1, prox: 1, deaf: 0, mute: 0, cues: 1, pv: {} };
+            const cfg = Object.assign({}, D);
+            try { Object.assign(cfg, JSON.parse(localStorage.getItem(LS) || '{}')); } catch (e) { }
+            if (!cfg.pv || typeof cfg.pv !== 'object') cfg.pv = {};
+            const save = () => { try { localStorage.setItem(LS, JSON.stringify(cfg)); } catch (e) { } };
+            const V = { ctx: null, out: null, stream: null, n: null, starting: 0, held: 0, tog: 0, vadUntil: 0, tail: 0, tx: 0, lv: 0, err: '', enc: null, codec: 'u', sr: SR, fl: 960, seq: 0, ts: 0, ring: new Float32Array(960 * 12), rl: 0, bind: 0, mon: 0, rx: {}, open: 0, devs: [], local: 0, muteFlash: 0, warned: 0 };
+
+            // ---------- піксельний мікрофон ----------
+            const MIC = ['..gggg..', '.gwgggg.', '.gwgggg.', '.gggggg.', 'G.gggg.G', 'G.gggg.G', '.GGGGGG.', '...GG...', '...GG...', '..GGGG..'];
+            const PALS = { gray: { g: '#cfd8e6', w: '#ffffff', G: '#8493aa' }, green: { g: '#7dffb0', w: '#eafff3', G: '#27a864' }, red: { g: '#ff7a7a', w: '#ffe3e3', G: '#b83a3a' }, amber: { g: '#ffd36b', w: '#fff3cf', G: '#b9831e' } };
+            const micCache = {};
+            function micCanvas(kind, slash) {
+                const key = kind + (slash ? '/' : ''); if (micCache[key]) return micCache[key];
+                const rows = MIC, w = 8, h = rows.length, c = document.createElement('canvas'); c.width = w + 2; c.height = h + 2; const x = c.getContext('2d'), P = PALS[kind] || PALS.gray;
+                const on_ = (px, py) => px >= 0 && py >= 0 && px < w && py < h && rows[py][px] !== '.';
+                for (let py = -1; py <= h; py++) for (let px = -1; px <= w; px++) {
+                    if (on_(px, py)) { x.fillStyle = P[rows[py][px]]; x.fillRect(px + 1, py + 1, 1, 1); }
+                    else if (on_(px - 1, py) || on_(px + 1, py) || on_(px, py - 1) || on_(px, py + 1)) { x.fillStyle = '#1b1730'; x.fillRect(px + 1, py + 1, 1, 1); }
+                }
+                if (slash) { for (let i = 0; i < h; i++) { const px = 1 + Math.round(i * (w - 1) / (h - 1)); x.fillStyle = '#1b1730'; x.fillRect(px - 1, 1 + i, 3, 1); x.fillStyle = '#ff4d5e'; x.fillRect(px, 1 + i, 1, 1); } }
+                return (micCache[key] = c);
+            }
+            const micUrl = {};
+            function micImg(kind, slash) { const k = kind + (slash ? '/' : ''); if (!micUrl[k]) { const s = micCanvas(kind, slash), c = document.createElement('canvas'); c.width = s.width * 4; c.height = s.height * 4; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(s, 0, 0, c.width, c.height); micUrl[k] = c.toDataURL(); } return micUrl[k]; }
+
+            // ---------- стилі ----------
+            {
+                const st = document.createElement('style'); st.textContent = `
+                #zv-btn{position:fixed;right:14px;bottom:232px;width:46px;height:46px;border-radius:50%;z-index:62;display:none;align-items:center;justify-content:center;cursor:pointer;
+                  background:linear-gradient(160deg,#2a4670,#14233c);border:2px solid rgba(150,200,255,.45);box-shadow:0 6px 16px rgba(0,0,0,.55);transition:transform .15s,border-color .2s,background .2s}
+                #zv-btn.show{display:flex;animation:zvPop .45s cubic-bezier(.2,1.4,.4,1)}
+                #zv-btn:hover{transform:scale(1.12) rotate(-6deg)}
+                #zv-btn img{width:26px;height:30px;image-rendering:pixelated;position:relative;z-index:1}
+                #zv-btn::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(125,255,176,0);pointer-events:none}
+                #zv-btn.tx{border-color:#7dffb0;background:linear-gradient(160deg,#1f6a4a,#0e3a2a);box-shadow:0 0 18px rgba(125,255,176,.55),0 6px 16px rgba(0,0,0,.55)}
+                #zv-btn.tx::after{border-color:rgba(125,255,176,.75);transform:scale(calc(1 + var(--lv,0) * .55));transition:transform .06s linear}
+                #zv-btn.mute{border-color:#ff7a7a;background:linear-gradient(160deg,#6a2a2a,#3a1414)}
+                #zv-btn.err{border-color:#ffd36b;background:linear-gradient(160deg,#6a5420,#3a2c0e)}
+                #zv-btn.idle{opacity:.78}
+                @keyframes zvPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+                #zv-badge{position:fixed;left:50%;top:122px;transform:translate(-50%,-12px);z-index:66;display:flex;align-items:center;gap:9px;padding:6px 14px 6px 10px;border-radius:22px;opacity:0;pointer-events:none;
+                  background:linear-gradient(160deg,rgba(18,52,40,.94),rgba(8,26,22,.94));border:1.5px solid rgba(125,255,176,.55);box-shadow:0 8px 26px rgba(0,0,0,.6),0 0 22px rgba(80,255,150,.22);color:#d6ffe8;font:700 12.5px 'Segoe UI',sans-serif;transition:opacity .22s,transform .3s cubic-bezier(.2,1.3,.4,1)}
+                #zv-badge.show{opacity:1;transform:translate(-50%,0)}
+                #zv-badge.mu{background:linear-gradient(160deg,rgba(60,22,22,.94),rgba(30,10,10,.94));border-color:rgba(255,122,122,.6);color:#ffd6d6;box-shadow:0 8px 26px rgba(0,0,0,.6),0 0 22px rgba(255,80,80,.2)}
+                #zv-badge img{width:17px;height:20px;image-rendering:pixelated}
+                #zv-badge .eq{display:flex;align-items:flex-end;gap:2px;height:16px}
+                #zv-badge .eq i{display:block;width:3px;height:3px;border-radius:2px;background:#7dffb0;box-shadow:0 0 6px #7dffb0;transition:height .07s}
+                #zv-panel{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(10,18,32,.55),rgba(3,6,12,.82));backdrop-filter:blur(3px);font:600 13px 'Segoe UI',sans-serif;color:#dfeaff}
+                #zv-panel.show{display:flex;animation:zvFade .25s ease-out}
+                @keyframes zvFade{from{opacity:0}to{opacity:1}}
+                #zv-win{width:min(600px,95vw);max-height:90vh;overflow:auto;padding:18px 20px 16px;border-radius:20px;background:linear-gradient(160deg,rgba(26,42,66,.98),rgba(10,16,28,.98));border:1px solid rgba(130,190,255,.3);box-shadow:0 30px 90px rgba(0,0,0,.85),0 0 0 1px rgba(0,0,0,.45);scrollbar-width:thin;scrollbar-color:#35557f transparent;animation:zvWin .4s cubic-bezier(.2,1.25,.4,1)}
+                @keyframes zvWin{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+                #zv-win .hd{display:flex;align-items:center;gap:13px;margin-bottom:12px}
+                #zv-win .hd img{width:38px;height:46px;image-rendering:pixelated;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));animation:zvBob 2.6s ease-in-out infinite}
+                @keyframes zvBob{50%{transform:translateY(-3px) rotate(-4deg)}}
+                #zv-win .hd h3{margin:0;font-size:20px;color:#cfeaff;letter-spacing:.01em}
+                #zv-win .hd small{display:block;color:#8fa6c4;font-weight:400;font-size:12px;margin-top:1px}
+                #zv-win .hd .chip{margin-left:auto;padding:5px 11px;border-radius:14px;font-size:11.5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#9fb6d4;white-space:nowrap;transition:all .25s}
+                #zv-win .hd .chip.ok{color:#aaffcf;background:rgba(60,200,120,.14);border-color:rgba(125,255,176,.45)}
+                #zv-win .hd .chip.bad{color:#ffc9c9;background:rgba(220,70,70,.14);border-color:rgba(255,122,122,.45)}
+                #zv-win .hd .chip.tx{color:#fff;background:rgba(60,200,120,.35);border-color:#7dffb0;box-shadow:0 0 14px rgba(125,255,176,.5);animation:zvGlow 1s ease-in-out infinite}
+                @keyframes zvGlow{50%{box-shadow:0 0 22px rgba(125,255,176,.8)}}
+                #zv-win .hd u{text-decoration:none;cursor:pointer;color:#8fa6c4;font-size:18px;padding:2px 6px;border-radius:8px;transition:all .15s}#zv-win .hd u:hover{color:#fff;background:rgba(255,255,255,.1)}
+                #zv-win .card{margin:10px 0;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);animation:zvRise .4s backwards}
+                #zv-win .card:nth-of-type(2){animation-delay:.04s}#zv-win .card:nth-of-type(3){animation-delay:.08s}#zv-win .card:nth-of-type(4){animation-delay:.12s}#zv-win .card:nth-of-type(5){animation-delay:.16s}#zv-win .card:nth-of-type(6){animation-delay:.2s}
+                @keyframes zvRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+                #zv-win h4{margin:0 0 9px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6f8fb8}
+                #zv-win .row{display:flex;align-items:center;gap:12px;margin:8px 0}
+                #zv-win .row .lb{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}#zv-win .row .lb b{font-size:13px;color:#e6f0ff}#zv-win .row .lb span{font-size:11.5px;color:#8fa6c4;font-weight:400}
+                #zv-win .sw{position:relative;width:46px;height:26px;flex:none;cursor:pointer}#zv-win .sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:2}
+                #zv-win .sw i{position:absolute;inset:0;border-radius:13px;background:#26354d;border:1px solid #3a5a86;transition:all .25s}
+                #zv-win .sw i::after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#9fb6d4;transition:all .28s cubic-bezier(.3,1.5,.5,1);box-shadow:0 2px 4px rgba(0,0,0,.5)}
+                #zv-win .sw input:checked+i{background:linear-gradient(90deg,#2a9a62,#3fd388);border-color:#7dffb0;box-shadow:0 0 12px rgba(80,255,150,.4)}
+                #zv-win .sw input:checked+i::after{left:23px;background:#fff}
+                #zv-win select{width:100%;padding:9px 10px;border-radius:10px;background:#16233a;border:1px solid #3a5a86;color:#e6f0ff;font:600 13px 'Segoe UI',sans-serif;outline:none;transition:border-color .15s}#zv-win select:hover,#zv-win select:focus{border-color:#7fc3ff}
+                #zv-win .meter{position:relative;display:flex;gap:2.5px;height:20px;margin:11px 0 4px;padding:4px;border-radius:9px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+                #zv-win .meter span{flex:1;border-radius:2px;background:rgba(255,255,255,.08);transition:background .06s,box-shadow .06s}
+                #zv-win .meter span.l{background:#3fe08a;box-shadow:0 0 6px rgba(63,224,138,.7)}#zv-win .meter span.l.y{background:#ffd36b;box-shadow:0 0 6px rgba(255,211,107,.7)}#zv-win .meter span.l.r{background:#ff5a5a;box-shadow:0 0 6px rgba(255,90,90,.7)}
+                #zv-win .meter b{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff;opacity:0;transition:left .1s,opacity .2s;pointer-events:none}
+                #zv-win.m-vad .meter b{opacity:.95}
+                #zv-win .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+                #zv-win button.b{flex:1;min-width:150px;padding:9px 12px;border:0;border-radius:10px;cursor:pointer;color:#fff;font:700 12.5px 'Segoe UI',sans-serif;background:linear-gradient(180deg,#3a86c8,#2563a0);box-shadow:0 2px 0 #163e66;transition:transform .12s,filter .15s,background .2s}
+                #zv-win button.b:hover{transform:translateY(-1px);filter:brightness(1.12)}#zv-win button.b:active{transform:translateY(1px)}
+                #zv-win button.b.act{background:linear-gradient(180deg,#3fc47a,#23925a);box-shadow:0 2px 0 #14603a}
+                #zv-win button.b.warn{background:linear-gradient(180deg,#d65a5a,#a63636);box-shadow:0 2px 0 #6a1f1f}
+                #zv-win .seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:rgba(0,0,0,.3)}
+                #zv-win .seg button{flex:1;padding:8px 6px;border:0;border-radius:9px;background:transparent;color:#9fb6d4;cursor:pointer;font:700 12px 'Segoe UI',sans-serif;transition:all .2s}
+                #zv-win .seg button:hover{color:#fff;background:rgba(255,255,255,.07)}
+                #zv-win .seg button.on{color:#fff;background:linear-gradient(180deg,#3a86c8,#2563a0);box-shadow:0 2px 8px rgba(40,110,200,.5);animation:zvBeat .3s}
+                @keyframes zvBeat{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+                #zv-win .keybtn{min-width:140px;padding:9px 14px;border-radius:10px;cursor:pointer;color:#fff;font:800 14px 'Segoe UI',sans-serif;background:#1d2d47;border:2px solid #3a5a86;border-bottom-width:4px;transition:all .15s}
+                #zv-win .keybtn:hover{border-color:#7fc3ff;transform:translateY(-1px)}
+                #zv-win .keybtn.wait{border-color:#ffd36b;color:#ffe9a8;animation:zvWait 1s ease-in-out infinite}
+                @keyframes zvWait{50%{box-shadow:0 0 18px rgba(255,211,107,.6);transform:scale(1.03)}}
+                #zv-win .keymsg{min-height:16px;font-size:11.5px;margin-top:2px;color:#ffb0a0;animation:zvRise .25s}
+                #zv-win input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:4px;background:linear-gradient(90deg,#3fd388 var(--p,50%),#26354d var(--p,50%));outline:none;cursor:pointer}
+                #zv-win input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #3fd388;box-shadow:0 2px 6px rgba(0,0,0,.5);transition:transform .15s}
+                #zv-win input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+                #zv-win input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #3fd388}
+                #zv-win .sl{display:flex;align-items:center;gap:12px;margin:9px 0}#zv-win .sl .lb{width:150px;flex:none}#zv-win .sl .lb b{display:block;font-size:12.5px;color:#e6f0ff}#zv-win .sl output{width:46px;text-align:right;color:#bfe6ff;font-weight:700}
+                #zv-win .err{display:none;margin-top:8px;padding:9px 12px;border-radius:10px;background:rgba(220,70,70,.14);border:1px solid rgba(255,122,122,.4);color:#ffc9c9;font-weight:500;line-height:1.4}#zv-win .err.show{display:block;animation:zvShake .4s}
+                @keyframes zvShake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+                #zv-win .vad-only,#zv-win .key-only{display:none}#zv-win.m-vad .vad-only{display:block}#zv-win:not(.m-vad) .key-only{display:flex}
+                #zv-win .pl{display:flex;align-items:center;gap:11px;padding:6px 2px;animation:zvRise .35s backwards}
+                #zv-win .av{position:relative;flex:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 14px 'Segoe UI';color:#fff;text-shadow:0 1px 2px #0008;box-shadow:0 0 0 2px rgba(255,255,255,.16),0 2px 6px rgba(0,0,0,.5);transition:box-shadow .15s}
+                #zv-win .pl.sp .av{box-shadow:0 0 0 3px #7dffb0,0 0 16px rgba(125,255,176,.8);animation:zvSp .7s ease-in-out infinite}
+                @keyframes zvSp{50%{transform:scale(1.1)}}
+                #zv-win .pl .nm{width:104px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e6f0ff}#zv-win .pl .nm em{font-style:normal;color:#8fa6c4;font-weight:400;font-size:11px}
+                #zv-win .pl input[type=range]{flex:1}
+                #zv-win .pl button{width:34px;height:30px;flex:none;border:0;border-radius:8px;cursor:pointer;background:#1d2d47;color:#fff;font-size:15px;transition:all .15s}#zv-win .pl button:hover{background:#2c4468;transform:scale(1.08)}#zv-win .pl button.m{background:#7a2a2a}
+                #zv-win .none{color:#8fa6c4;font-weight:400;padding:4px 0}
+                #zv-win .foot{margin-top:10px;font-size:11.5px;color:#8fa6c4;font-weight:400;line-height:1.5}
+                #zv-win kbd{padding:1px 7px;border-radius:5px;background:#1d2d47;border:1px solid #3a5a86;border-bottom-width:2px;color:#d6e6ff;font:700 11.5px 'Segoe UI'}
+                #zv-open-mp{display:block;margin:8px auto 0;padding:9px 16px;border-radius:10px;border:2px solid #3b8fc0;background:linear-gradient(#2a5d8a,#173552);color:#fff;font:700 13px 'Segoe UI',sans-serif;cursor:pointer;transition:transform .12s}#zv-open-mp:hover{transform:translateY(-1px)}
+                `;
+                document.head.appendChild(st);
+            }
+
+            // ---------- допоміжне ----------
+            const b64 = u => { let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); };
+            const unb64 = s => { try { const t = atob(s), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; } catch (e) { return null; } };
+            function lin2u(x) { x = Math.max(-1, Math.min(1, x)); const s = x < 0 ? 0x80 : 0; let v = Math.min(32635, Math.abs(Math.round(x * 32768))) + 132, e = 7; for (let m = 0x4000; (v & m) === 0 && e > 0; m >>= 1) e--; return (~(s | (e << 4) | ((v >> (e + 3)) & 15))) & 0xff; }
+            function u2lin(u) { u = ~u & 0xff; const e = (u >> 4) & 7; let v = (((u & 15) << 3) + 132) << e; v -= 132; return ((u & 0x80) ? -v : v) / 32768; }
+            const lvl = r => Math.max(0, Math.min(1, (20 * Math.log10(Math.max(r, 1e-5)) + 60) / 54));
+            const vadThr = () => 0.09 * Math.pow(0.04, cfg.vad / 100);
+            const KN = { Backquote: '` / Ё', Space: 'Пробіл', ShiftLeft: 'Shift ←', ShiftRight: 'Shift →', ControlLeft: 'Ctrl ←', ControlRight: 'Ctrl →', AltLeft: 'Alt ←', AltRight: 'Alt →', CapsLock: 'Caps Lock', Backslash: '\\', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: '\'', Comma: ',', Period: '.', Slash: '/', Backspace: 'Backspace', Insert: 'Insert', Delete: 'Delete', Home: 'Home', End: 'End', PageUp: 'PgUp', PageDown: 'PgDn', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+            function keyName(k) {
+                if (k.startsWith('m:')) return ['ЛКМ', 'Колесо (натиск)', 'ПКМ', 'Бічна кнопка ◀', 'Бічна кнопка ▶'][+k.slice(2)] || 'Миша ' + k.slice(2);
+                const c = k.slice(2); if (KN[c]) return KN[c]; if (/^Key[A-Z]$/.test(c)) return c[3]; if (/^Digit\d$/.test(c)) return c[5]; if (/^Numpad/.test(c)) return 'Num ' + c.slice(6); return c;
+            }
+            function busyKey(code) {
+                try { for (const a of V31_ACT) { if (a.e.includes(code) || (V31.bind[a.id] || []).includes(code)) return a.n; } } catch (e) { }
+                return ({ Tab: 'Колесо емоцій', Enter: 'Чат', Escape: 'Пауза', KeyF: 'Крюк / підйом союзника' })[code] || '';
+            }
+
+            // ---------- аудіо ----------
+            function ensureCtx() {
+                if (V.ctx && V.ctx.state !== 'closed') { if (V.ctx.state === 'suspended') { try { V.ctx.resume(); } catch (e) { } } return V.ctx; }
+                const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; let c;
+                try { c = new AC({ sampleRate: SR, latencyHint: 'interactive' }); } catch (e) { try { c = new AC(); } catch (e2) { return null; } }
+                V.ctx = c; V.out = c.createGain(); V.out.gain.value = cfg.vol / 100; V.out.connect(c.destination); return c;
+            }
+            const resume = () => { try { if (V.ctx && V.ctx.state === 'suspended') V.ctx.resume(); } catch (e) { } };
+            window.addEventListener('pointerdown', resume, true); window.addEventListener('keydown', resume, true);
+            function errText(e) {
+                const n = e && (e.name || e.message);
+                if (n === 'nomd') return 'Мікрофон недоступний у цьому режимі: браузер дає доступ лише на https або localhost. У лаунчері GrogCraft усе працює.';
+                if (n === 'NotAllowedError' || n === 'SecurityError') return 'Доступ до мікрофона заборонено. Дозволь його в налаштуваннях браузера/системи й увімкни знову.';
+                if (n === 'NotFoundError' || n === 'DevicesNotFoundError') return 'Мікрофон не знайдено. Підключи його й натисни «Оновити список».';
+                if (n === 'NotReadableError') return 'Мікрофон зайнятий іншою програмою.';
+                return 'Не вдалось увімкнути мікрофон: ' + String((e && e.message) || e).slice(0, 80);
+            }
+            async function refreshDevs() {
+                try { const l = await navigator.mediaDevices.enumerateDevices(); V.devs = l.filter(d => d.kind === 'audioinput').map((d, i) => ({ id: d.deviceId, label: d.label || ('Мікрофон ' + (i + 1)) })); if (V.open) render(); } catch (e) { }
+            }
+            async function startMic() {
+                if (V.stream || V.starting) return; V.starting = 1; V.err = ''; ui();
+                try {
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw { name: 'nomd' };
+                    const c = ensureCtx(); if (!c) throw { name: 'noctx', message: 'аудіо недоступне' };
+                    const a = { echoCancellation: !!cfg.ec, noiseSuppression: !!cfg.ns, autoGainControl: !!cfg.agc, channelCount: 1 }; if (cfg.dev) a.deviceId = { exact: cfg.dev };
+                    let st; try { st = await navigator.mediaDevices.getUserMedia({ audio: a }); } catch (e) { if (cfg.dev && e && e.name === 'OverconstrainedError') { cfg.dev = ''; save(); delete a.deviceId; st = await navigator.mediaDevices.getUserMedia({ audio: a }); } else throw e; }
+                    if (!cfg.enabled) { st.getTracks().forEach(t => t.stop()); return; }
+                    V.stream = st; buildGraph(c, st); await initEnc(); refreshDevs();
+                    const tr = st.getAudioTracks()[0]; if (tr) tr.addEventListener('ended', () => { V.err = 'Мікрофон від’єднано.'; stopMic(); ui(); });
+                } catch (e) { V.err = errText(e); cfg.enabled = cfg.enabled; }
+                finally { V.starting = 0; ui(); }
+            }
+            function buildGraph(c, st) {
+                const src = c.createMediaStreamSource(st), hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 90;
+                const gn = c.createGain(); gn.gain.value = cfg.gain / 100; const proc = c.createScriptProcessor(1024, 1, 1), zero = c.createGain(); zero.gain.value = 0;
+                const mon = c.createGain(); mon.gain.value = V.mon ? 0.9 : 0;
+                src.connect(hp); hp.connect(gn); gn.connect(proc); proc.connect(zero); zero.connect(c.destination); gn.connect(mon); mon.connect(c.destination);
+                proc.onaudioprocess = onAudio; V.n = { src, hp, gn, proc, zero, mon };
+            }
+            function stopMic() {
+                setTx(0);
+                try { if (V.n) { V.n.proc.onaudioprocess = null; for (const k in V.n) { try { V.n[k].disconnect(); } catch (e) { } } } } catch (e) { }
+                V.n = null; try { if (V.stream) V.stream.getTracks().forEach(t => t.stop()); } catch (e) { } V.stream = null; V.lv = 0; V.mon = 0;
+                try { if (V.enc) V.enc.close(); } catch (e) { } V.enc = null;
+            }
+            async function initEnc() {
+                V.enc = null; V.codec = 'u'; V.sr = V.ctx.sampleRate; V.fl = Math.round(V.sr * 0.02);
+                if (!(window.AudioEncoder && window.AudioData) || V.sr !== SR) return;
+                const conf = { codec: 'opus', sampleRate: SR, numberOfChannels: 1, bitrate: 32000, opus: { frameDuration: 20000, application: 'voip', signal: 'voice', complexity: 6, usedtx: false, useinbandfec: false } };
+                try {
+                    const sup = await AudioEncoder.isConfigSupported(conf); if (!sup || !sup.supported) return;
+                    const enc = new AudioEncoder({ output: ch => { const b = new Uint8Array(ch.byteLength); ch.copyTo(b); sendPkt('o', b); }, error: () => { V.enc = null; V.codec = 'u'; } });
+                    enc.configure(sup.config || conf); V.enc = enc; V.codec = 'o';
+                } catch (e) { V.enc = null; V.codec = 'u'; }
+            }
+            function sendPkt(c, bytes) { if (!on()) return; if (MP.ws.bufferedAmount > 300000) return; try { MP.ws.send(JSON.stringify({ t: 'x_vc', c, q: ++V.seq, d: b64(bytes) })); } catch (e) { } }
+            function cue(up) {
+                if (!cfg.cues || cfg.mode === 'vad' || !V.ctx || V.ctx.state !== 'running') return;
+                try { const c = V.ctx, o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.setValueAtTime(up ? 700 : 620, t); o.frequency.exponentialRampToValueAtTime(up ? 1040 : 420, t + 0.07); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.07 * (cfg.vol / 100), t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09); o.connect(g); g.connect(V.out); o.start(t); o.stop(t + 0.1); } catch (e) { }
+            }
+            function setTx(w) {
+                w = w ? 1 : 0; if (w === V.tx) return; V.tx = w;
+                if (w) { V.rl = 0; V.ts = 0; mpSendS({ t: 'x_vs', on: 1, mu: cfg.mute ? 1 : 0 }); cue(1); }
+                else { try { if (V.enc && V.enc.state === 'configured') V.enc.flush().catch(() => { }); } catch (e) { } mpSendS({ t: 'x_vs', on: 0, mu: cfg.mute ? 1 : 0 }); cue(0); }
+                ui();
+            }
+            const mpSendS = o => { try { if (on()) MP.ws.send(JSON.stringify(o)); } catch (e) { } };
+            function onAudio(e) {
+                const d = e.inputBuffer.getChannelData(0); let s = 0; for (let i = 0; i < d.length; i++) s += d[i] * d[i];
+                const rms = Math.sqrt(s / d.length); V.lv = Math.max(rms, V.lv * 0.86); const now = performance.now();
+                let act = 0;
+                if (cfg.mode === 'vad') { if (rms > vadThr()) V.vadUntil = now + 380; act = now < V.vadUntil; }
+                else act = cfg.mode === 'toggle' ? V.tog : V.held;
+                if (act && cfg.mode !== 'vad') V.tail = now + 170;
+                V.local = act || (cfg.mode !== 'vad' && now < V.tail) ? 1 : 0;
+                setTx(on() && !cfg.mute && V.local);
+                if (V.tx) feed(d);
+            }
+            function feed(d) {
+                const FL = V.fl; if (V.rl + d.length > V.ring.length) V.rl = 0;
+                V.ring.set(d, V.rl); V.rl += d.length; let o = 0;
+                while (V.rl - o >= FL) { frame(V.ring.subarray(o, o + FL)); o += FL; }
+                if (o) { V.ring.copyWithin(0, o, V.rl); V.rl -= o; }
+            }
+            function frame(f) {
+                if (!on() || MP.ws.bufferedAmount > 300000) return;
+                if (V.codec === 'o' && V.enc && V.enc.state === 'configured') {
+                    if (V.enc.encodeQueueSize > 12) return;
+                    const data = new Float32Array(f.length); for (let i = 0; i < f.length; i++) { const v = f[i]; data[i] = v > 1 ? 1 : v < -1 ? -1 : v; }
+                    try { const ad = new AudioData({ format: 'f32-planar', sampleRate: V.sr, numberOfFrames: f.length, numberOfChannels: 1, timestamp: V.ts, data }); V.ts += 20000; V.enc.encode(ad); ad.close(); } catch (e) { }
+                } else {
+                    const n = 320, out = new Uint8Array(n), step = f.length / n;
+                    for (let i = 0; i < n; i++) out[i] = lin2u(f[Math.min(f.length - 1, Math.floor(i * step + step / 2))]);
+                    sendPkt('u', out);
+                }
+            }
+
+            // ---------- приймання та просторовий мікс ----------
+            function rxGet(id) {
+                let st = V.rx[id]; if (st) return st; const c = ensureCtx(); if (!c) return null;
+                const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 22000; const g = c.createGain(); g.gain.value = 0; let pan = null; try { pan = c.createStereoPanner(); } catch (e) { }
+                lp.connect(g); if (pan) { g.connect(pan); pan.connect(V.out); } else g.connect(V.out);
+                return (V.rx[id] = { id, lp, g, pan, next: 0, dec: null, level: 0, last: 0, vol: 0, mu: 0 });
+            }
+            function rxMix(st) {
+                const p = MP && MP.players && MP.players[st.id]; if (!p) { st.vol = 0; return; }
+                const known = !(p.hide && !p.seen), dx = known ? p.x - player.x : 0, dy = known ? p.y - player.y : NEAR, dist = Math.hypot(dx, dy);
+                const prox = cfg.prox ? (dist <= NEAR ? 1 : dist >= RANGE ? 0 : Math.pow(1 - (dist - NEAR) / (RANGE - NEAR), 1.6)) : 1;
+                const pv = cfg.pv[p.name] || {}, vol = (pv.v == null ? 100 : pv.v) / 100, target = cfg.deaf || pv.m ? 0 : prox * vol;
+                st.vol = target; st.prox = prox; const c = V.ctx, t = c.currentTime;
+                st.g.gain.setTargetAtTime(target, t, 0.06);
+                if (st.pan) st.pan.pan.setTargetAtTime(cfg.prox ? Math.max(-1, Math.min(1, dx / 450)) * 0.85 : 0, t, 0.08);
+                st.lp.frequency.setTargetAtTime(cfg.prox ? Math.max(2400, 22000 - (1 - prox) * 19600) : 22000, t, 0.1);
+            }
+            function queue(st, f32, sr) {
+                const c = V.ctx; if (!c || c.state !== 'running') return;
+                let s = 0; for (let i = 0; i < f32.length; i++) s += f32[i] * f32[i]; st.level = Math.max(Math.min(1, Math.sqrt(s / f32.length) * 4), st.level * 0.85);
+                const buf = c.createBuffer(1, f32.length, sr); buf.copyToChannel(f32, 0); const src = c.createBufferSource(); src.buffer = buf; src.connect(st.lp);
+                const now = c.currentTime; if (st.next < now + 0.02) st.next = now + JIT; else if (st.next > now + 0.7) st.next = now + JIT;
+                src.start(st.next); st.next += buf.duration;
+            }
+            function onVc(m) {
+                if (!V.ctx && !ensureCtx()) return; const st = rxGet(m.id); if (!st) return; st.last = performance.now(); rxMix(st);
+                if (st.vol < 0.01) { st.level *= 0.9; return; }
+                const b = unb64(m.d); if (!b) return;
+                if (m.c === 'u') { const n = b.length, f = new Float32Array(n); for (let i = 0; i < n; i++) f[i] = u2lin(b[i]); queue(st, f, 16000); return; }
+                if (!window.AudioDecoder) { if (!V.warned) { V.warned = 1; try { homeToast('🎙 Твій браузер не вміє декодувати голос друга (потрібен Chrome/лаунчер)'); } catch (e) { } } return; }
+                if (!st.dec) {
+                    try { st.dec = new AudioDecoder({ output: ad => { const n = ad.numberOfFrames, f = new Float32Array(n); try { ad.copyTo(f, { planeIndex: 0, format: 'f32-planar' }); } catch (e) { } ad.close(); queue(st, f, 48000); }, error: () => { try { st.dec.close(); } catch (e) { } st.dec = null; } }); st.dec.configure({ codec: 'opus', sampleRate: 48000, numberOfChannels: 1 }); }
+                    catch (e) { st.dec = null; return; }
+                }
+                try { st.dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: m.q * 20000, data: b })); } catch (e) { }
+            }
+            function onVs(m) { const st = rxGet(m.id); if (!st) return; st.mu = m.mu ? 1 : 0; if (m.on) st.last = performance.now(); else { st.last = 0; st.level = 0; } }
+            const speaking = st => performance.now() - st.last < 340;
+            function rxClose(id) { const st = V.rx[id]; if (!st) return; try { if (st.dec) st.dec.close(); } catch (e) { } try { st.lp.disconnect(); st.g.disconnect(); if (st.pan) st.pan.disconnect(); } catch (e) { } delete V.rx[id]; }
+
+            // ---------- клавіша розмови ----------
+            function press(k, down, e) {
+                if (k !== cfg.key) return false;
+                if (!(gameState === 'PLAYING' || gameState === 'DEAD' || V.open)) return false;
+                if (e) { e.preventDefault(); e.stopImmediatePropagation(); }
+                if (cfg.mode === 'toggle') { if (down) V.tog = V.tog ? 0 : 1; } else if (cfg.mode === 'ptt') V.held = down ? 1 : 0;
+                return true;
+            }
+            window.addEventListener('keydown', e => {
+                if (V.bind) { bindKey(e, 'k:' + e.code); return; }
+                if (typing(e) || e.repeat || e.ctrlKey || e.metaKey || e.altKey && false) return; press('k:' + e.code, true, e);
+            }, true);
+            window.addEventListener('keyup', e => { if (V.bind) { e.preventDefault(); e.stopImmediatePropagation(); return; } if (typing(e)) return; press('k:' + e.code, false, e); }, true);
+            window.addEventListener('mousedown', e => { if (V.bind) { if (e.target.closest && e.target.closest('#zv-win .keybtn')) return; if (e.button === 1 || e.button >= 3) bindKey(e, 'm:' + e.button); return; } if (e.button === 1 || e.button >= 3) press('m:' + e.button, true, e); }, true);
+            window.addEventListener('mouseup', e => { if (V.bind) return; if (e.button === 1 || e.button >= 3) press('m:' + e.button, false, e); }, true);
+            window.addEventListener('blur', () => { V.held = 0; });
+            function bindKey(e, k) {
+                e.preventDefault(); e.stopImmediatePropagation();
+                const msg = $('zv-keymsg');
+                if (k === 'k:Escape') { V.bind = 0; render(); return; }
+                if (k.startsWith('k:')) { const busy = busyKey(k.slice(2)); if (busy) { if (msg) { msg.textContent = '⚠ Клавіша зайнята: «' + busy + '» — обери іншу'; msg.style.animation = 'none'; void msg.offsetWidth; msg.style.animation = ''; } return; } if (/^(Shift|Control|Alt|Meta)/.test(k.slice(2)) && false) return; }
+                cfg.key = k; save(); V.bind = 0; V.held = 0; V.tog = 0; render(); try { playSound('pickup'); } catch (er) { }
+            }
+
+            // ---------- інтерфейс: кнопка, значок, вікно ----------
+            let btn, badge, panel, win;
+            function build() {
+                if (btn) return;
+                btn = document.createElement('div'); btn.id = 'zv-btn'; btn.title = 'Голосовий чат — налаштування'; btn.innerHTML = '<img alt="">'; document.body.appendChild(btn);
+                btn.addEventListener('mousedown', e => e.stopPropagation()); btn.addEventListener('click', e => { e.stopPropagation(); openPanel(); });
+                badge = document.createElement('div'); badge.id = 'zv-badge'; badge.innerHTML = '<img alt=""><span></span><div class="eq"><i></i><i></i><i></i><i></i><i></i></div>'; document.body.appendChild(badge);
+                panel = document.createElement('div'); panel.id = 'zv-panel'; win = document.createElement('div'); win.id = 'zv-win'; panel.appendChild(win); document.body.appendChild(panel);
+                panel.addEventListener('mousedown', e => { e.stopPropagation(); if (e.target === panel) closePanel(); }); panel.addEventListener('click', onClick); panel.addEventListener('input', onInput); panel.addEventListener('change', onChange);
+                for (const n of ['wheel', 'contextmenu', 'pointerdown', 'touchstart']) panel.addEventListener(n, e => { e.stopPropagation(); if (n === 'contextmenu') e.preventDefault(); });
+                const pb = $('mp-pause-btn'); if (pb && !$('zv-pause-btn')) { const b = document.createElement('button'); b.className = 'menu-btn'; b.id = 'zv-pause-btn'; b.textContent = '🎙 Голосовий чат'; b.onclick = () => { try { playSound('click'); } catch (e) { } openPanel(); }; pb.parentNode.insertBefore(b, pb.nextSibling); }
+                const ms = $('mp-status'); if (ms && !$('zv-open-mp')) { const b = document.createElement('button'); b.type = 'button'; b.id = 'zv-open-mp'; b.textContent = '🎙 Налаштування голосового чату'; b.onclick = () => { try { playSound('click'); } catch (e) { } openPanel(); }; ms.parentNode.insertBefore(b, ms); }
+            }
+            function openPanel() { build(); V.open = 1; V.bind = 0; refreshDevs(); render(); panel.classList.remove('show'); void panel.offsetWidth; panel.classList.add('show'); if (cfg.enabled && !V.stream) startMic(); }
+            function closePanel() { V.open = 0; V.bind = 0; V.mon = 0; if (V.n) V.n.mon.gain.value = 0; if (panel) panel.classList.remove('show'); if (!on() && V.stream) stopMic(); }
+            window.addEventListener('keydown', e => { if (V.open && e.code === 'Escape' && !V.bind) { e.stopImmediatePropagation(); e.preventDefault(); closePanel(); } }, true);
+            const setP = el => { if (el && el.type === 'range') el.style.setProperty('--p', ((el.value - el.min) / (el.max - el.min) * 100) + '%'); };
+            function players() { const a = [{ id: MP && MP.id, name: (MP && MP.name) || 'Ти', me: 1 }]; if (on()) for (const id in MP.players) { const p = MP.players[id]; if (p.hide && !p.seen && false) continue; a.push({ id, name: p.name }); } return a; }
+            function render() {
+                if (!win) return; const live = on(), seg = (v, l) => `<button data-a="mode" data-v="${v}" class="${cfg.mode === v ? 'on' : ''}">${l}</button>`;
+                win.className = 'm-' + cfg.mode;
+                const pl = players(), me = pl[0];
+                win.innerHTML = `
+                <div class="hd"><img src="${micImg('green')}" alt=""><div><h3>Голосовий чат</h3><small>Говори з друзями прямо в грі — поруч звук тихіший і об’ємний</small></div><span class="chip" id="zv-chip">…</span><u data-a="close" title="Закрити">✕</u></div>
+                <div class="card"><div class="row"><div class="lb"><b>Увімкнути мікрофон</b><span>${live ? 'Ти в мультиплеєрі — друзі почують тебе' : 'Голос працює у мультиплеєрі; тут можна налаштувати й перевірити'}</span></div><label class="sw"><input type="checkbox" id="zv-en" ${cfg.enabled ? 'checked' : ''}><i></i></label></div><div class="err" id="zv-err"></div></div>
+                <div class="card"><h4>Мікрофон</h4>
+                  <select id="zv-dev"><option value="">Пристрій за замовчуванням</option>${V.devs.map(d => `<option value="${esc(d.id)}" ${cfg.dev === d.id ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select>
+                  <div class="meter" id="zv-meter">${'<span></span>'.repeat(28)}<b id="zv-thr"></b></div>
+                  <div class="btns"><button class="b ${V.mon ? 'act' : ''}" data-a="test">🎧 ${V.mon ? 'Слухаю себе… (стоп)' : 'Почути себе'}</button><button class="b ${cfg.mute ? 'warn' : ''}" data-a="mute">${cfg.mute ? '🔇 Мікрофон вимкнено — увімкнути' : '🎙 Вимкнути звук мікрофона'}</button><button class="b" data-a="devs" style="flex:.6;min-width:120px">↻ Оновити список</button></div>
+                  <div class="foot" style="margin-top:6px">«Почути себе» — вдягни навушники, щоб не було луни.</div></div>
+                <div class="card"><h4>Як говорити</h4>
+                  <div class="seg">${seg('ptt', '🖐 Утримувати клавішу')}${seg('toggle', '🔁 Перемикач')}${seg('vad', '🎚 За голосом')}</div>
+                  <div class="row key-only"><div class="lb"><b>${cfg.mode === 'toggle' ? 'Клавіша-перемикач' : 'Клавіша розмови'}</b><span>Підтримуються клавіші й бічні кнопки миші</span></div><button class="keybtn ${V.bind ? 'wait' : ''}" data-a="key">${V.bind ? 'Натисни клавішу… (Esc — скасувати)' : esc(keyName(cfg.key))}</button></div>
+                  <div class="keymsg key-only" id="zv-keymsg"></div>
+                  <div class="vad-only"><div class="sl"><div class="lb"><b>Чутливість</b><span style="color:#8fa6c4;font-weight:400;font-size:11px">біла риска на шкалі — поріг</span></div><input type="range" id="zv-vad" min="0" max="100" value="${cfg.vad}"><output id="zv-vado">${cfg.vad}%</output></div></div>
+                  <div class="row"><div class="lb"><b>Звуки «клік»</b><span>Короткий сигнал, коли мікрофон вмикається й вимикається</span></div><label class="sw"><input type="checkbox" id="zv-cues" ${cfg.cues ? 'checked' : ''}><i></i></label></div></div>
+                <div class="card"><h4>Звук</h4>
+                  <div class="seg"><button data-a="prox" data-v="1" class="${cfg.prox ? 'on' : ''}">📍 Поруч (за відстанню)</button><button data-a="prox" data-v="0" class="${cfg.prox ? '' : 'on'}">📻 Усіх (рація)</button></div>
+                  <div class="sl"><div class="lb"><b>Гучність мікрофона</b></div><input type="range" id="zv-gain" min="0" max="200" value="${cfg.gain}"><output id="zv-gaino">${cfg.gain}%</output></div>
+                  <div class="sl"><div class="lb"><b>Гучність співрозмовників</b></div><input type="range" id="zv-vol" min="0" max="200" value="${cfg.vol}"><output id="zv-volo">${cfg.vol}%</output></div>
+                  <div class="row"><div class="lb"><b>Придушення луни</b><span>Менше відлуння з динаміків</span></div><label class="sw"><input type="checkbox" id="zv-ec" ${cfg.ec ? 'checked' : ''}><i></i></label></div>
+                  <div class="row"><div class="lb"><b>Шумозаглушення</b><span>Прибирає фоновий шум і клавіатуру</span></div><label class="sw"><input type="checkbox" id="zv-ns" ${cfg.ns ? 'checked' : ''}><i></i></label></div>
+                  <div class="row"><div class="lb"><b>Автогучність</b><span>Вирівнює тихий і гучний голос</span></div><label class="sw"><input type="checkbox" id="zv-agc" ${cfg.agc ? 'checked' : ''}><i></i></label></div>
+                  <div class="row"><div class="lb"><b>Заглушити всіх</b><span>Не чути нікого (мікрофон лишається)</span></div><label class="sw"><input type="checkbox" id="zv-deaf" ${cfg.deaf ? 'checked' : ''}><i></i></label></div></div>
+                <div class="card"><h4>Гравці у світі</h4>${pl.length > 1 ? pl.map((p, i) => {
+                    const pv = cfg.pv[p.name] || {}, v = pv.v == null ? 100 : pv.v;
+                    return `<div class="pl" data-id="${esc(p.id)}" style="animation-delay:${i * 50}ms"><div class="av" style="background:linear-gradient(160deg,${col(p.id).shirt},${col(p.id).shirtDark})">${esc((p.name || '?').trim().charAt(0).toUpperCase())}</div><div class="nm">${esc(p.name)}${p.me ? ' <em>(ти)</em>' : ''}</div>${p.me ? '<div style="flex:1;color:#8fa6c4;font-weight:400;font-size:12px">це ти</div>' : `<input type="range" data-pn="${esc(p.name)}" min="0" max="200" value="${v}"><button data-a="pm" data-pn="${esc(p.name)}" class="${pv.m ? 'm' : ''}" title="Заглушити">${pv.m ? '🔇' : '🔊'}</button>`}</div>`;
+                }).join('') : '<div class="none">У світі поки нікого, крім тебе.</div>'}</div>
+                <div class="foot">Порада: <kbd>${esc(keyName(cfg.key))}</kbd> — ${cfg.mode === 'vad' ? 'мікрофон вмикається сам, коли ти говориш' : cfg.mode === 'toggle' ? 'натисни, щоб почати, і ще раз — щоб закінчити' : 'утримуй і говори'}. Над головою того, хто говорить, з’являється мікрофон. Кодек: <b>${V.codec === 'o' ? 'Opus (висока якість)' : 'запасний µ-law'}</b>.</div>`;
+                win.querySelectorAll('input[type=range]').forEach(setP); ui();
+            }
+            function onClick(e) {
+                const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a; try { playSound('click'); } catch (er) { }
+                if (a === 'close') closePanel();
+                else if (a === 'mode') { cfg.mode = t.dataset.v; V.held = 0; V.tog = 0; V.vadUntil = 0; save(); render(); }
+                else if (a === 'prox') { cfg.prox = +t.dataset.v; save(); render(); }
+                else if (a === 'key') { V.bind = V.bind ? 0 : 1; render(); }
+                else if (a === 'mute') { cfg.mute = cfg.mute ? 0 : 1; save(); mpSendS({ t: 'x_vs', on: 0, mu: cfg.mute }); V.muteFlash = performance.now(); render(); }
+                else if (a === 'test') { if (!cfg.enabled) { cfg.enabled = 1; save(); startMic(); } V.mon = V.mon ? 0 : 1; if (V.n) V.n.mon.gain.value = V.mon ? 0.9 : 0; render(); }
+                else if (a === 'devs') { refreshDevs(); }
+                else if (a === 'pm') { const n = t.dataset.pn, o = cfg.pv[n] || (cfg.pv[n] = {}); o.m = o.m ? 0 : 1; save(); render(); }
+            }
+            function onInput(e) {
+                const t = e.target; setP(t);
+                if (t.id === 'zv-gain') { cfg.gain = +t.value; $('zv-gaino').textContent = cfg.gain + '%'; if (V.n) V.n.gn.gain.value = cfg.gain / 100; save(); }
+                else if (t.id === 'zv-vol') { cfg.vol = +t.value; $('zv-volo').textContent = cfg.vol + '%'; if (V.out) V.out.gain.value = cfg.vol / 100; save(); }
+                else if (t.id === 'zv-vad') { cfg.vad = +t.value; $('zv-vado').textContent = cfg.vad + '%'; save(); }
+                else if (t.dataset && t.dataset.pn) { const o = cfg.pv[t.dataset.pn] || (cfg.pv[t.dataset.pn] = {}); o.v = +t.value; save(); }
+            }
+            let rsT = 0;
+            function restartMic() { clearTimeout(rsT); rsT = setTimeout(async () => { if (!cfg.enabled) return; stopMic(); await startMic(); }, 350); }
+            function onChange(e) {
+                const t = e.target; try { playSound('click'); } catch (er) { }
+                if (t.id === 'zv-en') { cfg.enabled = t.checked ? 1 : 0; save(); if (cfg.enabled) { V.err = ''; startMic(); } else stopMic(); render(); }
+                else if (t.id === 'zv-dev') { cfg.dev = t.value; save(); if (cfg.enabled) restartMic(); }
+                else if (t.id === 'zv-ec') { cfg.ec = t.checked ? 1 : 0; save(); restartMic(); }
+                else if (t.id === 'zv-ns') { cfg.ns = t.checked ? 1 : 0; save(); restartMic(); }
+                else if (t.id === 'zv-agc') { cfg.agc = t.checked ? 1 : 0; save(); restartMic(); }
+                else if (t.id === 'zv-deaf') { cfg.deaf = t.checked ? 1 : 0; save(); }
+                else if (t.id === 'zv-cues') { cfg.cues = t.checked ? 1 : 0; save(); }
+            }
+            function ui() {
+                if (!btn) return; const live = on();
+                btn.classList.toggle('show', live && (gameState === 'PLAYING' || gameState === 'DEAD'));
+                const kind = V.err ? 'err' : cfg.mute ? 'mute' : V.tx ? 'tx' : !cfg.enabled ? 'idle' : 'ok';
+                btn.classList.remove('tx', 'mute', 'err', 'idle'); if (kind !== 'ok') btn.classList.add(kind);
+                const im = btn.firstElementChild, u = micImg(kind === 'tx' ? 'green' : kind === 'err' ? 'amber' : kind === 'mute' ? 'red' : 'gray', kind === 'mute'); if (im.src !== u) im.src = u;
+                if (win && V.open) {
+                    const chip = $('zv-chip'), err = $('zv-err');
+                    if (chip) { const [c, t] = V.err ? ['bad', '⚠ Помилка'] : !cfg.enabled ? ['', '○ Вимкнено'] : V.starting ? ['', '… Запуск'] : cfg.mute ? ['bad', '🔇 Без звуку'] : V.tx ? ['tx', '● Говориш'] : V.stream ? ['ok', '● Готовий'] : ['', '○ Очікування']; chip.className = 'chip ' + c; chip.textContent = t; }
+                    if (err) { err.textContent = V.err; err.classList.toggle('show', !!V.err); }
+                }
+            }
+            function tick() {
+                try {
+                    build(); const now = performance.now(), live = on();
+                    if (btn) btn.style.setProperty('--lv', Math.min(1, V.lv * 5).toFixed(2));
+                    if (V.open && win) {
+                        const m = $('zv-meter'); if (m) { const n = Math.round(lvl(V.lv) * 28), segs = m.children; for (let i = 0; i < 28; i++) { const s = segs[i], lit = i < n && V.stream; s.className = lit ? 'l' + (i > 23 ? ' r' : i > 18 ? ' y' : '') : ''; } const th = $('zv-thr'); if (th) th.style.left = (4 + lvl(vadThr()) * (m.clientWidth - 8)) + 'px'; }
+                        win.querySelectorAll('.pl').forEach(r => { const id = r.dataset.id, st = V.rx[id]; const sp = (MP && String(MP.id) === id) ? !!V.tx : !!(st && speaking(st)); r.classList.toggle('sp', sp); });
+                    }
+                    // значок «говориш / вимкнено»
+                    if (badge) {
+                        const showTx = V.tx && live, showMu = cfg.mute && live && now - V.muteFlash < 1800;
+                        badge.classList.toggle('show', showTx || showMu); badge.classList.toggle('mu', !showTx && showMu);
+                        if (showTx || showMu) { const im = badge.firstElementChild, u = micImg(showTx ? 'green' : 'red', !showTx); if (im.src !== u) im.src = u; badge.children[1].textContent = showTx ? 'Говориш' : 'Мікрофон вимкнено'; badge.querySelectorAll('.eq i').forEach((b, i) => { b.style.height = (showTx ? 3 + Math.min(13, V.lv * 90 * (0.55 + 0.45 * Math.sin(now / 90 + i * 1.7)) + 1) : 3) + 'px'; }); }
+                    }
+                    for (const id in V.rx) { const st = V.rx[id]; if (!MP || !MP.players || !MP.players[id]) { rxClose(id); continue; } if (speaking(st)) rxMix(st); }
+                } catch (e) { }
+            }
+            setInterval(tick, 50);
+            let wasLive = 0;
+            setInterval(() => {
+                try {
+                    const live = on(); ui();
+                    if (live && cfg.enabled && !V.stream && !V.starting && !V.err) startMic();
+                    if (!live && wasLive) { for (const id in V.rx) rxClose(id); setTx(0); V.held = 0; V.tog = 0; }
+                    if (!live && V.stream && !V.open) stopMic();
+                    if (live && !wasLive) { try { homeToast(cfg.enabled ? '🎙 Голос: утримуй ' + keyName(cfg.key) + ', щоб говорити' : '🎙 Голосовий чат вимкнено — увімкни його кнопкою 🎙 праворуч'); } catch (e) { } }
+                    wasLive = live ? 1 : 0;
+                    if (V.open && live) { const sig = JSON.stringify(players().map(p => p.name)); if (sig !== V.psig) { V.psig = sig; if (!V.bind) render(); } }
+                } catch (e) { }
+            }, 1000);
+
+            // ---------- мікрофон над головою того, хто говорить ----------
+            function drawTag(x, y, lv, now, kind) {
+                const sp = micCanvas(kind), sc = 2, w = sp.width * sc, h = sp.height * sc, pulse = 1 + 0.06 * Math.sin(now / 120);
+                ctx.save(); ctx.translate(x, y); ctx.scale(pulse, pulse); ctx.imageSmoothingEnabled = false;
+                for (let i = 0; i < 2; i++) { const ph = ((now / 700) + i / 2) % 1; ctx.globalAlpha = (1 - ph) * (0.35 + Math.min(0.55, lv * 2.2)); ctx.strokeStyle = '#7dffb0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 9 + ph * 12, -0.9, 0.9); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 9 + ph * 12, Math.PI - 0.9, Math.PI + 0.9); ctx.stroke(); }
+                ctx.globalAlpha = 1; ctx.shadowColor = 'rgba(125,255,176,.85)'; ctx.shadowBlur = 8; ctx.drawImage(sp, -w / 2, -h / 2, w, h); ctx.restore();
+            }
+            function drawVoice(now) {
+                if (!on()) return;
+                for (const id in V.rx) {
+                    const st = V.rx[id], p = MP.players[id]; if (!p || (p.hide && !p.seen) || !speaking(st)) continue;
+                    if (p.x < camera.x - 80 || p.x > camera.x + canvas.width + 80 || p.y < camera.y - 100 || p.y > camera.y + canvas.height + 80) continue;
+                    ctx.save(); ctx.font = 'bold 13px Segoe UI'; const tw = ctx.measureText(p.name || '').width; ctx.restore();
+                    drawTag(p.x + 12 + tw / 2 + 15, p.y - 19, st.level, now, 'green');
+                }
+                if (V.tx) { drawTag(player.x + 12, player.y - 24, V.lv * 6, now, 'green'); }
+            }
+            mpDraw = (function (o) { return function (t) { o.apply(this, arguments); try { drawVoice(performance.now()); } catch (e) { } }; })(mpDraw);
+            mpOnMsg = (function (o) { return function (m) { try { if (m && m.t === 'x_vc') { onVc(m); return; } if (m && m.t === 'x_vs') { onVs(m); return; } } catch (e) { } return o.apply(this, arguments); }; })(mpOnMsg);
+            mpLeave = (function (o) { return function () { try { for (const id in V.rx) rxClose(id); setTx(0); V.held = 0; V.tog = 0; } catch (e) { } return o.apply(this, arguments); }; })(mpLeave);
+            try { guide.adviceList.push('Голосовий чат: утримуй клавішу розмови (за замовчуванням « ` »), щоб говорити з друзями. Налаштування — кнопка 🎙 праворуч або в меню паузи.'); } catch (e) { }
+            window.__zvc = () => ({ tx: V.tx, codec: V.codec, enc: !!V.enc, stream: !!V.stream, err: V.err, lv: +V.lv.toFixed(4), cfg, ctx: V.ctx && V.ctx.state, rx: Object.keys(V.rx).map(id => ({ id, level: +V.rx[id].level.toFixed(3), vol: +V.rx[id].vol.toFixed(2), sp: speaking(V.rx[id]), dec: !!V.rx[id].dec })) });
         })();
 // v44.0 — лічильник гравців онлайн (сигнал раз на хвилину)
 (() => {
@@ -35171,12 +35682,18 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['44.5', 'Світло рятунку', 'new'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['44.6', 'Голос і мітки', 'new'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '44.6': [
+                ['#7dffb0', '🎙 Голосовий чат', 'Говори з друзями прямо в грі. Утримуй клавішу розмови (за замовчуванням « ` »), або обери режим «перемикач» чи «за голосом». Звук об’ємний: що далі друг — то тихіше, глухіше й збоку; можна перейти в режим «рація» і чути всіх. Над головою того, хто говорить, з’являється мікрофон.'],
+                ['#8fd0ff', '⚙ Налаштування голосу', 'Кнопка 🎙 праворуч, меню паузи або екран «Мультиплеєр»: вибір мікрофона з живою шкалою рівня, власна клавіша (навіть бічна кнопка миші), чутливість, гучність, шумо- й ехозаглушення, «Почути себе», гучність і вимкнення кожного гравця.'],
+                ['#6fe0a0', '📍 Мітка «Сюди!»', 'Емоція «Сюди!» ставить мітку там, куди вказує курсор: промінь на землі, стрілка з відстанню на краю екрана й позначка на мінікарті та великій карті. Зникає, коли підійдеш.'],
+                ['#ff9a8a', '💓 Серцебиття', 'Поки ти лежиш і чекаєш підйому, чути биття серця — воно частішає, коли час спливає. Біля тіла лежить випущений предмет, а під ним — піксельна тінь.'],
+            ],
             '44.5': [
                 ['#7dffb0', '✨ Промінь життя', 'Коли союзника піднімають, між гравцями спалахує зелений промінь із літаючими хрестиками, під ногами рятівника крутиться коло. Над полеглим стоїть світловий стовп — його видно здалеку, а тіло світиться.'],
                 ['#ffd36b', '👾 Піксельні емоції', 'Емоції тепер — власні піксельні іконки з контуром (замість системних смайлів), у колесі, на кнопці й над головою. У кожної своя мелодія, а голосність залежить від відстані до друга.'],
