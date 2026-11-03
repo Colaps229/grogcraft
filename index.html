@@ -3282,7 +3282,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         }
 
         // ===== ЕКРАН СМЕРТІ ТА ВІДРОДЖЕННЯ =====
-        const DEATH_MS = 10000;
+        let DEATH_MS = 10000;
         let deathInfo = null;
         function secWord(n) { const a = n % 10, b = n % 100; if (a === 1 && b !== 11) return 'секунду'; if (a >= 2 && a <= 4 && (b < 10 || b >= 20)) return 'секунди'; return 'секунд'; }
         function resetDeathUI() {
@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '44.3', GAME_VER_NAME = 'Спокійніший світ';
+        const GAME_VER = '44.4', GAME_VER_NAME = 'Разом';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -34529,6 +34529,535 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     mapPlayers = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapPlayers);
     mapMarks = (function (o) { return function () { return mapY(o.apply(this, arguments)); }; })(mapMarks);
 })();
+        // ================= 🤝 v44.4: «РАЗОМ» — підйом союзників, колесо емоцій, код запрошення =================
+        (() => {
+            const $ = id => document.getElementById(id);
+            const on = () => !!(MP && MP.sh && MP.ws && MP.ws.readyState === 1);
+            const typing = e => { const t = e && e.target, g = t && t.tagName; return g === 'INPUT' || g === 'TEXTAREA' || g === 'SELECT' || (t && t.isContentEditable); };
+            const DEATH_MP = 16000, REVIVE_MS = 2600, REACH = 84, BUB_LIFE = 3800;
+            const EMO = [
+                ['👋', 'Привіт!', '#ffd36b'], ['❤️', 'Дякую!', '#ff7a9c'], ['⚔️', 'Допоможіть!', '#ff6a5a'], ['❓', 'Куди йдемо?', '#8fd0ff'],
+                ['😂', 'Ха-ха!', '#ffe08a'], ['🎉', 'Ура!', '#b58cff'], ['📍', 'Сюди!', '#6fe0a0'], ['💤', 'Я відійду', '#9fb0c8']
+            ];
+            const Z = {
+                em: { open: 0, sticky: 0, sel: -1, last: 0, b: {} },
+                rv: { hold: 0, prog: 0, near: null, tgt: null, mine: null, vis: {}, fx: [], ls: 0, t0: 0 },
+                inv: { open: 0, pub: null, pubTried: 0 }, was: 0
+            };
+            const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const col = id => MP_COLORS[(+id || 0) % MP_COLORS.length];
+
+            // ---------- стилі ----------
+            {
+                const st = document.createElement('style'); st.textContent = `
+                #zm-wheel{position:fixed;inset:0;z-index:9100;display:none;user-select:none;-webkit-user-select:none;cursor:default}
+                #zm-wheel.show{display:block}
+                #zm-wheel .bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(8,14,26,.2) 0,rgba(4,8,16,.72) 62%);backdrop-filter:blur(2.5px);animation:zmFade .22s ease-out}
+                #zm-wheel .ring{position:absolute;left:50%;top:50%;width:0;height:0}
+                #zm-wheel .disc{position:absolute;left:-168px;top:-168px;width:336px;height:336px;border-radius:50%;border:1px solid rgba(140,200,255,.22);background:radial-gradient(circle,rgba(20,36,58,.55) 0,rgba(20,36,58,.15) 62%,transparent 70%);box-shadow:0 0 70px rgba(70,150,255,.14) inset;animation:zmSpin .55s cubic-bezier(.2,1.2,.4,1)}
+                #zm-wheel .disc::before{content:'';position:absolute;inset:36px;border-radius:50%;border:1px dashed rgba(140,200,255,.18);animation:zmRot 38s linear infinite}
+                #zm-wheel .slot{position:absolute;left:0;top:0;width:0;height:0;transform:rotate(var(--a))}
+                #zm-wheel .it{position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:29px;line-height:1;cursor:pointer;
+                  background:linear-gradient(160deg,rgba(34,52,80,.92),rgba(16,26,44,.94));border:2px solid rgba(255,255,255,.14);box-shadow:0 6px 18px rgba(0,0,0,.55);
+                  transform:translateY(-118px) rotate(calc(var(--a) * -1));transition:transform .16s cubic-bezier(.3,1.5,.5,1),box-shadow .16s,border-color .16s,background .16s;
+                  animation:zmItIn .42s cubic-bezier(.2,1.35,.4,1) backwards;animation-delay:var(--d)}
+                #zm-wheel .it.sel{transform:translateY(-124px) rotate(calc(var(--a) * -1)) scale(1.3);border-color:var(--c);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 38%,#1a2a44),rgba(16,26,44,.96));box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 28%,transparent),0 0 28px var(--c),0 8px 22px rgba(0,0,0,.6)}
+                #zm-wheel .it i{position:absolute;right:-3px;top:-3px;width:18px;height:18px;border-radius:50%;background:#0c1626;border:1px solid rgba(255,255,255,.25);font:700 10px/16px 'Segoe UI',sans-serif;color:#9fb6d4;text-align:center;font-style:normal}
+                #zm-wheel .hub{position:absolute;left:-62px;top:-62px;width:124px;height:124px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
+                  background:radial-gradient(circle,rgba(16,26,44,.96),rgba(10,16,28,.9));border:2px solid color-mix(in srgb,var(--c,#6aa8ff) 70%,#223);box-shadow:0 0 30px color-mix(in srgb,var(--c,#6aa8ff) 40%,transparent);transition:border-color .15s,box-shadow .15s;animation:zmPop .4s cubic-bezier(.2,1.4,.4,1)}
+                #zm-wheel .hub b{font-size:34px;line-height:1.05;display:block;transition:transform .15s}
+                #zm-wheel .hub.pulse b{animation:zmBeat .28s ease-out}
+                #zm-wheel .hub span{font:700 13px 'Segoe UI',sans-serif;color:#e6f0ff;padding:0 8px}
+                #zm-wheel .hint{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);padding:7px 16px;border-radius:20px;background:rgba(10,18,32,.78);border:1px solid rgba(140,200,255,.22);color:#a9c2e4;font:600 12px 'Segoe UI',sans-serif;white-space:nowrap;animation:zmRise .4s .1s backwards}
+                #zm-wheel kbd{display:inline-block;min-width:22px;padding:1px 6px;margin:0 2px;border-radius:5px;background:#1d2d47;border:1px solid #3a5a86;border-bottom-width:2px;color:#d6e6ff;font:700 11px 'Segoe UI',sans-serif;text-align:center}
+                @keyframes zmFade{from{opacity:0}to{opacity:1}}
+                @keyframes zmPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+                @keyframes zmSpin{from{transform:scale(.4) rotate(-50deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+                @keyframes zmRot{to{transform:rotate(360deg)}}
+                @keyframes zmBeat{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+                @keyframes zmRise{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+                @keyframes zmItIn{from{transform:translateY(0) rotate(calc(var(--a) * -1)) scale(.1);opacity:0}to{transform:translateY(-118px) rotate(calc(var(--a) * -1)) scale(1);opacity:1}}
+                #zm-emo-btn{position:fixed;right:14px;bottom:176px;width:46px;height:46px;border-radius:50%;z-index:62;display:none;align-items:center;justify-content:center;font-size:24px;cursor:pointer;
+                  background:linear-gradient(160deg,#2a4670,#14233c);border:2px solid rgba(150,200,255,.45);box-shadow:0 6px 16px rgba(0,0,0,.55);transition:transform .15s}
+                #zm-emo-btn.show{display:flex;animation:zmPop .45s cubic-bezier(.2,1.4,.4,1)}
+                #zm-emo-btn:hover{transform:scale(1.12) rotate(-6deg)}
+                #zm-emo-btn::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(120,190,255,.5);animation:zmPing 2.6s ease-out infinite}
+                @keyframes zmPing{0%{transform:scale(.85);opacity:.9}70%,100%{transform:scale(1.5);opacity:0}}
+                #zm-rv-hud{position:fixed;left:50%;bottom:132px;transform:translateX(-50%);z-index:70;display:none;min-width:250px;padding:10px 18px 12px;border-radius:16px;
+                  background:linear-gradient(160deg,rgba(18,44,38,.94),rgba(8,22,22,.94));border:1.5px solid rgba(125,255,176,.5);box-shadow:0 10px 34px rgba(0,0,0,.65),0 0 30px rgba(80,255,150,.18);color:#d6ffe8;font:700 13px 'Segoe UI',sans-serif;text-align:center}
+                #zm-rv-hud.show{display:block;animation:zmRise2 .3s cubic-bezier(.2,1.3,.4,1)}
+                @keyframes zmRise2{from{opacity:0;transform:translate(-50%,16px) scale(.9)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+                #zm-rv-hud .bar{height:9px;margin-top:8px;border-radius:6px;background:rgba(0,0,0,.5);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(125,255,176,.25)}
+                #zm-rv-hud .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#3fe08a,#c8ffd8,#3fe08a);background-size:200% 100%;animation:zmShim 1s linear infinite}
+                @keyframes zmShim{to{background-position:-200% 0}}
+                #zm-rv-ui{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);display:none;align-items:center;gap:12px;padding:10px 20px;border-radius:30px;background:rgba(10,36,28,.88);border:1.5px solid rgba(125,255,176,.6);color:#d6ffe8;font:700 14px 'Segoe UI',sans-serif;box-shadow:0 0 40px rgba(80,255,150,.3);z-index:5}
+                #zm-rv-ui.show{display:flex;animation:zmRise2 .35s cubic-bezier(.2,1.3,.4,1)}
+                #zm-rv-ui svg{width:42px;height:42px;transform:rotate(-90deg)}
+                #zm-rv-ui circle{fill:none;stroke-width:5}
+                #zm-rv-ui .tr{stroke:rgba(255,255,255,.14)}#zm-rv-ui .fl{stroke:#7dffb0;stroke-linecap:round;stroke-dasharray:113.1;stroke-dashoffset:113.1;transition:stroke-dashoffset .12s linear;filter:drop-shadow(0 0 5px #7dffb0)}
+                #zm-rv-tip{margin-top:10px;padding:8px 16px;border-radius:12px;background:rgba(14,52,36,.7);border:1px solid rgba(125,255,176,.45);color:#c8ffe0;font:600 14px 'Segoe UI',sans-serif;animation:zmRise3 .6s 1.2s backwards}#zm-rv-tip b{display:inline-block;padding:0 7px;border-radius:5px;background:#1d3a2c;border:1px solid #4fbf86;border-bottom-width:2px}
+                #zm-rv-ui b{font-size:20px;animation:zmBeat 1s ease-in-out infinite}
+                #zm-inv-btn{position:fixed;z-index:61;width:30px;height:30px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:linear-gradient(160deg,#2c5a8a,#16314f);border:2px solid #3b8fc0;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.5);transition:transform .15s}
+                #zm-inv-btn.show{display:flex;animation:zmPop .4s cubic-bezier(.2,1.4,.4,1)}
+                #zm-inv-btn:hover{transform:scale(1.15) rotate(8deg)}
+                #zm-inv{position:fixed;left:50%;z-index:9200;width:min(420px,92vw);transform:translateX(-50%);padding:14px 16px 12px;border-radius:18px;display:none;
+                  background:linear-gradient(160deg,rgba(24,40,62,.97),rgba(10,16,28,.97));border:1px solid rgba(130,190,255,.3);box-shadow:0 24px 70px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.4);backdrop-filter:blur(10px);color:#dfeaff;font:600 13px 'Segoe UI',sans-serif}
+                #zm-inv.show{display:block;animation:zmDrop .38s cubic-bezier(.2,1.25,.4,1)}
+                @keyframes zmDrop{from{opacity:0;transform:translate(-50%,-14px) scale(.92)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+                #zm-inv h4{margin:0 0 2px;font-size:16px;color:#bfe6ff;display:flex;align-items:center;gap:8px}
+                #zm-inv h4 u{margin-left:auto;text-decoration:none;cursor:pointer;color:#8fa6c4;font-size:15px;padding:0 4px}#zm-inv h4 u:hover{color:#fff}
+                #zm-inv small{display:block;color:#8fa6c4;font-weight:400;line-height:1.4;margin:2px 0 8px}
+                #zm-inv .sec{margin:10px 0 5px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#6f8fb8}
+                #zm-inv .row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);margin-bottom:6px;animation:zmRise3 .35s backwards}
+                @keyframes zmRise3{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+                #zm-inv .row .lb{display:flex;flex-direction:column;min-width:96px;font-size:11px;color:#9fb6d4;line-height:1.25}#zm-inv .row .lb b{font-size:12px;color:#e6f0ff}
+                #zm-inv .code{flex:1;white-space:nowrap;font:800 15px/1 Consolas,'Courier New',monospace;letter-spacing:.05em;color:#ffe9a8;text-align:center;word-break:break-all}
+                #zm-inv .code span{display:inline-block;animation:zmCh .4s backwards}
+                @keyframes zmCh{from{opacity:0;transform:translateY(-8px) scale(1.6);color:#fff}to{opacity:1;transform:none}}
+                #zm-inv .cp{border:0;border-radius:9px;padding:7px 11px;cursor:pointer;color:#fff;font:700 12px 'Segoe UI',sans-serif;background:linear-gradient(180deg,#3a86c8,#2563a0);box-shadow:0 2px 0 #163e66;transition:transform .12s,background .2s}
+                #zm-inv .cp:hover{transform:translateY(-1px)}#zm-inv .cp:active{transform:translateY(1px)}
+                #zm-inv .cp.ok{background:linear-gradient(180deg,#3fc47a,#23925a);box-shadow:0 2px 0 #14603a;animation:zmBeat .35s}
+                #zm-inv .big{width:100%;margin-top:4px;padding:10px;font-size:13px}
+                #zm-inv .pl{display:flex;align-items:center;gap:9px;padding:5px 4px;animation:zmRise3 .35s backwards}
+                #zm-inv .av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 13px 'Segoe UI';color:#fff;text-shadow:0 1px 2px #0008;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 2px 6px rgba(0,0,0,.5);position:relative}
+                #zm-inv .av::after{content:'';position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#4cff94;border:2px solid #0e1726;box-shadow:0 0 6px #4cff94}
+                #zm-inv .pl.dn .av::after{background:#ff5a5a;box-shadow:0 0 6px #ff5a5a}
+                #zm-inv .pl em{margin-left:auto;font-style:normal;font-size:11px;color:#8fa6c4}
+                #zm-inv .keys{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#8fa6c4;font-weight:400;line-height:1.7}
+                #zm-inv kbd{padding:1px 6px;border-radius:5px;background:#1d2d47;border:1px solid #3a5a86;border-bottom-width:2px;color:#d6e6ff;font:700 11px 'Segoe UI'}
+                #zm-code-row .zm-box{display:flex;gap:8px}#zm-code-row input{flex:1;font-family:Consolas,'Courier New',monospace;letter-spacing:.06em;text-transform:uppercase}
+                #zm-code-row .zm-paste{padding:0 14px;border-radius:8px;border:2px solid #3b8fc0;background:linear-gradient(#2a5d8a,#173552);color:#fff;font:700 13px 'Segoe UI';cursor:pointer;transition:transform .12s}#zm-code-row .zm-paste:hover{transform:translateY(-1px)}
+                #zm-code-st{min-height:18px;margin-top:5px;font:600 12.5px 'Segoe UI';text-align:left;transition:opacity .25s}
+                #zm-code-st.ok{color:#9fe8b0;animation:zmRise3 .3s}#zm-code-st.bad{color:#ff9a8a;animation:zmShake .35s}
+                @keyframes zmShake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+                #zm-recent{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+                #zm-recent .ch{display:flex;flex-direction:column;align-items:flex-start;padding:6px 11px;border-radius:11px;background:linear-gradient(160deg,rgba(40,70,104,.7),rgba(18,32,52,.7));border:1px solid rgba(130,190,255,.3);color:#dfeaff;font:600 12px 'Segoe UI';cursor:pointer;text-align:left;transition:transform .14s,border-color .14s;animation:zmRise3 .35s backwards}
+                #zm-recent .ch:hover{transform:translateY(-2px);border-color:#7fc3ff}#zm-recent .ch small{color:#8fa6c4;font-weight:400;font-size:10.5px}
+                #zm-recent .ch.pulse{animation:zmBeat .35s}
+                `;
+                document.head.appendChild(st);
+            }
+
+            // ============================================================
+            // 💬 ЕМОЦІЇ
+            // ============================================================
+            let wheel = null;
+            function wheelBuild() {
+                if (wheel) return;
+                wheel = document.createElement('div'); wheel.id = 'zm-wheel';
+                wheel.innerHTML = `<div class="bg"></div><div class="ring"><div class="disc"></div>${EMO.map((e, i) => `<div class="slot" style="--a:${i * 45}deg"><div class="it" data-i="${i}" style="--a:${i * 45}deg;--c:${e[2]};--d:${i * 26}ms">${e[0]}<i>${i + 1}</i></div></div>`).join('')}<div class="hub"><b id="zm-w-ic">😊</b><span id="zm-w-tx">Обери емоцію</span></div></div><div class="hint">Відпусти <kbd>Tab</kbd>, щоб надіслати · <kbd>1</kbd>–<kbd>8</kbd> швидкий вибір · <kbd>Esc</kbd> скасувати</div>`;
+                document.body.appendChild(wheel);
+                const stop = e => e.stopPropagation();
+                for (const n of ['mousedown', 'mouseup', 'click', 'wheel', 'pointerdown', 'pointerup', 'touchstart', 'touchend']) wheel.addEventListener(n, stop);
+                wheel.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); });
+                const pick = (cx, cy) => {
+                    const r = wheel.querySelector('.ring').getBoundingClientRect(), dx = cx - r.left, dy = cy - r.top;
+                    if (Math.hypot(dx, dy) < 40) return -1;
+                    let a = Math.atan2(dx, -dy); if (a < 0) a += Math.PI * 2; return Math.round(a / (Math.PI / 4)) % 8;
+                };
+                wheel.addEventListener('mousemove', e => wheelSel(pick(e.clientX, e.clientY)));
+                wheel.addEventListener('click', e => {
+                    const i = pick(e.clientX, e.clientY);
+                    if (i >= 0) { emote(i); wheelClose(); } else if (Z.em.sticky) wheelClose();
+                });
+                wheel.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) wheelSel(pick(t.clientX, t.clientY)); }, { passive: true });
+                wheel.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) wheelSel(pick(t.clientX, t.clientY)); }, { passive: true });
+            }
+            function wheelSel(i) {
+                if (i === Z.em.sel) return; Z.em.sel = i;
+                wheel.querySelectorAll('.it').forEach((el, k) => el.classList.toggle('sel', k === i));
+                const hub = wheel.querySelector('.hub'), ic = $('zm-w-ic'), tx = $('zm-w-tx');
+                if (i < 0) { ic.textContent = '😊'; tx.textContent = 'Обери емоцію'; hub.style.removeProperty('--c'); }
+                else { ic.textContent = EMO[i][0]; tx.textContent = EMO[i][1]; hub.style.setProperty('--c', EMO[i][2]); hub.classList.remove('pulse'); void hub.offsetWidth; hub.classList.add('pulse'); try { playSound('click'); } catch (e) { } }
+            }
+            function wheelOpen(sticky) {
+                if (Z.em.open) return; wheelBuild(); Z.em.open = 1; Z.em.sticky = sticky ? 1 : 0; Z.em.sel = -2; wheelSel(-1);
+                wheel.classList.remove('show'); void wheel.offsetWidth; wheel.classList.add('show');
+                wheel.querySelector('.hint').style.display = sticky ? 'none' : '';
+            }
+            function wheelClose() { if (!Z.em.open) return; Z.em.open = 0; wheel.classList.remove('show'); }
+            function emote(i) {
+                const now = performance.now(); if (now - Z.em.last < 1100 || !EMO[i]) return; Z.em.last = now;
+                bubble('me', i);
+                if (on()) { mpSend({ t: 'x_em', i }); try { mpChatAdd(MP.name, EMO[i][0] + ' ' + EMO[i][1], true); } catch (e) { } }
+            }
+            function bubble(key, i) {
+                const e = EMO[i]; if (!e) return; Z.em.b[key] = { i, t0: performance.now() };
+                let x, y;
+                if (key === 'me') { x = player.x + 12; y = player.y - 30; } else { const p = MP && MP.players && MP.players[key]; if (!p) return; x = p.x + 12; y = p.y - 34; }
+                try { createParticles(x, y, e[2], 12, 3, 3, 30); createParticles(x, y, '#ffffff', 5, 2, 2, 22); } catch (er) { }
+            }
+            function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+            function drawBubble(b, cx, topY, now) {
+                const age = now - b.t0, e = EMO[b.i]; if (!e) return false; if (age > BUB_LIFE) return false;
+                const k = Math.min(1, age / 380), c1 = 1.70158, c3 = c1 + 1, sc = k >= 1 ? 1 : 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2);
+                const fade = age > BUB_LIFE - 600 ? Math.max(0, (BUB_LIFE - age) / 600) : 1, rise = Math.min(14, age * 0.03) + Math.sin(age / 340) * 1.6;
+                ctx.save(); ctx.font = '700 13px "Segoe UI",sans-serif';
+                const tw = ctx.measureText(e[1]).width, w = 20 + 30 + tw + 4, h = 38;
+                ctx.translate(cx, topY - rise); ctx.scale(sc, sc); ctx.globalAlpha = fade;
+                ctx.shadowColor = e[2]; ctx.shadowBlur = 16 * fade;
+                const g = ctx.createLinearGradient(0, -h - 8, 0, -8); g.addColorStop(0, 'rgba(34,52,80,.96)'); g.addColorStop(1, 'rgba(14,22,38,.96)');
+                ctx.fillStyle = g; rr(ctx, -w / 2, -h - 8, w, h, 15); ctx.fill();
+                ctx.shadowBlur = 0; ctx.lineWidth = 2; ctx.strokeStyle = e[2]; ctx.stroke();
+                ctx.fillStyle = 'rgba(16,26,44,.97)'; ctx.beginPath(); ctx.moveTo(-7, -9); ctx.lineTo(0, 1); ctx.lineTo(7, -9); ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = e[2]; ctx.beginPath(); ctx.moveTo(-7, -8.5); ctx.lineTo(0, 1); ctx.lineTo(7, -8.5); ctx.stroke();
+                ctx.save(); ctx.translate(-w / 2 + 25, -h / 2 - 8); ctx.rotate(Math.sin(age / 85) * 0.22 * Math.max(0, 1 - age / 900));
+                ctx.font = '24px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(e[0], 0, 1); ctx.restore();
+                ctx.font = '700 13px "Segoe UI",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#eef5ff'; ctx.fillText(e[1], -w / 2 + 44, -h / 2 - 8);
+                ctx.restore(); return true;
+            }
+
+            // ============================================================
+            // 💚 ВОСКРЕСІННЯ
+            // ============================================================
+            function arc(cx, cy, r, a0, a1, color, lw) { ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke(); }
+            function burst(x, y) {
+                const pts = []; for (let i = 0; i < 12; i++) pts.push({ a: i / 12 * 6.283 + Math.random() * 0.3, v: 0.05 + Math.random() * 0.06, s: 7 + Math.random() * 7 });
+                Z.rv.fx.push({ x, y, t0: performance.now(), pts });
+                try { createParticles(x, y, '#7dffb0', 28, 5, 4, 50); createParticles(x, y, '#ffe9a8', 16, 4, 3, 44); createParticles(x, y, '#ffffff', 10, 3, 3, 36); shake = Math.max(shake, 5); playSound('timerewind'); playSound('pickup'); } catch (e) { }
+            }
+            function getUp(byName) {
+                if (gameState !== 'DEAD' || Z.noRv) return;
+                if (deathInfo) deathInfo.done = true;
+                player.health = Math.max(1, Math.round(player.maxHealth * 0.5)); player.vx = 0; player.vy = 0; hLast = -1; player.damageCooldown = 240;
+                try { RPG.mana = Math.max(RPG.mana, Math.round(RPG.maxMana * 0.5)); } catch (e) { }
+                gameState = 'PLAYING';
+                const scr = $('death-screen'); scr.classList.add('respawning');
+                canvas.style.transition = 'filter 0.8s ease'; canvas.style.filter = '';
+                setTimeout(() => { if (gameState === 'PLAYING') resetDeathUI(); }, 1000);
+                Z.rv.mine = null; const u = $('zm-rv-ui'); if (u) u.classList.remove('show');
+                burst(player.x + 12, player.y + 20);
+                floatingTexts.push({ x: player.x - 6, y: player.y - 28, text: 'Підняли! 💚', color: '#7dffb0', life: 90 });
+                try { v26Banner('💚 Тебе підняв ' + esc(byName || 'союзник'), 'Здоров’я 50% — не поспішай у бій'); } catch (e) { }
+                try { updateHealthHUD(); } catch (e) { }
+            }
+            function rvMsg(m) {
+                const R = Z.rv, now = performance.now();
+                if (m.k === 'dn') {
+                    const p = MP.players[m.id]; if (!p) return; p.dead = 1; p.x = p.tx = m.x; p.y = p.ty = m.y; p._ds = now; p._nr = m.nr ? 1 : 0; p.hide = 0; p.seen = now; p.vx = 0; p.og = 1;
+                    if (!p._nr) { try { if (Math.hypot(m.x - player.x, m.y - player.y) < 1600) homeToast('☠ ' + p.name + ' упав(ла)! Підійди й утримуй F, щоб підняти'); } catch (e) { } }
+                    return;
+                }
+                if (m.k === 'h') { if (Z.noRv) return; if (m.to === MP.id) R.mine = { p: m.p, t: now, by: m.id }; else R.vis[m.to] = { p: m.p, t: now, by: m.id }; }
+                else if (m.k === 's') { if (m.to === MP.id) R.mine = null; else delete R.vis[m.to]; }
+                else if (m.k === 'd') {
+                    const by = MP.players[m.id], nm = by ? by.name : '';
+                    if (m.to === MP.id) getUp(nm);
+                    else { const p = MP.players[m.to]; delete R.vis[m.to]; if (p) { burst(p.x + 12, p.y + 20); p.dead = 0; p._ds = 0; if (nm) try { mpChatAdd('', '💚 ' + nm + ' підняв(ла) ' + p.name, false, true); } catch (e) { } } }
+                }
+            }
+            function rvTick() {
+                const R = Z.rv, now = performance.now(), dt = Math.min(250, R.t0 ? now - R.t0 : 16); R.t0 = now;
+                let best = null, bd = 1e9;
+                if (on() && gameState === 'PLAYING') for (const id in MP.players) {
+                    const p = MP.players[id]; if (!p.dead || p._nr || (p.hide && !p.seen)) continue;
+                    const d = Math.hypot(p.x + 12 - (player.x + 12), p.y + 20 - (player.y + 20)); if (d < REACH && d < bd) { bd = d; best = p.id; }
+                }
+                R.near = best;
+                for (const k in R.vis) if (now - R.vis[k].t > 700) delete R.vis[k];
+                const hud = $('zm-rv-hud');
+                if (R.hold && best != null && gameState === 'PLAYING') {
+                    if (R.tgt !== best) { R.tgt = best; R.prog = 0; }
+                    R.prog = Math.min(1, R.prog + dt / REVIVE_MS);
+                    const p = MP.players[best];
+                    if (now - R.ls > 110) { R.ls = now; mpSend({ t: 'x_rv', k: 'h', to: best, p: +R.prog.toFixed(2) }); }
+                    if (hud) { hud.classList.add('show'); hud.firstElementChild.innerHTML = '✚ Піднімаєш <span style="color:' + col(best).shirt + '">' + esc(p ? p.name : '') + '</span> · ' + Math.round(R.prog * 100) + '%'; hud.querySelector('i').style.width = (R.prog * 100) + '%'; }
+                    if (R.prog >= 1) {
+                        mpSend({ t: 'x_rv', k: 'd', to: best });
+                        if (p) { burst(p.x + 12, p.y + 20); p.dead = 0; p._ds = 0; floatingTexts.push({ x: p.x - 10, y: p.y - 30, text: 'Врятовано! 💚', color: '#7dffb0', life: 80 }); try { mpChatAdd('', '💚 Ти підняв(ла) ' + p.name, false, true); } catch (e) { } }
+                        R.prog = 0; R.tgt = null; R.hold = 0; if (hud) hud.classList.remove('show');
+                    }
+                } else {
+                    if (R.tgt != null) { mpSend({ t: 'x_rv', k: 's', to: R.tgt }); R.tgt = null; }
+                    R.prog = Math.max(0, R.prog - dt / 350);
+                    if (hud && hud.classList.contains('show')) hud.classList.remove('show');
+                }
+            }
+            function mineUi() {
+                const R = Z.rv, now = performance.now(); if (R.mine && now - R.mine.t > 700) R.mine = null;
+                const u = $('zm-rv-ui'); if (!u) return;
+                if (R.mine && gameState === 'DEAD' && MP) {
+                    const by = MP.players[R.mine.by]; u.classList.add('show');
+                    u.querySelector('.fl').style.strokeDashoffset = (113.1 * (1 - R.mine.p)).toFixed(1);
+                    u.querySelector('span').innerHTML = 'Тебе піднімає <u style="text-decoration:none;color:' + col(R.mine.by).shirt + '">' + esc(by ? by.name : 'союзник') + '</u> · ' + Math.round(R.mine.p * 100) + '%';
+                } else u.classList.remove('show');
+            }
+            function drawDowned(p, now, t) {
+                const id = p.id, C = col(id), cx = p.x + player.width / 2, fy = p.y + player.height;
+                if (!p._ds) p._ds = now;
+                const left = Math.max(0, 1 - (now - p._ds) / DEATH_MP), pulse = 0.5 + 0.5 * Math.sin(now / 260);
+                // аура на землі
+                ctx.save(); ctx.globalAlpha = 0.35 + 0.25 * pulse; const gr = ctx.createRadialGradient(cx, fy, 2, cx, fy, 46); gr.addColorStop(0, 'rgba(120,255,180,.75)'); gr.addColorStop(1, 'rgba(120,255,180,0)');
+                ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(cx, fy, 46, 12, 0, 0, 7); ctx.fill(); ctx.restore();
+                // тіло, що лежить
+                ctx.save(); ctx.globalAlpha = 0.62; try { ctx.filter = 'grayscale(.75) brightness(.9)'; } catch (e) { }
+                ctx.translate(cx, fy - 9); ctx.rotate(-Math.PI / 2 * (p.f < 0 ? -1 : 1)); ctx.translate(-cx, -fy);
+                try { mpBody(p, id, C, cx, p.y + player.height / 2, t); } catch (e) { }
+                ctx.restore();
+                // кільця: час, що лишився (червоне→бурштин), і прогрес підйому (зелене)
+                const ry = p.y - 34 - 3 * Math.sin(now / 300), vis = Z.rv.vis[id] || (Z.rv.tgt === id ? { p: Z.rv.prog } : null), prog = vis ? vis.p : 0;
+                ctx.save(); ctx.translate(cx, ry);
+                ctx.fillStyle = 'rgba(8,14,24,.85)'; ctx.beginPath(); ctx.arc(0, 0, 17, 0, 7); ctx.fill();
+                arc(0, 0, 15, 0, 6.283, 'rgba(255,255,255,.12)', 3);
+                arc(0, 0, 15, -Math.PI / 2, -Math.PI / 2 + 6.283 * left, left > 0.4 ? '#ffd36b' : '#ff5a5a', 3);
+                if (prog > 0.01) { ctx.shadowColor = '#7dffb0'; ctx.shadowBlur = 12; arc(0, 0, 11, -Math.PI / 2, -Math.PI / 2 + 6.283 * prog, '#7dffb0', 4); ctx.shadowBlur = 0; }
+                ctx.font = '700 15px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = prog > 0.01 ? '#b9ffd6' : '#ffd0d0'; ctx.fillText(prog > 0.01 ? '✚' : '☠', 0, 1);
+                ctx.restore();
+                // підказка «F»
+                if (Z.rv.near === id && !Z.rv.hold) {
+                    const k = 1 + 0.07 * Math.sin(now / 160);
+                    ctx.save(); ctx.translate(cx, ry - 30); ctx.scale(k, k);
+                    ctx.fillStyle = 'rgba(14,26,44,.94)'; rr(ctx, -50, -13, 100, 26, 9); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#7dffb0'; ctx.stroke();
+                    ctx.fillStyle = '#25405e'; rr(ctx, -44, -9, 18, 18, 5); ctx.fill(); ctx.strokeStyle = '#6aa8e0'; ctx.lineWidth = 1; ctx.stroke();
+                    ctx.font = '800 12px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText('F', -35, 1);
+                    ctx.font = '700 12px "Segoe UI",sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#c8ffe0'; ctx.fillText('підняти', -20, 1);
+                    ctx.restore();
+                }
+                // сяйво, що здіймається
+                if (Math.random() < 0.12) Z.rv.fx.push({ x: cx + (Math.random() - 0.5) * 22, y: fy - 6, t0: now, mote: 1 });
+            }
+            function drawFx(now) {
+                const F = Z.rv.fx;
+                for (let i = F.length - 1; i >= 0; i--) {
+                    const f = F[i], age = now - f.t0;
+                    if (f.mote) { if (age > 1400) { F.splice(i, 1); continue; } ctx.save(); ctx.globalAlpha = (1 - age / 1400) * 0.9; ctx.font = '700 12px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#9dffc4'; ctx.fillText('✚', f.x + Math.sin(age / 200 + f.x) * 5, f.y - age * 0.035); ctx.restore(); continue; }
+                    if (age > 1500) { F.splice(i, 1); continue; }
+                    const k = age / 1500, e = 1 - Math.pow(1 - k, 3);
+                    ctx.save(); ctx.globalAlpha = 1 - k;
+                    arc(f.x, f.y, 10 + e * 90, 0, 6.283, '#7dffb0', 4 * (1 - k) + 1); arc(f.x, f.y, 6 + e * 55, 0, 6.283, '#ffe9a8', 2.5 * (1 - k) + 0.5);
+                    const gr = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, 70 * (1 - k * 0.4)); gr.addColorStop(0, 'rgba(180,255,210,' + (0.55 * (1 - k)) + ')'); gr.addColorStop(1, 'rgba(180,255,210,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(f.x, f.y, 70, 0, 7); ctx.fill();
+                    ctx.font = '700 14px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    for (const p of f.pts) { ctx.fillStyle = '#c8ffe0'; ctx.fillText('✚', f.x + Math.cos(p.a) * p.v * age, f.y + Math.sin(p.a) * p.v * age - age * 0.04); }
+                    ctx.restore();
+                }
+            }
+
+            // ============================================================
+            // 🎟 КОД ЗАПРОШЕННЯ
+            // ============================================================
+            const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+            function encAddr(a) {
+                a = String(a || '').trim();
+                const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3}):(\d{1,5})$/.exec(a);
+                if (m) {
+                    const b = [+m[1], +m[2], +m[3], +m[4]], pt = +m[5];
+                    if (b.every(x => x < 256) && pt < 65536) {
+                        let n = (((b[0] * 256 + b[1]) * 256 + b[2]) * 256 + b[3]) * 65536 + pt, s = '';
+                        for (let i = 0; i < 10; i++) { s = B32[n % 32] + s; n = Math.floor(n / 32); }
+                        return 'GC-' + s.slice(0, 5) + '-' + s.slice(5);
+                    }
+                }
+                try { return 'GH-' + btoa(unescape(encodeURIComponent(a))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch (e) { return ''; }
+            }
+            function decCode(txt) {
+                txt = String(txt || '');
+                let m = /GC-?([0-9A-Za-z]{5})-?([0-9A-Za-z]{5})/i.exec(txt);
+                if (m) {
+                    const s = (m[1] + m[2]).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1'); let n = 0;
+                    for (const ch of s) { const v = B32.indexOf(ch); if (v < 0) return null; n = n * 32 + v; }
+                    const pt = n % 65536; let ip = Math.floor(n / 65536); const b = [];
+                    for (let i = 0; i < 4; i++) { b.unshift(ip % 256); ip = Math.floor(ip / 256); }
+                    if (ip > 0 || !pt) return null; return b.join('.') + ':' + pt;
+                }
+                m = /GH-([A-Za-z0-9_-]{6,})/.exec(txt);
+                if (m) {
+                    try { const a = decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')))); return /^[\w.:\/-]+$/.test(a) ? a : null; } catch (e) { return null; }
+                }
+                return null;
+            }
+            const isPriv = ip => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(ip);
+            function addrRows() {
+                const rows = []; if (!MP) return rows;
+                if (MP.host) {
+                    for (const ip of (MP.ips || [])) {
+                        const vpn = /^(25|26|100\.6[4-9]|100\.[7-9]\d|100\.1[01]\d|100\.12[0-7])\./.test(ip);
+                        rows.push({ ic: vpn ? '🛡' : '🏠', lb: vpn ? 'VPN' : isPriv(ip) ? 'Локальна мережа' : 'Прямий IP', sub: vpn ? 'Radmin / ZeroTier / Hamachi' : 'одна Wi‑Fi / LAN', addr: ip + ':' + (MP.port || 3000) });
+                    }
+                    if (location.protocol === 'https:' && !/^(localhost|127\.)/.test(location.hostname)) rows.push({ ic: '☁', lb: 'Тунель', sub: location.host, addr: 'https://' + location.host });
+                    if (Z.inv.pub) rows.push({ ic: '🌍', lb: 'Інтернет', sub: 'потрібен проброс порту', addr: Z.inv.pub + ':' + (MP.port || 3000) });
+                } else if (MP.addr) rows.push({ ic: '🔗', lb: 'Цей сервер', sub: MP.addr, addr: (document.getElementById('mp-addr') || {}).value && /^https?:/i.test(document.getElementById('mp-addr').value) ? document.getElementById('mp-addr').value : MP.addr });
+                return rows;
+            }
+            function fetchPub() {
+                if (Z.inv.pubTried) return; Z.inv.pubTried = 1;
+                try { const ac = new AbortController(), to = setTimeout(() => ac.abort(), 3500); fetch('https://api.ipify.org?format=json', { signal: ac.signal, cache: 'no-store' }).then(r => r.json()).then(j => { clearTimeout(to); if (j && /^\d+\.\d+\.\d+\.\d+$/.test(j.ip)) { Z.inv.pub = j.ip; if (Z.inv.open) invRender(); } }).catch(() => { }); } catch (e) { }
+            }
+            function copyTxt(txt, btn) {
+                const done = () => { if (!btn) return; const o = btn.dataset.o || (btn.dataset.o = btn.textContent); btn.textContent = '✔ Скопійовано'; btn.classList.add('ok'); clearTimeout(btn._t); btn._t = setTimeout(() => { btn.textContent = o; btn.classList.remove('ok'); }, 1600); try { playSound('pickup'); } catch (e) { } };
+                const fb = () => { try { const ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;left:-999px;top:0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); } catch (e) { } };
+                try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fb); else fb(); } catch (e) { fb(); }
+            }
+            let invBtn = null, invBox = null;
+            function invBuild() {
+                if (invBtn) return;
+                invBtn = document.createElement('div'); invBtn.id = 'zm-inv-btn'; invBtn.textContent = '🔗'; invBtn.title = 'Запросити друзів / хто в грі'; document.body.appendChild(invBtn);
+                invBox = document.createElement('div'); invBox.id = 'zm-inv'; document.body.appendChild(invBox);
+                invBtn.addEventListener('click', e => { e.stopPropagation(); Z.inv.open ? invClose() : invOpen(); });
+                invBox.addEventListener('mousedown', e => e.stopPropagation()); invBox.addEventListener('click', e => e.stopPropagation());
+                document.addEventListener('mousedown', e => { if (Z.inv.open && !invBox.contains(e.target) && e.target !== invBtn) invClose(); });
+                const eb = document.createElement('div'); eb.id = 'zm-emo-btn'; eb.textContent = '😊'; eb.title = 'Емоції (Tab)'; document.body.appendChild(eb);
+                eb.addEventListener('mousedown', e => e.stopPropagation());
+                eb.addEventListener('click', e => { e.stopPropagation(); Z.em.open ? wheelClose() : wheelOpen(1); });
+                const hud = document.createElement('div'); hud.id = 'zm-rv-hud'; hud.innerHTML = '<div></div><div class="bar"><i></i></div>'; document.body.appendChild(hud);
+                const ds = $('death-screen'); if (ds) { const hn = ds.querySelector('.death-hint'); if (hn) { const tp = document.createElement('div'); tp.id = 'zm-rv-tip'; tp.style.display = 'none'; tp.innerHTML = '💚 Союзник може підняти тебе раніше: хай стане поруч і утримує <b>F</b>'; hn.parentNode.insertBefore(tp, hn.nextSibling); } const u = document.createElement('div'); u.id = 'zm-rv-ui'; u.innerHTML = '<svg viewBox="0 0 44 44"><circle class="tr" cx="22" cy="22" r="18"/><circle class="fl" cx="22" cy="22" r="18"/></svg><b>💚</b><span></span>'; ds.appendChild(u); }
+            }
+            function invPlace() {
+                const pill = $('mp-pill'); if (!pill || pill.classList.contains('hidden')) return false;
+                const r = pill.getBoundingClientRect(); invBtn.style.left = (r.right + 8) + 'px'; invBtn.style.top = (r.top - 1) + 'px'; invBox.style.top = (r.bottom + 10) + 'px'; return true;
+            }
+            function invRender() {
+                Z.inv.sig = JSON.stringify([addrRows().map(r => r.addr), Object.values(MP.players).map(q => [q.id, q.name, q.dead ? 1 : 0]), gameState === 'DEAD' ? 1 : 0]);
+                const rows = addrRows(), host = MP && MP.host, pl = [{ id: MP.id, name: MP.name + ' (ти)', me: 1, dead: gameState === 'DEAD' }].concat(Object.values(MP.players).map(p => ({ id: p.id, name: p.name, dead: p.dead })));
+                const inv = r => 'Заходь у мій світ у GrogCraft! Мультиплеєр → «Код запрошення» → ' + encAddr(r.addr) + '  (або адреса ' + r.addr.replace(/^https?:\/\//, '') + ')';
+                invBox.innerHTML = `<h4>🤝 Гра разом<u title="Закрити">✕</u></h4>
+                <small>${host ? 'Надішли другові код — він вводить його на екрані «Мультиплеєр» і потрапляє у твій світ.' : 'Код цього сервера — можна передати іншим друзям.'}</small>
+                <div class="sec">Код запрошення</div>
+                ${rows.length ? rows.map((r, i) => { const c = encAddr(r.addr); return `<div class="row" style="animation-delay:${i * 70}ms"><div class="lb"><b>${r.ic} ${esc(r.lb)}</b>${esc(r.sub)}</div><div class="code" title="${esc(r.addr)}">${[...c].map((ch, k) => `<span style="animation-delay:${k * 28}ms">${esc(ch)}</span>`).join('')}</div><button class="cp" data-i="${i}">📋</button></div>`; }).join('') : '<small>Адреса ще невідома.</small>'}
+                ${rows.length ? '<button class="cp big" id="zm-cpall">📨 Скопіювати готове запрошення</button>' : ''}
+                <div class="sec">У світі зараз · ${pl.length}</div>
+                ${pl.map((p, i) => `<div class="pl${p.dead ? ' dn' : ''}" style="animation-delay:${i * 60}ms"><div class="av" style="background:linear-gradient(160deg,${col(p.id).shirt},${col(p.id).shirtDark})">${esc((p.name || '?').trim().charAt(0).toUpperCase())}</div>${esc(p.name)}<em>${p.dead ? '☠ повалений(а)' : (host && p.id === MP.id ? '👑 хост' : '')}</em></div>`).join('')}
+                <div class="keys"><kbd>Tab</kbd> (утримуй) — колесо емоцій · <kbd>F</kbd> (утримуй біля полеглого) — підняти союзника</div>`;
+                invBox.querySelector('h4 u').onclick = invClose;
+                invBox.querySelectorAll('.cp[data-i]').forEach(b => b.onclick = () => copyTxt(encAddr(rows[+b.dataset.i].addr), b));
+                const all = $('zm-cpall'); if (all) all.onclick = () => copyTxt(rows.map(inv).join('\n'), all);
+            }
+            function invOpen() { if (!on() || !invPlace()) return; Z.inv.open = 1; if (MP.host) fetchPub(); invRender(); invBox.classList.remove('show'); void invBox.offsetWidth; invBox.classList.add('show'); try { playSound('click'); } catch (e) { } }
+            function invClose() { Z.inv.open = 0; if (invBox) invBox.classList.remove('show'); }
+
+            // ---------- екран «Мультиплеєр»: поле коду + недавні світи ----------
+            const getRecent = () => { try { return JSON.parse(localStorage.getItem('zm_recent') || '[]').filter(x => x && x.a); } catch (e) { return []; } };
+            function ago(t) { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); if (m < 2) return 'щойно'; if (m < 60) return m + ' хв тому'; const h = Math.round(m / 60); if (h < 24) return h + ' год тому'; return Math.round(h / 24) + ' дн тому'; }
+            function remember() {
+                if (!MP || MP.host) return; const a = ((document.getElementById('mp-addr') || {}).value || MP.addr || '').trim(); if (!a) return;
+                const l = getRecent().filter(x => x.a !== a); l.unshift({ a, w: String((currentWorld && currentWorld.name) || 'Світ').replace(/ \(мультиплеєр\)$/, ''), t: Date.now() });
+                try { localStorage.setItem('zm_recent', JSON.stringify(l.slice(0, 5))); } catch (e) { }
+            }
+            function codeStatus(txt, ok) { const s = $('zm-code-st'); if (!s) return; s.className = ok ? 'ok' : txt ? 'bad' : ''; s.textContent = txt; if (txt) { s.style.animation = 'none'; void s.offsetWidth; s.style.animation = ''; } }
+            function applyCode(raw) {
+                const inp = $('zm-code'); const t = String(raw || '').trim(); if (!t) { codeStatus(''); return; }
+                const a = decCode(t);
+                if (a) { const f = $('mp-addr'); if (f) f.value = a; codeStatus('✔ Знайдено сервер: ' + a.replace(/^https?:\/\//, ''), true); try { playSound('pickup'); } catch (e) { } if (inp && /GC-?|GH-/i.test(t)) { const m = /G[CH]-[A-Za-z0-9_-]+/i.exec(t.replace(/\s/g, '')); if (m) inp.value = m[0].toUpperCase().startsWith('GH') ? m[0] : m[0].toUpperCase(); } }
+                else if (t.length >= 6) codeStatus('✖ Код не розпізнано — перевір, чи скопійовано повністю', false);
+                else codeStatus('');
+            }
+            function mpScreen() {
+                if ($('zm-code-row')) return; const addr = $('mp-addr'); if (!addr) return;
+                const row = document.createElement('div'); row.className = 'input-group'; row.id = 'zm-code-row';
+                row.innerHTML = '<label>🎟 Код запрошення (від друга — замість IP)</label><div class="zm-box"><input id="zm-code" placeholder="GC-XXXXX-XXXXX" maxlength="200" autocomplete="off" spellcheck="false"><button type="button" class="zm-paste">📋 Вставити</button></div><div id="zm-code-st"></div><div id="zm-recent"></div>';
+                addr.parentElement.parentElement.insertBefore(row, addr.parentElement.nextSibling);
+                const inp = $('zm-code');
+                inp.addEventListener('keydown', e => e.stopPropagation()); inp.addEventListener('input', () => applyCode(inp.value)); inp.addEventListener('paste', () => setTimeout(() => applyCode(inp.value), 0));
+                row.querySelector('.zm-paste').onclick = () => { try { navigator.clipboard.readText().then(t => { inp.value = t.trim(); applyCode(inp.value); }, () => { codeStatus('Встав код вручну: Ctrl + V у полі', false); inp.focus(); }); } catch (e) { codeStatus('Встав код вручну: Ctrl + V у полі', false); inp.focus(); } };
+            }
+            function recentRender() {
+                const box = $('zm-recent'); if (!box) return; const l = getRecent(); box.innerHTML = '';
+                if (!l.length) return;
+                const h = document.createElement('div'); h.style.cssText = 'width:100%;font:600 11px "Segoe UI";color:#6f8fb8;letter-spacing:.08em;text-transform:uppercase;text-align:left'; h.textContent = 'Недавні світи'; box.appendChild(h);
+                l.forEach((x, i) => {
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'ch'; b.style.animationDelay = (i * 60) + 'ms';
+                    b.innerHTML = '🌍 ' + esc(x.w) + '<small>' + esc(x.a.replace(/^https?:\/\//, '')) + ' · ' + ago(x.t) + '</small>';
+                    b.onclick = () => { const f = $('mp-addr'); if (f) f.value = x.a; codeStatus('✔ Адресу підставлено: ' + x.a.replace(/^https?:\/\//, ''), true); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); try { playSound('click'); } catch (e) { } };
+                    box.appendChild(b);
+                });
+            }
+
+            // ============================================================
+            // 🔌 ПІДКЛЮЧЕННЯ ДО ГРИ
+            // ============================================================
+            window.addEventListener('keydown', e => {
+                if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.code === 'KeyF' && gameState === 'PLAYING' && on() && Z.rv.near != null) { e.stopImmediatePropagation(); e.preventDefault(); Z.rv.hold = 1; return; }
+                if (e.code === 'Tab') {
+                    if (gameState !== 'PLAYING' || inventoryOpen || chestOpen || (typeof mapOpen !== 'undefined' && mapOpen)) return;
+                    e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) wheelOpen(0); return;
+                }
+                if (Z.em.open && e.code === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); wheelClose(); return; }
+                if (Z.em.open) { const m = /^(?:Digit|Numpad)([1-8])$/.exec(e.code); if (m) { e.stopImmediatePropagation(); e.preventDefault(); emote(+m[1] - 1); wheelClose(); } }
+            }, true);
+            window.addEventListener('keyup', e => {
+                if (e.code === 'KeyF') Z.rv.hold = 0;
+                if (e.code === 'Tab' && Z.em.open && !Z.em.sticky) { e.preventDefault(); e.stopImmediatePropagation(); if (Z.em.sel >= 0) emote(Z.em.sel); wheelClose(); }
+            }, true);
+            window.addEventListener('blur', () => { Z.rv.hold = 0; if (Z.em.open && !Z.em.sticky) wheelClose(); });
+
+            mpOnMsg = (function (o) {
+                return function (m) {
+                    try {
+                        if (m && m.t === 'x_em') { const k = String(m.id); bubble(k, m.i); const p = MP.players[m.id], e = EMO[m.i]; if (p && e) { try { mpChatAdd(p.name, e[0] + ' ' + e[1], false); } catch (er) { } } try { playSound('click'); } catch (er) { } return; }
+                        if (m && m.t === 'x_rv') { rvMsg(m); return; }
+                    } catch (e) { try { rpgErr(e); } catch (_) { } }
+                    return o.apply(this, arguments);
+                };
+            })(mpOnMsg);
+
+            killPlayer = (function (o) {
+                return function (cause) {
+                    const was = gameState === 'PLAYING', r = o.apply(this, arguments);
+                    try {
+                        if (was && gameState === 'DEAD') {
+                            DEATH_MS = on() ? DEATH_MP : 10000; Z.rv.mine = null; wheelClose();
+                            Z.noRv = !!(typeof V35 !== 'undefined' && V35 && V35.hc);
+                            const tip = $('zm-rv-tip'); if (tip) tip.style.display = on() && !Z.noRv ? '' : 'none';
+                            if (on()) mpSend({ t: 'x_rv', k: 'dn', x: Math.round(player.x), y: Math.round(player.y), nr: Z.noRv ? 1 : 0 });
+                        }
+                    } catch (e) { }
+                    return r;
+                };
+            })(killPlayer);
+
+            mpTick = (function (o) { return function () { const r = o.apply(this, arguments); try { rvTick(); } catch (e) { } return r; }; })(mpTick);
+
+            // поки союзник піднімає — таймер відродження завмирає (щоб не «вкрасти» підйом в останню секунду)
+            tickDeath = (function (o) {
+                return function () {
+                    try {
+                        const now = performance.now(), dt = Z.frz ? Math.min(250, now - Z.frz) : 0; Z.frz = now;
+                        const R = Z.rv; if (R.mine && now - R.mine.t < 700 && R.mine.p > 0 && deathInfo && !deathInfo.done) deathInfo.start += dt;
+                    } catch (e) { }
+                    return o.apply(this, arguments);
+                };
+            })(tickDeath);
+
+            mpDraw = (function (o) {
+                return function (t) {
+                    o.apply(this, arguments);
+                    try {
+                        const now = performance.now();
+                        if (MP && MP.sh) for (const id in MP.players) {
+                            const p = MP.players[id]; if (p.hide && !p.seen) continue;
+                            if (!p.dead) { p._ds = 0; p._nr = 0; continue; }
+                            if (p._nr) continue;
+                            if (p.x < camera.x - 100 || p.x > camera.x + canvas.width + 100 || p.y < camera.y - 140 || p.y > camera.y + canvas.height + 100) { if (!p._ds) p._ds = now; continue; }
+                            drawDowned(p, now, t);
+                        }
+                        drawFx(now);
+                        for (const k in Z.em.b) {
+                            const b = Z.em.b[k]; let cx, ty;
+                            if (k === 'me') { if (gameState === 'DEAD') { delete Z.em.b[k]; continue; } cx = player.x + 12; ty = player.y - 22; }
+                            else { const p = MP && MP.players && MP.players[k]; if (!p || p.dead) { delete Z.em.b[k]; continue; } cx = p.x + 12; ty = p.y - 30 - (p.mh ? 4 : 0); }
+                            if (!drawBubble(b, cx, ty, now)) delete Z.em.b[k];
+                        }
+                    } catch (e) { }
+                };
+            })(mpDraw);
+
+            mpOpen = (function (o) { return function (from) { const r = o.apply(this, arguments); try { mpScreen(); const row = $('zm-code-row'); if (row) { row.style.display = from === 'pause-menu' ? 'none' : ''; codeStatus(''); const i = $('zm-code'); if (i) i.value = ''; recentRender(); } } catch (e) { } return r; }; })(mpOpen);
+            mpJoinWorld = (function (o) { return function (m) { const r = o.apply(this, arguments); try { remember(); } catch (e) { } return r; }; })(mpJoinWorld);
+            mpLeave = (function (o) { return function () { try { invClose(); wheelClose(); Z.rv.hold = 0; Z.rv.mine = null; Z.rv.vis = {}; Z.inv.pubTried = 0; } catch (e) { } return o.apply(this, arguments); }; })(mpLeave);
+
+            setInterval(() => { try { mineUi(); } catch (e) { } }, 60);
+            setInterval(() => {
+                try {
+                    invBuild(); const live = on(), ok = live && invPlace();
+                    invBtn.classList.toggle('show', !!ok); $('zm-emo-btn').classList.toggle('show', live && gameState === 'PLAYING');
+                    if (!ok && Z.inv.open) invClose();
+                    if (live && !Z.was) { try { homeToast('💡 Tab — емоції · F біля полеглого — підняти · 🔗 — код запрошення'); } catch (e) { } }
+                    Z.was = live ? 1 : 0;
+                    if (Z.inv.open && live) { const sg = JSON.stringify([addrRows().map(r => r.addr), Object.values(MP.players).map(q => [q.id, q.name, q.dead ? 1 : 0]), gameState === 'DEAD' ? 1 : 0]); if (sg !== Z.inv.sig) invRender(); }
+                } catch (e) { }
+            }, 1000);
+            try { guide.adviceList.push('Утримуй Tab і наведи мишку на емоцію — друзі побачать її над твоєю головою.', 'Якщо союзник упав, стань поруч і утримуй F — він підведеться з 50% здоров’я.'); } catch (e) { }
+        })();
 // v44.0 — лічильник гравців онлайн (сигнал раз на хвилину)
 (() => {
     const ZO_URL = 'https://grogcount.kazume2020.workers.dev';
@@ -34544,12 +35073,17 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['44.3', 'Спокійніший світ', 'new'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['44.4', 'Разом', 'new'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '44.4': [
+                ['#7dffb0', '💚 Підйом союзників', 'У мультиплеєрі полеглого можна підняти: стань поруч і утримуй F приблизно 2,6 с. Він встане на місці зі здоров’ям 50%. На час очікування відрождення збільшено до 16 с, а над тілом видно кільце часу й прогрес підйому.'],
+                ['#8fd0ff', '😊 Колесо емоцій', 'Утримуй Tab, наведи мишку на емоцію й відпусти: над головою з’явиться анімована бульбашка, яку бачать усі. Швидкий вибір — клавіші 1–8; на сенсорному екрані є кнопка 😊.'],
+                ['#ffd36b', '🎟 Код запрошення', 'Біля плашки мультиплеєра з’явилась кнопка 🔗: короткий код (GC-XXXXX-XXXXX) для друга, список гравців у світі та готовий текст запрошення. Друг вставляє код на екрані «Мультиплеєр», а гра сама підставляє адресу. Тут же — недавні світи.'],
+            ],
             '44.3': [
                 ['#9be8a8', '🌿 Менше ворогів', 'Моби з’являються приблизно вдвічі рідше, і їх одночасно менше.'],
                 ['#9be8a8', '🧬 Адаптація рідша', 'Броньовані, жаростійкі та інші пристосовані вороги з’являються приблизно втричі рідше, ніж раніше.'],
