@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '45.8', GAME_VER_NAME = 'Болото і Рада';
+        const GAME_VER = '45.82', GAME_VER_NAME = 'Знайди рецепт';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -36295,16 +36295,16 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 if (!audioCtx || v <= .01) return; v *= .3; const R = rev ? 1 : 0, h = hard || 1, p = rnd(.9, 1.12), A = { rev: R };
                 try {
                     switch (m) {
-                        case 'grass': noiseHit(.09 * h, .5 * v, 'bandpass', 2600 * p, 1300, .9, A); noiseHit(.05, .2 * v, 'highpass', 4500, 3000, .5, { delay: .02, rev: R }); break;
+                        case 'grass': noiseHit(.12 * h, .6 * v, 'bandpass', 1000 * p, 500, .7, A); break;
                         case 'dirt': noiseHit(.09 * h, .75 * v, 'lowpass', 1100 * p, 380, .8, A); tone('sine', 130 * p, 70, .08, .12 * v, { lp: 300, rev: R }); break;
-                        case 'sand': noiseHit(.16 * h, .55 * v, 'highpass', 2400 * p, 1700, .5, A); noiseHit(.1, .25 * v, 'bandpass', 3200, 2200, 1, { delay: .03, rev: R }); break;
+                        case 'sand': noiseHit(.16 * h, .6 * v, 'bandpass', 1500 * p, 800, .6, A); break;
                         case 'snow': noiseHit(.13 * h, .55 * v, 'bandpass', 1500 * p, 800, 1.3, A); noiseHit(.03, .45 * v, 'highpass', 3500, 3000, .6, { delay: .035, rev: R }); break;
                         case 'wood': tone('triangle', 240 * p, 120, .09 * h, .22 * v, { lp: 1300, rev: R }); noiseHit(.04, .3 * v, 'bandpass', 1000, 700, 2, A); break;
                         case 'metal': tone('square', 560 * p, 430, .07, .08 * v, { lp: 3200, rev: R }); tone('triangle', 1120 * p, 1020, .16, .05 * v, { delay: .01, rev: 1 }); noiseHit(.03, .25 * v, 'highpass', 3000, 2500, .6, A); break;
                         case 'ice': tone('sine', 1500 * p, 950, .08, .06 * v, { rev: R }); noiseHit(.05, .4 * v, 'highpass', 4200, 3200, .7, A); tone('sine', 220, 150, .1, .1 * v, { lp: 400 }); break;
                         case 'crystal': tone('sine', 1900 * p, 1750, .2, .05 * v, { rev: 1 }); tone('sine', 2850 * p, 2700, .22, .03 * v, { delay: .02, rev: 1 }); noiseHit(.03, .2 * v, 'highpass', 5000, 4000, .6, A); break;
                         case 'cloth': noiseHit(.07, .28 * v, 'lowpass', 800 * p, 400, .7, A); break;
-                        default: tone('square', 190 * p, 95, .05 * h, .1 * v, { lp: 900, rev: R }); noiseHit(.055 * h, .45 * v, 'bandpass', 1900 * p, 850, 2, A); tone('sine', 110, 60, .1, .14 * v, { lp: 250 });
+                        default: noiseHit(.09 * h, .6 * v, 'bandpass', 1000 * p, 500, .8, A); tone('sine', 110, 60, .1, .14 * v, { lp: 250 });
                     }
                 } catch (e) { }
             }
@@ -36315,7 +36315,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 const P = player; if (!audioCtx) return;
                 const gnd = !!P.onGround, wat = !!P.wasInWater, rev = cave(P.x, P.y);
                 S.mat = under(P.x, P.y, P.width || 24, P.height || 44);
-                if (gnd && !wat && Math.abs(P.vx) > .6) { S.acc += Math.abs(P.vx); if (S.acc >= 34) { S.acc -= 34; step(S.mat, .8, rev, 1); } } else if (!gnd) S.acc = 20;
+                if (gnd && !wat && Math.abs(P.vx) > .6) { S.acc += Math.abs(P.vx); if (S.acc >= 52) { S.acc -= 52; step(S.mat, .8, rev, 1); } } else if (!gnd) S.acc = 20;
                 if (gnd && !S.pg && S.pvy > 6.5 && !wat && performance.now() - S.lastLand > 120) { S.lastLand = performance.now(); const hh = clamp(S.pvy / 10, 1, 2.1); step(S.mat, clamp(.55 + S.pvy / 18, .6, 1.3), rev, hh); if (hh > 1.4) step(S.mat, .5, rev, hh); }
                 if (!gnd && S.pg && P.vy < -3 && !wat) step(S.mat, .35, rev, .8);
                 S.pg = gnd; S.pvy = P.vy;
@@ -38087,11 +38087,11 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         ['reforge', '🎲 Перековка зброї в Майстерні', 'Перекидання властивостей предмета (вкладка «Перековка»)'],
         ['ench', '✨ Чари з умовами (Чарівний стіл)', 'Нічний мисливець, Кат, Витік та інші чари з шансом невдачі. Кнопка «✨ Чари й реліквії» у Майстерні модифікацій'],
         ['relic', '🏺 Відновлення реліквій', 'Зламані реліквії знаходять у скринях, під землею й у босів; у Майстерні їх відновлюють у стародавню зброю'],
-        ['recdisc', '📜 Відкриття рецептів', 'Рецепт з’являється, коли ти вперше побачив усі потрібні матеріали. Без цього — усі рецепти видно одразу'],
+        ['recdisc', '📜 Відкриття рецептів', 'Рецепти рідкісної броні, аксесуарів та інструментів треба знайти (сторінки рецептів). Основні крафти відкриті завжди'],
         ['chsearch', '🔎 Пошук у скринях', 'Кнопка 🔎 зліва: введи назву предмета — скрині з ним засяють'],
         ['hints', '💡 Поступові підказки', 'Короткі поради в потрібний момент: перша ніч, мало здоров’я, печери тощо. Кожна показується один раз'],
         ['shadow', '🌗 Тіні, що йдуть за сонцем', 'Тіні гравців і мобів довшають вранці й увечері. Не працює в режимі для слабких ПК'],
-        ['swamp', '🐸 Болото з туманом (354)', 'Лише в нових світах: болото з обмеженою видимістю, вогниками, жабами, рідкісними травами та відьмою-торговкою'],
+        ['swamp', '🐸 Болото з туманом (354)', 'Лише в нових світах: болото з вогниками, жабами, рідкісними травами та відьмою-торговкою'],
         ['bossarena', '🌋 Арена боса змінюється (360)', 'Під час бою з босом: каменепад, вогняні тріщини, а в кінці сильний вітер. Усе з попередженням'],
         ['council', '🏛 Рада містечка й закони (344)', 'Податки, комендантська година, ополчення; настрій мешканців впливає на бонуси містечка. Кнопка в вікні містечка (T)'],
         ['school', '🎓 Школа й бібліотека (345)', 'Будуються через Раду: бонус до досвіду та полиці з лор-книгами, що дають регенерацію мани'],
@@ -38100,32 +38100,10 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const KEY = 'zf_cfg_v1', cfg = {}; FEAT.forEach(f => cfg[f[0]] = 1);
     try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); for (const k in cfg) if (s[k] === 0) cfg[k] = 0; } catch (e) { }
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) { } };
-    let pend = null;
-    const wf = () => pend || (typeof currentWorld !== 'undefined' && currentWorld && currentWorld.zfe) || null;
+        const wf = () => (typeof currentWorld !== 'undefined' && currentWorld && currentWorld.zfe) || null;
     const worldOn = id => { const z = wf(); return !z || !(id in z) ? true : !!z[id]; };
     const on = id => cfg[id] !== 0 && worldOn(id);
-    // ---------- вибір при створенні світу ----------
-    function buildCreate() {
-        if ($('zf-wc')) return; const size = $('new-world-size'); if (!size) return;
-        const anchor = $('zk-desc') || ($('new-world-mode') && $('new-world-mode').closest('.input-group')) || size.closest('.input-group'); if (!anchor) return;
-        const d = document.createElement('details'); d.id = 'zf-wc'; d.style.cssText = 'flex:0 0 100%;margin:6px 0;padding:4px 8px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.25);text-align:left';
-        d.innerHTML = '<summary style="cursor:pointer;font-weight:700">🧩 Можливості світу (за замовчуванням усі увімкнені)</summary><div style="font-size:12px;opacity:.75;margin:4px 0">Можна вимкнути те, що не потрібно саме в цьому світі. Є ще й загальні перемикачі в Налаштуваннях.</div>' +
-            FEAT.map(f => `<label style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer"><input type="checkbox" data-zf="${f[0]}" checked style="margin-top:3px"><span>${f[1]}<small style="display:block;opacity:.65;font-size:11px">${f[2]}</small></span></label>`).join('');
-        anchor.after(d);
-    }
-    const poll = setInterval(() => { try { buildCreate(); if ($('zf-wc')) { clearInterval(poll); } } catch (e) { } }, 700);
-    // повторно, якщо екран перебудовують
-    setInterval(() => { try { if (!$('zf-wc') && $('new-world-size')) buildCreate(); } catch (e) { } }, 3000);
-    const grab = () => { const o = {}; FEAT.forEach(f => { const el = document.querySelector('#zf-wc input[data-zf="' + f[0] + '"]'); o[f[0]] = el ? (el.checked ? 1 : 0) : 1; }); return o; };
-    createNewWorld = (function (o) { return function () { try { pend = grab(); } catch (e) { pend = null; } return o.apply(this, arguments); }; })(createNewWorld);
-    generateWorldData = (function (o) {
-        return function () {
-            const P = pend; const r = o.apply(this, arguments);
-            try { if (P) { currentWorld.zfe = P; pend = null; } } catch (e) { }
-            return r;
-        };
-    })(generateWorldData);
-    window.__zfeat = { FEAT, cfg, save, apply() { }, on, worldOn, get pend() { return pend; } };
+    window.__zfeat = { FEAT, cfg, save, apply() { }, on, worldOn };
 })();
 // ===== v45.7 «Майстри й підказки»: чари, реліквії, відкриття рецептів, пошук у скринях, підказки, тіні, динамічна музика =====
 (function () {
@@ -38285,24 +38263,37 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#zf-eb')) openZ(); });
     let mineT = 0;
 
-    // ================= ВІДКРИТТЯ РЕЦЕПТІВ (340) =================
+    // ================= РЕЦЕПТИ РІДКІСНИХ РЕЧЕЙ (340) =================
+    // Основні крафти відкриті завжди. Рідкісна броня, аксесуари й інструменти (lvl ≥ 6, окрім перших наборів) потребують знайденого рецепта.
+    ITEM_METADATA.recipe_page = { name: 'Сторінка рецепта', rarity: 'Рідкісний', color: '#ffd77a', type: '📜 Рецепт', desc: 'Стародавні нотатки майстра. Вивчаються самі, щойно потрапляють до сумки: відкривають випадковий рецепт рідкісної броні, аксесуара чи інструмента.', stat: 'Шукай у скринях, у босів, глибоко під землею або в Відьми' };
+    try { itemSprites.recipe_page = generateSprite(cx => { cx.fillStyle = '#3a2a14'; cx.fillRect(7, 4, 18, 24); cx.fillStyle = '#f2e2b0'; cx.fillRect(8, 5, 16, 22); cx.fillStyle = '#b4964a'; [[11, 9, 10], [11, 13, 8], [11, 17, 10], [11, 21, 6]].forEach(l => cx.fillRect(l[0], l[1], l[2], 2)); cx.fillStyle = '#c0392b'; cx.beginPath(); cx.arc(21, 22, 3, 0, 7); cx.fill(); }); } catch (e) { }
     let RD = null, RDw = '';
-    function rdLoad() {
-        const w = wname(); if (RD && RDw === w) return; RDw = w; let s = null; try { s = JSON.parse(localStorage.getItem('zf_rd_' + w) || 'null'); } catch (e) { }
-        if (!s) { s = {}; const old = !currentWorld || !currentWorld.zfe || (currentWorld.playTime || 0) > 300; if (old) s.all = 1; }
-        RD = s;
-    }
-    const rdSave = () => { try { localStorage.setItem('zf_rd_' + RDw, JSON.stringify(RD)); } catch (e) { } };
-    const rdKnown = r => !on('recdisc') || (RD && (RD.all || RD[r.result]));
+    const grpOf = r => { const id = r.result; if (/_(helmet|chestplate|leggings|boots)$/.test(id)) return id.replace(/_(helmet|chestplate|leggings|boots)$/, '') + '*'; return id; };
+    const isRare = r => { try { if (!r || (r.lvl || 0) < 6) return false; const id = r.result; return /_(helmet|chestplate|leggings|boots)$/.test(id) || !!(ACC && ACC[id]) || v24Cat(id) === 'tool'; } catch (e) { return false; } };
+    function rdLoad() { const w = wname(); if (RD && RDw === w) return; RDw = w; try { RD = JSON.parse(localStorage.getItem('zf_rg_' + w) || 'null'); } catch (e) { RD = null; } RD = RD || {}; }
+    const rdSave = () => { try { localStorage.setItem('zf_rg_' + RDw, JSON.stringify(RD)); } catch (e) { } };
+    const rdKnown = r => !on('recdisc') || !isRare(r) || !!(RD && RD[grpOf(r)]);
+    const gName = g => g.endsWith('*') ? ((ARMOR_SETS[g.slice(0, -1)] || {}).name || 'Броня ' + g.slice(0, -1)) : ((ITEM_METADATA[g] || {}).name || g);
+    function locked() { rdLoad(); const m = {}; for (const r of recipes) if (isRare(r)) { const g = grpOf(r); if (!RD[g]) m[g] = Math.min(m[g] || 99, r.lvl || 0); } return m; }
+    function learn(g, why) { rdLoad(); if (RD[g]) return; RD[g] = 1; rdSave(); toast('📜 Вивчено рецепт: <b>' + gName(g) + '</b>' + (why ? ' (' + why + ')' : '')); try { playSound('pickup'); } catch (e) { } try { if (typeof renderCraftingRecipes === 'function' && $('crafting-recipes-list')) renderCraftingRecipes(); } catch (e) { } }
     rpgRecipeShown = (function (o) { return function (rec) { try { rdLoad(); if (!rdKnown(rec)) return false; } catch (e) { } return o.apply(this, arguments); }; })(rpgRecipeShown);
     function rdScan() {
-        if (!on('recdisc') || !playing()) return; rdLoad(); if (RD.all) return;
-        const have = new Set(); for (const s of inventory) if (s) have.add(s.id); let n = 0, first = '';
-        for (const r of recipes) { if (RD[r.result]) continue; const ks = Object.keys(r.req); if (ks.every(k => have.has(k) || (RD.seen && RD.seen[k]))) { RD[r.result] = 1; n++; if (!first) first = (ITEM_METADATA[r.result] || {}).name || r.result; } }
-        RD.seen = RD.seen || {}; have.forEach(k => RD.seen[k] = 1);
-        if (n) { rdSave(); toast('📜 Відкрито ' + (n === 1 ? 'рецепт: <b>' + first + '</b>' : n + ' нових рецептів (' + first + '…)') + '. Відкрий крафт — E', 5000); try { if (typeof renderCraftingRecipes === 'function' && $('crafting-recipes-list')) renderCraftingRecipes(); } catch (e) { } }
+        if (!on('recdisc') || !playing()) return; rdLoad();
+        // якщо річ уже є в тебе (знайшов, одягнув) — рецепт відомий
+        const own = new Set(); for (const s of inventory) if (s) own.add(s.id); try { ARMOR_PIECES.forEach(p => { const a = player.armor[p]; if (a) own.add(a.id); }); (player.acc || []).forEach(a => a && own.add(a.id)); } catch (e) { }
+        for (const r of recipes) if (isRare(r) && !RD[grpOf(r)] && own.has(r.result)) learn(grpOf(r), 'у тебе вже є така річ');
+        // сторінки рецептів читаються самі
+        if (cnt('recipe_page') > 0) {
+            const L = locked(), ks = Object.keys(L); if (!ks.length) return;
+            const cap = ((RPG && RPG.level) || 1) + 8, ok = ks.filter(k => L[k] <= cap), pool = ok.length ? ok : [ks.sort((a, b) => L[a] - L[b])[0]];
+            consumeItemCount('recipe_page', 1); learn(pool[Math.random() * pool.length | 0]); try { updateInventoryUI(); } catch (e) { }
+        }
     }
-    craftItem = (function (o) { return function (rec) { const r = o.apply(this, arguments); try { if (RD && rec && rec.result) RD[rec.result] = 1; } catch (e) { } return r; }; })(craftItem);
+    craftItem = (function (o) { return function (rec) { try { if (rec && !rdKnown(rec)) return; } catch (e) { } return o.apply(this, arguments); }; })(craftItem);
+    function pageDrop(x, y, c) { try { if (on('recdisc') && Object.keys(locked()).length) floatingItems.push({ x, y, vx: (Math.random() - 0.5) * 2, vy: -3.5, itemId: 'recipe_page', count: c || 1 }); } catch (e) { } }
+    sapDrops = (function (o) { return function (bId, px, py) { try { if (Math.random() < 0.0025 && py / 32 > ((surfaceHeights && surfaceHeights[Math.floor(px / 32)]) || 30) + 10) { pageDrop(px + 16, py + 8); } } catch (e) { } return o.apply(this, arguments); }; })(sapDrops);
+    bossLoot = (function (o) { return function (b) { o.apply(this, arguments); try { if (b && Math.random() < 0.5) pageDrop(b.x + (b.w || 40) / 2, b.y); } catch (e) { } }; })(bossLoot);
+    zrLoot = (function (o) { return function (t, rich) { const L = o.apply(this, arguments); try { if (on('recdisc')) L.push(['recipe_page', 1, 1, rich ? 0.08 : 0.04]); } catch (e) { } return L; }; })(zrLoot);
 
     // ================= ПОШУК У СКРИНЯХ (376) =================
     const CS = { q: '', t: 0, hit: [] };
@@ -38385,6 +38376,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         ['chest', () => cnt('chest') > 0, '📦 Скриню можна поставити та складати речі. Кнопка 🔎 зліва допоможе потім знайти, де що лежить.'],
         ['iron', () => cnt('iron_ingot') >= 3, '⚒ З залізних зливків куються ковадло й зброя. Майстерню модифікацій можна зробити пізніше.'],
         ['gem', () => ['gem_ruby', 'gem_sapphire', 'gem_emerald', 'gem_amethyst', 'gem_diamond'].some(cnt), '💎 Самоцвіти вставляють у зброю та броню в Майстерні модифікацій. Там же є «✨ Чари й реліквії».'],
+        ['rare', () => cnt('iron_ingot') >= 2 && on('recdisc'), '📜 Рецепти рідкісної броні, аксесуарів та інструментів треба знайти: шукай «Сторінки рецептів» у скринях, у босів, глибоко під землею й у Відьми болота.'],
         ['relic', () => cnt('broken_relic') > 0, '🏺 Зламана реліквія! У Майстерні модифікацій натисни «✨ Чари й реліквії», щоб відновити її.']
     ];
     function hintTick() {
@@ -38402,7 +38394,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const tb = document.querySelector('#v24-ov .wk-tabs'); if (tb && !$('zf-eb')) { const b = document.createElement('button'); b.id = 'zf-eb'; b.textContent = '✨ Чари й реліквії'; b.style.cssText = 'margin-left:6px;border:1px solid #c9a0ff'; tb.appendChild(b); }
         } catch (e) { }
     }, 1000);
-    window.__zforge = { ENCH, openZ, csFind, CS, REL_POOL, RDget: () => RD, toast, HINTS, HS };
+    window.__zforge = { ENCH, openZ, csFind, CS, REL_POOL, RDget: () => RD, toast, HINTS, HS, lockedCount: () => Object.keys(locked()).length, isRare, grpOf };
 })();
 // ===== v45.8 «Болото» (354): туман, вогники, жаби, рідкісні трави, відьма-торговка =====
 (function () {
@@ -38504,9 +38496,6 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         for (const f of SW.fr) { ctx.fillStyle = '#4fae4a'; ctx.fillRect(f.x - 5, gy - 6 - f.h, 10, 6); ctx.fillStyle = '#2d6e2a'; ctx.fillRect(f.x - 5, gy - 2 - f.h, 10, 2); ctx.fillStyle = '#fff'; ctx.fillRect(f.x - 4, gy - 8 - f.h, 2, 2); ctx.fillRect(f.x + 2, gy - 8 - f.h, 2, 2); }
         // вогники
         for (const o of SW.w) { const g = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, L ? 10 : 20); g.addColorStop(0, 'rgba(230,255,240,.95)'); g.addColorStop(.35, 'rgba(150,255,200,.5)'); g.addColorStop(1, 'rgba(100,230,170,0)'); ctx.fillStyle = g; ctx.fillRect(o.x - 20, o.y - 20, 40, 40); }
-        // туман: видимість ~6 блоків, далі темно-зелена імла
-        const px = player.x + 12, py = player.y + 20, f = SW.f, g = ctx.createRadialGradient(px, py, 170, px, py, 440); g.addColorStop(0, 'rgba(150,190,165,0)'); g.addColorStop(1, `rgba(140,178,155,${(0.74 * f).toFixed(3)})`);
-        ctx.fillStyle = g; ctx.fillRect(camera.x - 4, camera.y - 4, canvas.width + 8, canvas.height + 8); ctx.fillStyle = `rgba(150,190,165,${(0.08 * f).toFixed(3)})`; ctx.fillRect(camera.x - 4, camera.y - 4, canvas.width + 8, canvas.height + 8);
         ctx.restore();
     }
     const spriteOf = id => { try { const s = itemSprites[id]; return s && (s.canvas || s); } catch (e) { return null; } };
@@ -38515,20 +38504,22 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     // ---------- відьма: торгівля ----------
     const ov = document.createElement('div'); ov.className = 'zov'; ov.id = 'zw-ov'; ov.innerHTML = '<div class="zb"></div>'; document.body.appendChild(ov);
     let msg = '';
-    const SELL = { bog_herb: 3, wisp_dust: 2 }, TONIC = 12, BOOK = 40;
+    const SELL = { bog_herb: 3, wisp_dust: 2 }, TONIC = 12, BOOK = 40, PAGE = 45;
     function ui() {
         const b = ov.firstChild, coins = cnt('gold_coin'), BK = (window.__zcouncil && window.__zcouncil.BOOKS) || [], own = (window.__zcouncil && window.__zcouncil.owned()) || [];
         const sells = Object.keys(SELL).map(k => `<div class="row"><span>${nm(k)} <small>(в тебе ${cnt(k)})</small></span><button data-s="${k}" ${cnt(k) ? '' : 'disabled'}>Продати 1 за ${SELL[k]} 💰</button></div>`).join('');
         const left = BK.filter(x => !own.includes(x.id) && cnt(x.id) < 1);
         b.innerHTML = `<div class="hd"><b>🧙 Відьма болота</b><span>💰 ${coins}</span><button data-x="1">✕</button></div>${msg ? `<div class="msg">${msg}</div>` : ''}<div class="en"><b>Купую</b>${sells}</div>
         <div class="en"><b>Продаю</b><div class="row"><span>${nm('bog_tonic')} <small>90 HP + 40 мани</small></span><button data-b="tonic" ${coins >= TONIC ? '' : 'disabled'}>${TONIC} 💰</button></div>
-        <div class="row"><span>Лор-книга <small>${left.length ? 'випадкова з тих, яких ще немає' : 'ти зібрав усі'}</small></span><button data-b="book" ${coins >= BOOK && left.length && window.__zfeat.on('school') ? '' : 'disabled'}>${BOOK} 💰</button></div></div>`;
+        <div class="row"><span>Лор-книга <small>${left.length ? 'випадкова з тих, яких ще немає' : 'ти зібрав усі'}</small></span><button data-b="book" ${coins >= BOOK && left.length && window.__zfeat.on('school') ? '' : 'disabled'}>${BOOK} 💰</button></div>
+        <div class="row"><span>Сторінка рецепта <small>вивчиться сама: рідкісна броня, аксесуар чи інструмент</small></span><button data-b="page" ${coins >= PAGE && window.__zfeat.on('recdisc') && window.__zforge.lockedCount() ? '' : 'disabled'}>${PAGE} 💰</button></div></div>`;
     }
     ov.addEventListener('click', e => {
         const t = e.target.closest('button'); if (!t) { if (e.target === ov) ov.classList.remove('show'); return; }
         if (t.dataset.x) { ov.classList.remove('show'); return; }
         if (t.dataset.s && cnt(t.dataset.s)) { consumeItemCount(t.dataset.s, 1); giveItem('gold_coin', SELL[t.dataset.s]); msg = 'Дякую, мандрівнику.'; }
         else if (t.dataset.b === 'tonic' && cnt('gold_coin') >= TONIC) { consumeItemCount('gold_coin', TONIC); giveItem('bog_tonic', 1); msg = 'Тримай, зварене сьогодні.'; }
+        else if (t.dataset.b === 'page' && cnt('gold_coin') >= PAGE && window.__zforge.lockedCount()) { consumeItemCount('gold_coin', PAGE); giveItem('recipe_page', 1); msg = 'Читай уважно — тут щось цікаве.'; }
         else if (t.dataset.b === 'book' && cnt('gold_coin') >= BOOK) { const BK = window.__zcouncil.BOOKS, own = window.__zcouncil.owned(), L = BK.filter(x => !own.includes(x.id) && cnt(x.id) < 1); if (L.length) { consumeItemCount('gold_coin', BOOK); const k = L[Math.random() * L.length | 0]; giveItem(k.id, 1); msg = 'Ця книга довго чекала на читача: «' + k.n + '».'; } }
         try { updateInventoryUI(); playSound('click'); } catch (er) { } ui();
     });
@@ -38781,7 +38772,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     ${rowOf('zd', 0, 'chat', '💬 Результати дуелей у чаті', '')}
                 </details>
                 <details><summary>🧩 Нові можливості (можна вимкнути)</summary>
-                    <div style="font-size:12px;opacity:.7;padding:2px 8px">Це загальні перемикачі. Окремо для кожного світу їх можна вимкнути при його створенні.</div>
+                    <div style="font-size:12px;opacity:.7;padding:2px 8px">Вимкнена можливість зникає з гри (світи й предмети лишаються).</div>
                     ${(window.__zfeat ? window.__zfeat.FEAT : []).map(f => rowOf('zf', 0, f[0], f[1], f[2])).join('')}
                 </details>
                 <details><summary>☁ Скайблок</summary>
@@ -38828,28 +38819,35 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['45.8', 'Болото і Рада', 'new'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['45.82', 'Знайди рецепт', 'new'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '45.82': [
+                ['#ffd77a', '📜 Рідкісні рецепти треба знайти', 'Основні крафти відкриті, як і раніше. А рецепти рідкісної броні, аксесуарів та інструментів приховані: шукай «Сторінки рецептів» у скринях, босів, глибоко під землею й у Відьми болота. Сторінка вивчається сама. Якщо така річ уже є в тебе — рецепт відомий'],
+                ['#9f9', '🧹 Прибрано', 'З екрана створення світу прибрано блок можливостей, а з болота — туман. Перемикачі лишились у Налаштуваннях']
+            ],
+            '45.81': [
+                ['#7dff9a', '👣 Без цокання при бігу', 'Кроки по траві, піску й каменю стали глухішими, а при бігу лунають рідше']
+            ],
             '45.8': [
-                ['#5fbf9a', '🐸 Болото з туманом', 'У нових світах: трясовина з калюжами, густий туман (видно лише кілька блоків), вогники, що лікують, жаби, рідкісні болотні квіти та Відьма-торговка (ПКМ). З квітів і гелю варять тонік'],
+                ['#5fbf9a', '🐸 Болото з туманом', 'У нових світах: трясовина з калюжами, вогники, що лікують, жаби, рідкісні болотні квіти та Відьма-торговка (ПКМ). З квітів і гелю варять тонік'],
                 ['#ff7a2a', '🌋 Арена боса змінюється', 'Під час бою: з 75% здоров’я боса — каменепад, з 50% — вогняні тріщини, з 25% — буря з вітром. Усе з попередженням на землі'],
                 ['#c9a0ff', '🏛 Рада містечка й закони', 'Кнопка «🏛 Рада» у вікні містечка (T): податок, комендантська година, ополчення. Від них залежить настрій мешканців, а від настрою — сила бонусів містечка'],
                 ['#c9a0ff', '🎓 Школа й бібліотека', 'Будуються через Раду: до +7% досвіду, а лор-книги (з босів, скринь, у Відьми) на полицях дають регенерацію мани'],
-                ['#9f9', '🧩 Перемикачі', 'Усі чотири можливості вимикаються в Налаштуваннях і при створенні світу']
+                ['#9f9', '🧩 Перемикачі', 'Усі чотири можливості вимикаються в Налаштуваннях']
             ],
             '45.71': [
                 ['#c9a0ff', '✨ Дорожчі чари', 'Чари тепер коштують приблизно втричі більше золота й кристалів, плюс самоцвіти']
             ],
             '45.7': [
-                ['#c9a0ff', '🧩 Перемикачі можливостей', 'Кожну нову можливість можна вимкнути в Налаштуваннях («Нові можливості»), а також окремо для кожного світу при його створенні'],
+                ['#c9a0ff', '🧩 Перемикачі можливостей', 'Кожну нову можливість можна вимкнути в Налаштуваннях («Нові можливості»)'],
                 ['#c9a0ff', '✨ Чари з умовами', 'У Майстерні модифікацій нова кнопка «✨ Чари й реліквії»: Нічний мисливець, Денне сяйво, Кат, Витік, Жага. Є шанс невдачі, але предмет не губиться'],
                 ['#c9a0ff', '🏺 Відновлення реліквій', 'Зламані реліквії лежать у скринях, глибоко під землею та випадають з босів. Відновлена — стародавня зброя'],
                 ['#8fe3ff', '🎲 Перековка', 'Вже була в Майстерні — тепер її теж можна вимкнути'],
-                ['#ffd77a', '📜 Відкриття рецептів', 'Рецепт з’являється, коли ти побачив усі матеріали для нього'],
+                ['#ffd77a', '📜 Відкриття рецептів', 'Рецепти рідкісних речей відкриваються знайденими сторінками'],
                 ['#ffd77a', '🔎 Пошук у скринях', 'Кнопка 🔎 зліва: введи назву — скрині з предметом засяють, а підказка скаже, де найближча'],
                 ['#9f9', '💡 Підказки', 'Короткі поради в потрібний момент, кожна лише один раз'],
                 ['#aaa', '🌗 Тіні від сонця', 'Довші вранці й увечері; вимикаються режимом для слабких ПК'],
