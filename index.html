@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '45.82', GAME_VER_NAME = 'Знайди рецепт';
+        const GAME_VER = '45.83', GAME_VER_NAME = 'Лад у крафті';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -38320,9 +38320,9 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             try {
                 if (CS.t > 0 && CS.hit.length && on('chsearch')) {
                     CS.t--; const pu = 0.5 + 0.5 * Math.sin(performance.now() / 160), vx0 = camera.x - 40, vx1 = camera.x + canvas.width + 40, vy0 = camera.y - 40, vy1 = camera.y + canvas.height + 40;
-                    ctx.save(); ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,230,120,${0.55 + 0.4 * pu})`; ctx.fillStyle = `rgba(255,220,90,${0.12 + 0.16 * pu})`;
+                    ctx.save(); try { ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,230,120,${0.55 + 0.4 * pu})`; ctx.fillStyle = `rgba(255,220,90,${0.12 + 0.16 * pu})`;
                     for (const h of CS.hit) { const x = h.bx * 32, y = h.by * 32; if (x < vx0 || x > vx1 || y < vy0 || y > vy1) continue; ctx.fillRect(x - 2, y - 2, 36, 36); ctx.strokeRect(x - 3 - pu * 2, y - 3 - pu * 2, 38 + pu * 4, 38 + pu * 4); }
-                    ctx.restore();
+                    } finally { ctx.restore(); }
                 }
                 // ---- тіні (400) ----
                 if (on('shadow') && !low() && Math.sin(gameTime) > 0.06) shadows();
@@ -38337,11 +38337,11 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     }
     function onSurface(px, py) { const c = Math.floor(px / 32), s = surfaceHeights && surfaceHeights[c]; return s == null || py / 32 < s + 3; }
     function shadows() {
-        const vx0 = camera.x - 60, vx1 = camera.x + canvas.width + 60; ctx.save();
+        const vx0 = camera.x - 60, vx1 = camera.x + canvas.width + 60; ctx.save(); try {
         if (onSurface(player.x + 12, player.y)) shade(player.x + 12, player.y + (player.h || 40), 22);
         for (const m of mobs) { if (!m || m.x < vx0 || m.x > vx1 || m.hp <= 0 || !onSurface(m.x, m.y)) continue; shade(m.x + (m.w || 24) / 2, m.y + (m.h || 36), m.w || 24); }
         for (const a of animals) { if (!a || a.x < vx0 || a.x > vx1 || !onSurface(a.x, a.y)) continue; shade(a.x + (a.w || 24) / 2, a.y + (a.h || 20), a.w || 24); }
-        ctx.restore();
+        } finally { ctx.restore(); }
     }
 
     // ================= ДИНАМІЧНА МУЗИКА (348) =================
@@ -38486,8 +38486,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     updateGame = (function (o) { return function () { const r = o.apply(this, arguments); try { tick(); } catch (e) { } return r; }; })(updateGame);
     function draw() {
         const S = swp(); if (!S || !on('swamp') || SW.f <= 0) return; const L = low(), t = performance.now() / 1000, gy = S.H0 * 32;
-        ctx.save();
-        for (const hb of S.herbs) { if (hb.t && Date.now() / 1000 - hb.t < 420) continue; const x = hb.x * 32 + 16; if (x < camera.x - 40 || x > camera.x + canvas.width + 40) continue; if (!L) { const g = ctx.createRadialGradient(x, gy - 12, 1, x, gy - 12, 16); g.addColorStop(0, 'rgba(160,255,210,.7)'); g.addColorStop(1, 'rgba(120,240,180,0)'); ctx.fillStyle = g; ctx.fillRect(x - 16, gy - 28, 32, 32); } ctx.drawImage(spriteOf('bog_herb'), x - 12, gy - 28, 24, 24); }
+        for (const hb of S.herbs) { if (hb.t && Date.now() / 1000 - hb.t < 420) continue; const x = hb.x * 32 + 16; if (x < camera.x - 40 || x > camera.x + canvas.width + 40) continue; if (!L) { const g = ctx.createRadialGradient(x, gy - 12, 1, x, gy - 12, 16); g.addColorStop(0, 'rgba(160,255,210,.7)'); g.addColorStop(1, 'rgba(120,240,180,0)'); ctx.fillStyle = g; ctx.fillRect(x - 16, gy - 28, 32, 32); } const im = spriteOf('bog_herb'); if (im) ctx.drawImage(im, x - 12, gy - 28, 24, 24); }
         // відьма
         const wx = S.cx * 32 + 16; ctx.fillStyle = '#3a2a55'; ctx.fillRect(wx - 9, gy - 34, 18, 34); ctx.fillStyle = '#241838'; ctx.beginPath(); ctx.moveTo(wx - 14, gy - 36); ctx.lineTo(wx, gy - 62); ctx.lineTo(wx + 14, gy - 36); ctx.fill(); ctx.fillStyle = '#d9b98f'; ctx.fillRect(wx - 5, gy - 40, 10, 8); ctx.fillStyle = '#9ff4c8'; ctx.fillRect(wx - 3, gy - 38, 2, 2); ctx.fillRect(wx + 1, gy - 38, 2, 2);
         ctx.fillStyle = '#222'; ctx.beginPath(); ctx.ellipse(wx + 30, gy - 8, 10, 8, 0, 0, 7); ctx.fill(); ctx.fillStyle = `rgba(120,255,170,${0.6 + 0.3 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.ellipse(wx + 30, gy - 13, 8, 3, 0, 0, 7); ctx.fill();
@@ -38496,10 +38495,10 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         for (const f of SW.fr) { ctx.fillStyle = '#4fae4a'; ctx.fillRect(f.x - 5, gy - 6 - f.h, 10, 6); ctx.fillStyle = '#2d6e2a'; ctx.fillRect(f.x - 5, gy - 2 - f.h, 10, 2); ctx.fillStyle = '#fff'; ctx.fillRect(f.x - 4, gy - 8 - f.h, 2, 2); ctx.fillRect(f.x + 2, gy - 8 - f.h, 2, 2); }
         // вогники
         for (const o of SW.w) { const g = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, L ? 10 : 20); g.addColorStop(0, 'rgba(230,255,240,.95)'); g.addColorStop(.35, 'rgba(150,255,200,.5)'); g.addColorStop(1, 'rgba(100,230,170,0)'); ctx.fillStyle = g; ctx.fillRect(o.x - 20, o.y - 20, 40, 40); }
-        ctx.restore();
     }
-    const spriteOf = id => { try { const s = itemSprites[id]; return s && (s.canvas || s); } catch (e) { return null; } };
-    drawLibEntities = (function (o) { return function () { o.apply(this, arguments); try { draw(); } catch (e) { } }; })(drawLibEntities);
+    const IMG = {};
+    const spriteOf = id => { try { const s = itemSprites[id]; if (!s) return null; if (typeof s !== 'string') return s; let im = IMG[id]; if (!im) { im = IMG[id] = new Image(); im.src = s; } return im.complete && im.naturalWidth ? im : null; } catch (e) { return null; } };
+    drawLibEntities = (function (o) { return function () { o.apply(this, arguments); ctx.save(); try { draw(); } catch (e) { console.error('zswamp draw', e); } finally { ctx.restore(); } }; })(drawLibEntities);
 
     // ---------- відьма: торгівля ----------
     const ov = document.createElement('div'); ov.className = 'zov'; ov.id = 'zw-ov'; ov.innerHTML = '<div class="zb"></div>'; document.body.appendChild(ov);
@@ -38578,7 +38577,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         return function () {
             o.apply(this, arguments);
             try {
-                if (!A.B) return; ctx.save();
+                if (!A.B) return; ctx.save(); try {
                 for (const r of A.rocks) {
                     if (r.warn > 0) { const a = 0.25 + 0.3 * Math.sin(A.f * 0.4); ctx.fillStyle = `rgba(255,70,50,${a})`; ctx.beginPath(); ctx.ellipse(r.x, r.gy, r.w * 0.9, 5, 0, 0, 7); ctx.fill(); }
                     else { ctx.fillStyle = '#7d7466'; ctx.fillRect(r.x - r.w / 2, r.y, r.w, r.w); ctx.fillStyle = '#a89f90'; ctx.fillRect(r.x - r.w / 2, r.y, r.w, 4); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(r.x - r.w / 2 + r.w * 0.55, r.y + 4, r.w * 0.45, r.w - 4); }
@@ -38588,7 +38587,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     else if (f.t < 84) { const k = 1 - Math.abs(f.t - 73) / 11, g = ctx.createLinearGradient(0, f.gy - 80 * k, 0, f.gy); g.addColorStop(0, 'rgba(255,220,90,0)'); g.addColorStop(.5, 'rgba(255,140,40,.85)'); g.addColorStop(1, 'rgba(255,60,20,.95)'); ctx.fillStyle = g; ctx.fillRect(f.x, f.gy - 80 * k, f.w, 80 * k); }
                 }
                 if (A.wind && !low()) { ctx.strokeStyle = 'rgba(220,235,255,.35)'; ctx.lineWidth = 2; for (let i = 0; i < 12; i++) { const x = camera.x + ((A.f * 14 * A.wind + i * 173) % canvas.width + canvas.width) % canvas.width, y = camera.y + (i * 59 + A.f * 2) % canvas.height; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 38 * A.wind, y); ctx.stroke(); } }
-                ctx.restore();
+                } finally { ctx.restore(); }
             } catch (e) { }
         };
     })(drawLibEntities);
@@ -38701,6 +38700,58 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#zc-eb')) { msg = ''; ui(); ov.classList.add('show'); try { playSound('click'); } catch (er) { } } });
     setInterval(() => { try { const tb = document.querySelector('#v22-ov .tw-tabs'); if (tb && !$('zc-eb')) { const b = document.createElement('button'); b.id = 'zc-eb'; b.textContent = '🏛 Рада'; b.style.cssText = 'margin-left:6px;border:1px solid #c9a0ff'; tb.appendChild(b); } } catch (e) { } }, 1000);
     window.__zcouncil = { BOOKS, owned, mood, load };
+})();
+// ===== v45.83: категорії крафту (розбито великі купи) + спільне охолодження зілля 15 с =====
+(function () {
+    'use strict';
+    const NEW = [
+        ['build', 'Будівництво', 'plank'], ['station', 'Станції', 'anvil'], ['furn', 'Меблі й декор', 'table'], ['trap', 'Пастки й захист', 'spike_trap'],
+        ['food', 'Їжа', 'bread'], ['garden', 'Сад і квіти', 'flower_seeds'], ['tool', 'Інструменти', 'iron_pickaxe'],
+        ['melee', 'Ближній бій', 'iron_sword'], ['ranged', 'Дальній бій', 'iron_bow'], ['magic', 'Магія й призов', 'flame_staff'],
+        ['armor', 'Броня', 'iron_chestplate'], ['acc', 'Аксесуари', 'speed_ring'], ['potion', 'Зілля', 'life_potion'],
+        ['fest', 'Свята й одяг', 'fw_heart'], ['mat', 'Руни й особливе', 'rune_fire'], ['misc', 'Інше', 'cosmic_ingot']
+    ];
+    try { CRAFT_CATS.splice(0, CRAFT_CATS.length, ...NEW.map(c => ({ id: c[0], n: c[1], i: itemSprites[c[2]] ? c[2] : 'plank' }))); } catch (e) { console.error('zfix cats', e); }
+    const STATION = new Set(['workbench', 'anvil', 'furnace', 'mod_bench', 'alchemy_table', 'mill', 'kneader', 'oven', 'incubator', 'cauldron', 'stove', 'rune_table', 'trade_stall', 'caravan_post', 'contract_board', 'hunter_lair']);
+    const TRAP = new Set(['snare', 'spike_trap', 'flame_turret', 'arrow_turret', 'training_dummy', 'guard_tent']);
+    const GARDEN = new Set(['flower_seeds', 'lavender', 'sunflower', 'rose', 'herb_bed', 'flower_bed', 'planter', 'hanging_planter', 'herb_rack', 'big_fern', 'orchid', 'beehive']);
+    const MAT = id => /^rune_/.test(id) || /_fragment$/.test(id) || /^aero_/.test(id) || ['awaken_rune', 'cosmic_ingot', 'star_crystal', 'nutrient_gel', 'mod_extractor', 'hunter_seal', 'slime_crown', 'broken_chronometer', 'bunker_key', 'storm_beacon', 'magma_heart', 'lev_core', 'gas_canister', 'abyss_portal', 'desert_altar', 'rot_totem'].includes(id);
+    const base = catOf;
+    catOf = function (id) {
+        try {
+            if (STATION.has(id)) return 'station'; if (TRAP.has(id)) return 'trap'; if (GARDEN.has(id)) return 'garden'; if (id === 'flower_tea') return 'food';
+            const P = POTIONS[id];
+            if (P) { const f = P.fx; if (f === 'zws') return 'garden'; if (f === 'zwf' || f === 'zyc') return 'fest'; if (f === 'zyd') return 'food'; if (f === 'zyl' || f === 'zyw' || f === 'vgb') return 'tool'; return 'potion'; }
+            if (id === 'flask') return 'potion';
+            if (/^hook_/.test(id) || id === 'aerostat' || id === 'fishing_rod' || id === 'bucket') return 'tool';
+            if (/^(fw|fd|cosm)_/.test(id)) return 'fest';
+            const W = WEAPONS[id]; if (W) return W.t === 'melee' ? 'melee' : W.t === 'ranged' ? 'ranged' : 'magic';
+            if ((AMMO_INFO && AMMO_INFO[id]) || id === 'grenade') return 'ranged';
+            if (MAT(id)) return 'mat';
+        } catch (e) { }
+        return base(id);
+    };
+    try { if (!NEW.some(c => c[0] === bldCat)) bldCat = 'build'; } catch (e) { }
+
+    // ---------- спільне охолодження зілля 15 с ----------
+    let last = 0;
+    const isPot = P => P && (!P.fx || P.fx === 'torch' || P.fx === 'zwp');
+    usePotion = (function (o) {
+        return function (it) {
+            try {
+                const P = it && POTIONS[it.id];
+                if (isPot(P)) {
+                    const now = performance.now(), left = 15000 - (now - last);
+                    if (left > 0) { try { window.__zforge.toast('🧪 Зілля ще не готове: ' + Math.ceil(left / 1000) + ' с', 1500); } catch (e) { } return; }
+                    const before = it.count; const r = o.apply(this, arguments);
+                    if (it.count < before) last = now; return r;
+                }
+            } catch (e) { }
+            return o.apply(this, arguments);
+        };
+    })(usePotion);
+    startGamePlay = (function (o) { return function () { last = 0; return o.apply(this, arguments); }; })(startGamePlay);
+    window.__zfix = { NEW, potLeft: () => Math.max(0, 15000 - (performance.now() - last)), reset: () => { last = 0; } };
 })();
         // ================= ⚙ v44.9: УСІ НАЛАШТУВАННЯ ГРАВЦЯ — ЛИШЕ У ВКЛАДЦІ «НАЛАШТУВАННЯ» =================
         // Голос, ефекти, звук кроків, привітання, діагностика й резервні копії зібрані тут; з паузи й головного меню прибрані.
@@ -38819,12 +38870,17 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['45.82', 'Знайди рецепт', 'new'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['45.83', 'Лад у крафті', 'new'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '45.83': [
+                ['#9f9', '🛠 Виправлено болото', 'У болоті могло темнішати на весь екран і не малювалися квіти — виправлено'],
+                ['#ffd77a', '🗂 Нові категорії крафту', 'Станції, Пастки й захист, Сад і квіти, Ближній і Дальній бій, Магія й призов, Свята й одяг, Руни й особливе; у «Зіллях» лишились лише зілля'],
+                ['#7dd', '🧪 Охолодження зілля', 'Після випитого зілля наступне (будь-яке) можна випити через 15 секунд']
+            ],
             '45.82': [
                 ['#ffd77a', '📜 Рідкісні рецепти треба знайти', 'Основні крафти відкриті, як і раніше. А рецепти рідкісної броні, аксесуарів та інструментів приховані: шукай «Сторінки рецептів» у скринях, босів, глибоко під землею й у Відьми болота. Сторінка вивчається сама. Якщо така річ уже є в тебе — рецепт відомий'],
                 ['#9f9', '🧹 Прибрано', 'З екрана створення світу прибрано блок можливостей, а з болота — туман. Перемикачі лишились у Налаштуваннях']
