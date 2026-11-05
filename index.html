@@ -3192,7 +3192,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         window.addEventListener('keyup', e => keys[e.code] = false);
 
         window.addEventListener('wheel', e => {
-            if (gameState !== 'PLAYING' || inventoryOpen || chestOpen || furnaceOpen) return;
+            if (gameState !== 'PLAYING' || inventoryOpen || chestOpen || furnaceOpen || (window.__zr && window.__zr.isOpen && window.__zr.isOpen())) return;
             selectedHotbarSlot = e.deltaY > 0 ? (selectedHotbarSlot + 1) % 9 : (selectedHotbarSlot - 1 + 9) % 9;
             updateInventoryUI();
         });
@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.0', GAME_VER_NAME = 'Ігнарох';
+        const GAME_VER = '46.3', GAME_VER_NAME = 'Своє поселення';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -16323,7 +16323,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function v26Gen(retro) {
             const w = currentWorld.width, h = currentWorld.height, bio = currentWorld.bio || '';
-            const R = currentWorld.ruins = [], target = Math.round(w / (retro ? 48 : 36)), px = Math.floor(player.x / 32);
+            const R = currentWorld.ruins = [], target = Math.round(w / (retro ? 140 : 110)), px = Math.floor(player.x / 32);
             const custom = []; if (retro) { for (const k of Object.keys(chestsData)) { const p = k.split(',').map(Number); custom.push(p[0]); } }
             let bag = [], placed = 0, tries = 0; const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
             while (placed < target && tries++ < target * 6) {
@@ -16662,7 +16662,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
 
         function v28Gen(retro) {
             const w = currentWorld.width, h = currentWorld.height, R = currentWorld.ruins = currentWorld.ruins || [], halls = V26_T.map((T, i) => i).filter(i => V26_T[i].hall), px = Math.floor(player.x / 32);
-            const target = Math.max(2, Math.round(w / 200)); let bag = [], placed = 0, tries = 0, n0 = R.length; const sh = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+            const target = Math.max(2, Math.round(w / 300)); let bag = [], placed = 0, tries = 0, n0 = R.length; const sh = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
             const custom = []; if (retro) for (const k of Object.keys(chestsData)) custom.push(+k.split(',')[0]);
             while (placed < target && tries++ < target * 8) {
                 if (!bag.length) bag = sh(halls.slice()); const ti = bag.pop(), T = V26_T[ti], W = T.W, H = T.H; let ok = false;
@@ -37740,7 +37740,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 return function (t) {
                     o.apply(this, arguments);
                     try {
-                        if (!cfg.bees || !currentWorld || !currentWorld.furn) return; const camX = camera.x, camY = camera.y, W = canvas.width, H = canvas.height;
+                        if (true || !cfg.bees || !currentWorld || !currentWorld.furn) return; const camX = camera.x, camY = camera.y, W = canvas.width, H = canvas.height;
                         for (const k in currentWorld.furn) {
                             const f = currentWorld.furn[k]; if (f.t !== 'beehive') continue; const hx = (f.x + 0.5) * 32, hy = (f.y + 0.6) * 32;
                             if (hx < camX - 140 || hx > camX + W + 140 || hy < camY - 140 || hy > camY + H + 140) continue;
@@ -38114,6 +38114,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         ['lab', '⚗ Лабораторія експериментів', 'Польова лабораторія: змішуй інгредієнти й відкривай суміші'],
         ['mirror', '🪞 Дзеркальні світи', 'Арки у біомах ведуть у відображення на кілька хвилин; кристали дають осколки відбиття'],
         ['drakecine', '🐉 Катсцени дракона Ігнарох', 'Яскраві спалахи, тряска екрана й написи під час пробудження, втрати голів та загибелі дракона. Вимкни, якщо вони втомлюють'],
+        ['farm', '🐝 Ферми: бджоли й кристалічна грядка', 'Дикі бджоли, сітка, живі вулики (пилок → мед) і грядка, де росте кристал. Без цього вулик і грядка не працюють'],
+        ['shield', '🛡 Щити й дворучна зброя', 'Утримуй F: блок і парирування щитом (аксесуар). Дворучна зброя б’є важче, але щит із нею не працює'],
+        ['events', '🎪 Події світу', 'Цирк, свято врожаю, нашестя й лихоманка — рідко (раз на 40–70 хвилин), лише коли є поселення з 3+ жителями; лихоманка — окремо й ще рідше'],
+        ['plague', '🤢 Лихоманка серед подій', 'Подія «Лихоманка» може тебе заразити (легка: повільніше й без гоєння). Вимкни, якщо не хочеш'],
+        ['maze', '🧭 Лабіринт тижня', 'Підземний лабіринт, що міняється щопонеділка: час, рекорд і нагорода раз на тиждень. Лише в нових світах'],
+        ['own', '🏘 Власні поселення й руїни', 'У мультиплеєрі кожен гравець має своє поселення (мешканці живуть у його ліжках) і свої руїни (до 2). Події та рада працюють для власника'],
         ['fxrich', '✨ Пишні ефекти руїн, порталів і вівтарів', 'Більше частинок, світляків і хвиль біля відбудованих руїн, вівтарів та арок. Вимкни, якщо гра гальмує'],
         ['dmusic', '🎼 Музика реагує на дії', 'Додаткові шари: ритм у бою, брязкіт при копанні, дзвіночки в спокої']
     ];
@@ -39098,15 +39104,17 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const wkey = () => 'zc_' + ((currentWorld && currentWorld.name) || 'w');
     const DEF = () => ({ tax: 0, curf: 0, mil: 0, sch: 0, lib: 0, tr: 0, books: [], day: -1 });
     const mpOn = () => !!(MP && MP.sh && MP.ws && MP.ws.readyState === 1);
+    const me = () => { try { return (MP && MP.name) || ''; } catch (e) { return ''; } };
     function load() {
-        if (mpOn()) { // у мультиплеєрі стан спільний: лежить у світі й розсилається всім
-            if (!currentWorld.zcn) currentWorld.zcn = Object.assign(DEF(), (MP.host ? (() => { try { return JSON.parse(localStorage.getItem(wkey()) || 'null'); } catch (e) { return null; } })() : null) || {});
-            ZC = Object.assign(DEF(), currentWorld.zcn); currentWorld.zcn = ZC; return ZC;
+        if (mpOn()) { // у мультиплеєрі в кожного гравця власна рада: лежить у світі за іменем власника й розсилається всім
+            const all = currentWorld.zcn2 || (currentWorld.zcn2 = {}), k = me();
+            if (!all[k]) all[k] = Object.assign(DEF(), (MP.host ? (() => { try { return JSON.parse(localStorage.getItem(wkey()) || 'null'); } catch (e) { return null; } })() : null) || (MP.host && currentWorld.zcn ? currentWorld.zcn : {}) || {});
+            ZC = Object.assign(DEF(), all[k]); all[k] = ZC; return ZC;
         }
         const k = wkey(); if (ZC && ZW === k) return ZC; ZW = k; try { ZC = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { ZC = null; } ZC = Object.assign(DEF(), ZC || {}); return ZC;
     }
-    const save = () => { try { if (mpOn()) { currentWorld.zcn = ZC; mpSend({ t: 'x_cn', s: ZC }); } else localStorage.setItem(wkey(), JSON.stringify(ZC)); } catch (e) { } };
-    mpOnMsg = (function (o) { return function (m) { try { if (m && m.t === 'x_cn' && m.s && MP && MP.sh) { currentWorld.zcn = m.s; ZC = null; load(); try { recalcStats(); } catch (e) { } try { if (ov.classList.contains('show')) ui(); } catch (e) { } return; } } catch (e) { } return o.apply(this, arguments); }; })(mpOnMsg);
+    const save = () => { try { if (mpOn()) { (currentWorld.zcn2 || (currentWorld.zcn2 = {}))[me()] = ZC; mpSend({ t: 'x_cn2', o: me(), s: ZC }); } else localStorage.setItem(wkey(), JSON.stringify(ZC)); } catch (e) { } };
+    mpOnMsg = (function (o) { return function (m) { try { if (m && m.t === 'x_cn2' && m.s && typeof m.o === 'string' && MP && MP.sh) { (currentWorld.zcn2 || (currentWorld.zcn2 = {}))[m.o] = m.s; if (m.o === me()) { ZC = null; load(); try { recalcStats(); } catch (e) { } try { if (ov.classList.contains('show')) ui(); } catch (e) { } } return; } } catch (e) { } return o.apply(this, arguments); }; })(mpOnMsg);
     const owned = () => { try { return load().books.slice(); } catch (e) { return []; } };
     const housed = () => { try { return v22Housed(); } catch (e) { return []; } };
     const townLvl = () => { let m = 0; for (const h of housed()) m = Math.max(m, v22LvOf(h.o)); return m; };
@@ -39287,7 +39295,9 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const EXTRA = { elf: { atk: 80, leapT: 120, t: 0, cast: 0, dashT: 0 }, mummy: { cast: 0, t: 0, atk: 120 }, scarab: { leapT: 30 }, wight: { lg: 40 }, hunter: { ldr: 0, dcd: 100 } };
     const SKIP = { spirit: 1 };
     const g = n => { try { return eval(n); } catch (e) { return null; } };
+    window.ZEGG_MOBS = window.ZEGG_MOBS || {}; // нові моби реєструють тут {hp,w,h,col,fly}, щоб мати яйце
     function spec(t) {
+        { const R = window.ZEGG_MOBS[t]; if (R) return { hp: R.hp, w: R.w, h: R.h, col: R.col, fly: !!R.fly }; }
         for (const n of ['Z1_MOBS', 'ZX', 'ZM', 'ZTM', 'V377_MOBS', 'V378_HM']) { const T = g(n); if (T && T[t]) { const D = T[t]; return { hp: D.hp, w: D.w, h: D.h, col: D.col, fly: !!(D.fly || (g('ZTM') && g('ZTM')[t]) || t === 'cavebat') }; } }
         const c = CORE[t]; if (c) return { hp: c[0], w: c[1], h: c[2], col: c[3], fly: false };
         return null;
@@ -39314,7 +39324,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     }
     const EG = { mobs: [], bosses: [] };
     function init() {
-        const C = cat(); let i = 0;
+        const C = cat(); let i = 0; C.mobs = C.mobs.filter(m => !ITEM_METADATA['egg_m_' + m.id]); C.bosses = C.bosses.filter(b => !ITEM_METADATA['egg_b_' + b.id]);
         for (const m of C.mobs) { const id = 'egg_m_' + m.id; ITEM_METADATA[id] = { name: 'Яйце: ' + m.name, rarity: 'Рідкісний', color: m.col, type: '🥚 Яйце призиву', desc: 'Візьми в руку й натисни ПКМ — істота з’явиться в місці курсору.', stat: 'Не витрачається' }; try { itemSprites[id] = sprite(m.col, false, ++i * 7); } catch (e) { } EG.mobs.push(id); }
         for (const b of C.bosses) { const id = 'egg_b_' + b.id; ITEM_METADATA[id] = { name: 'Яйце боса: ' + b.name, rarity: 'Легендарний', color: b.col, type: '👑 Яйце боса', desc: 'Візьми в руку й натисни ПКМ — бос прокинеться в місці курсору.', stat: 'Не витрачається' }; try { itemSprites[id] = sprite(b.col, true, ++i * 11); } catch (e) { } EG.bosses.push(id); }
     }
@@ -39425,7 +39435,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         if (!ids.length) gd.innerHTML = '<small style="grid-column:1/-1;padding:18px;text-align:center">Нічого не знайдено</small>'; else if (ids.length > MAXN) { const s = document.createElement('small'); s.style.gridColumn = '1/-1'; s.textContent = 'Показано ' + MAXN + ' з ' + ids.length + ' — уточни пошук.'; gd.appendChild(s); }
     };
     mpOnMsg = (function (o) { return function (m) { try { if (m && m.t === 'x_egg' && MP && MP.sh) { if (MP.host && /^egg_m_[a-z]+$/.test(String(m.e)) && isFinite(m.bx) && isFinite(m.by)) summonMob(String(m.e), m.bx | 0, m.by | 0); return; } } catch (e) { console.error('zegg msg', e); } return o.apply(this, arguments); }; })(mpOnMsg);
-    window.__zegg = { EG, summon, spec, cat, summonMob };
+    window.__zegg = { EG, summon, spec, cat, summonMob, refresh: init };
 })();
 // ===== v45.86 «Живі дерева»: свій стиль для дуба, тропічного, болотного й ялини + три види саджанців =====
 (function () {
@@ -39709,6 +39719,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     function flash(col) { fl.style.setProperty('--fc', col || '#ffffff'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
     function render() { if (!cur) return; const r = cur.render(); ov.style.setProperty('--zrc', cur.col || '#a78bfa'); ov.innerHTML = '<div class="zrb"><div class="hd"><b>' + cur.title + '</b><button data-z="x">✕</button></div>' + r + '</div>'; }
     function open(title, col, renderFn, onClick) { clearTimeout(ct); ov.classList.remove('out'); cur = { title, col, render: renderFn, click: onClick }; render(); ov.classList.add('show'); }
+    ov.addEventListener('wheel', e => { e.stopPropagation(); }, { passive: true });
     ov.addEventListener('click', e => { if (e.target === ov) { close(); return; } const b = e.target.closest('[data-z]'); if (!b) return; if (b.dataset.z === 'x') { close(); return; } try { if (cur && cur.click) cur.click(b.dataset.z, b.dataset); } catch (er) { console.error('zr click', er); } if (cur) render(); });
     window.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('show')) { close(); e.stopPropagation(); } }, true);
 
@@ -39980,8 +39991,12 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const plaque = r => ({ x: r.x + Math.floor(r.w / 2), y: r.y + (T(r).gr != null ? T(r).gr : r.h - 1) });
     const rec = r => rb()[key(r)] || (rb()[key(r)] = { s: 0, bu: 0, cd: 0 });
     const inside = r => { const X = px(), Y = py(); return X >= r.x - 1 && X <= r.x + r.w + 1 && Y >= r.y - 2 && Y <= r.y + r.h + 2; };
+    const meN = () => { try { return Z.mpOn() && on('own') ? (MP.name || '') : ''; } catch (e) { return ''; } };
+    const canUse = R => { const m = meN(); return !m || !R || !R.o || R.o === m; };
+    const ownN = () => { const m = meN(), W = rb(); let n = 0; for (const k in W) if (W[k].o === m) n++; return n; };
+    const MAXR = 2;
     const sync = (r, R) => send({ t: 'x_zrb', k: key(r), r: R });
-    Z.MSG.x_zrb = m => { try { if (typeof m.k === 'string' && m.r && typeof m.r.s === 'number') rb()[m.k] = { s: m.r.s | 0, bu: +m.r.bu || 0, cd: +m.r.cd || 0 }; } catch (e) { } };
+    Z.MSG.x_zrb = m => { try { if (typeof m.k === 'string' && m.r && typeof m.r.s === 'number') { const old = rb()[m.k], o = String(m.r.o || '').slice(0, 24); if (old && old.o && o && old.o !== o) return; rb()[m.k] = { s: m.r.s | 0, bu: +m.r.bu || 0, cd: +m.r.cd || 0, o: (old && old.o) || o }; } } catch (e) { } };
     // ---------- тік: завершення будівництва (лише господар), привал, святкові ефекти ----------
     let f = 0; const lastS = {}, fireflies = {};
     const FX = () => window.__zpfx;
@@ -39996,7 +40011,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         if (!on('rebuild') || !currentWorld || !currentWorld.ruins) return; f++;
         if (f % 60 === 0 && Z.host()) for (const r of currentWorld.ruins) { const R = rb()[key(r)]; if (R && R.bu && gameTime >= R.bu) { R.s++; R.bu = 0; sync(r, R); toast('🏛 ' + (T(r).ic || '') + ' ' + (T(r).n || 'Руїна') + ': відбудовано етап «' + ST[R.s].n + '»'); } }
         if (f % 20 === 0) for (const r of currentWorld.ruins) { const k = key(r), R = rb()[k], s = R ? R.s | 0 : 0; if (lastS[k] != null && s > lastS[k]) { const P = plaque(r); if (Math.abs(px() - P.x) < 60) celebrate(r, s); } lastS[k] = s; }
-        if (f % 180 === 0) for (const r of currentWorld.ruins) { const R = rb()[key(r)]; if (R && R.s >= 1 && inside(r) && player.health < player.maxHealth) { player.health = Math.min(player.maxHealth, player.health + Math.max(1, Math.round(player.maxHealth * 0.01))); } }
+        if (f % 180 === 0) for (const r of currentWorld.ruins) { const R = rb()[key(r)]; if (R && R.s >= 1 && canUse(R) && inside(r) && player.health < player.maxHealth) { player.health = Math.min(player.maxHealth, player.health + Math.max(1, Math.round(player.maxHealth * 0.01))); } }
     });
     // ---------- малювання ----------
     const sway = (t, k) => Math.sin(t * 1.7 + k) * 0.6 + Math.sin(t * 3.1 + k * 2) * 0.4;
@@ -40061,7 +40076,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 if (rich && Math.random() < 0.3) X_.emit(X + (Math.random() - 0.5) * 24, Y - 38, { vx: (Math.random() - 0.5) * 0.3, vy: -1.2 - Math.random() * 1.4, g: -0.004, life: 2.2, s: 1.6, c: '#c8fbff', shape: Math.random() < 0.3 ? 1 : 0, a: 0.9 });
                 if (f % 240 === 0 || Math.floor(t / 4) !== Math.floor((t - 0.02) / 4)) X_.wave(X, Y - 1, '#9ff4ff', 110, { life: 1.6 });
             }
-            if (Math.abs(px() - P.x - 0.5) < 3.5 && Math.abs(py() - P.y) < 4) X_.label(X, Y - 82, '🏛 Відбудова — ПКМ', sc);
+            if (Math.abs(px() - P.x - 0.5) < 3.5 && Math.abs(py() - P.y) < 4) X_.label(X, Y - 82, R.o && !canUse(R) ? '🏛 Руїна гравця ' + R.o : '🏛 Відбудова — ПКМ' + (R.o ? ' · ' + R.o : ''), sc);
         }
     });
     Z.LIGHT.push(L => {
@@ -40077,32 +40092,95 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         return false;
     });
     function lootFor(r) { const h = Math.floor(Math.random() * 1e9), n = 2 + (h % 3), id = LOOT[h % LOOT.length]; return [[id, n], ['ancient_page', 1 + (h % 2)]]; }
+
+    { const st = document.createElement('style'); st.textContent = `
+#zr-ov .rh{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:0 0 10px;border-radius:13px;background:linear-gradient(100deg,rgba(224,176,96,.28),rgba(120,80,200,.2));border:1px solid rgba(255,220,140,.35);position:relative;overflow:hidden}
+#zr-ov .rh::after{content:'';position:absolute;top:0;left:-45%;width:30%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);transform:skewX(-20deg);animation:zrhSh 4.2s ease-in-out infinite}
+@keyframes zrhSh{0%,60%{left:-45%}100%{left:130%}}
+#zr-ov .rhi{font-size:40px;line-height:1;filter:drop-shadow(0 0 12px rgba(255,210,120,.8));animation:zrhFl 3s ease-in-out infinite}
+@keyframes zrhFl{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+#zr-ov .rht{flex:1;min-width:0}#zr-ov .rht b{display:block;font-size:17px}#zr-ov .rht small{display:block;opacity:.85;margin:1px 0 5px}
+#zr-ov .rhb{height:8px;border-radius:5px;background:rgba(0,0,0,.35);overflow:hidden}#zr-ov .rhb i{display:block;height:100%;background:linear-gradient(90deg,#e0b060,#fff3b0);border-radius:5px;transition:width .7s}
+#zr-ov .rhp{font:800 20px 'Segoe UI';color:#ffe9a8;text-shadow:0 0 10px rgba(255,200,100,.6)}
+#zr-ov .rss{display:grid;gap:6px;margin:0 0 10px}
+#zr-ov .rs{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:transform .2s,border-color .2s}
+#zr-ov .rs:hover{transform:translateX(3px)}
+#zr-ov .rs>span{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;background:#262244;border:2px solid #4a4478}
+#zr-ov .rs small{display:block;opacity:.75;font-size:12px}
+#zr-ov .rs.done{border-color:rgba(255,220,140,.5);background:rgba(224,176,96,.12)}#zr-ov .rs.done>span{background:radial-gradient(circle,#fff6c8,#e0b060);color:#3a2a08;border-color:#fff3b0;box-shadow:0 0 12px #e0b060}
+#zr-ov .rs.now{border-color:#e0b060;animation:zrhNow 1.8s ease-in-out infinite}#zr-ov .rs.now>span{border-color:#e0b060}
+@keyframes zrhNow{0%,100%{box-shadow:0 0 0 0 rgba(224,176,96,.5)}50%{box-shadow:0 0 0 6px rgba(224,176,96,0)}}
+#zr-ov .rs.lock{opacity:.55}`; document.head.appendChild(st); }
     function panel(r) {
         const t = T(r);
         Z.open((t.ic || '🏛') + ' ' + (t.n || 'Руїна') + ': відбудова', '#e0b060', () => {
             const R = rec(r), cur = R.s, nx = ST[cur + 1], DAYH = DAY / 24;
+            if (!canUse(R)) return `<div class="rh"><div class="rhi">${T(r).ic || '🏛'}</div><div class="rht"><b>${T(r).n || 'Руїна'}</b><small>Руїна гравця ${R.o} · етап ${cur} з 3</small></div></div><div class="card"><div>🔒 Цю руїну відбудовує інший гравець. Знайди й відбудуй власну!</div></div>`;
             let kb = 0; if (R.bu && nx) kb = Math.max(0, Math.min(1, 1 - (R.bu - gameTime) / (nx.days * DAY)));
             const nd = i => `<div class="nd ${cur >= i ? 'done' : (cur + 1 === i ? 'now' : '')}">${cur >= i ? '✔' : i}</div>`, ln = i => `<div class="ln"><i style="width:${cur >= i ? 100 : (cur + 1 === i ? Math.round(kb * 100) : 0)}%"></i></div>`;
-            let h = `<div class="trk">${nd(1)}${ln(1)}${nd(2)}${ln(2)}${nd(3)}</div><div class="msg">Етап <b>${cur}</b> з 3. Відбудова забирає матеріали й кілька діб гри — зате руїна стає твоєю опорою у світі.</div>`;
+            const t0 = T(r), cs = t => (cur >= t ? 'done' : (cur + 1 === t ? 'now' : 'lock')), pr = Math.round(Math.min(3, cur + (R.bu ? kb : 0)) / 3 * 100);
+            let h = `<div class="rh"><div class="rhi">${t0.ic || '🏛'}</div><div class="rht"><b>${t0.n || 'Руїна'}</b><small>${cur >= 3 ? '✨ Святилище-маяк відбудоване' : cur ? 'Відбудова: етап ' + cur + ' з 3' : 'Стародавня руїна · ще не відбудована'}</small><div class="rhb"><i style="width:${pr}%"></i></div></div><div class="rhp">${pr}%</div></div><div class="rss">${[1, 2, 3].map(q => `<div class="rs ${cs(q)}"><span>${cur >= q ? '✔' : (cs(q) === 'lock' ? '🔒' : q)}</span><div><b>${ST[q].n}</b><small>${ST[q].d}</small></div></div>`).join('')}</div>`;
             if (R.bu && nx) { const left = Math.max(0, (R.bu - gameTime) / DAYH); h += `<div class="card"><div>🔨 Будується: ${nx.n}<small>Лишилось ≈ ${Math.ceil(left)} год. гри. Можна йти — робота триває.</small><div class="bar" style="width:260px;max-width:100%"><i style="width:${Math.round(kb * 100)}%"></i></div></div></div>`; }
             else if (nx) {
-                const ok = Object.keys(nx.need).every(k => cnt(k) >= nx.need[k]);
-                h += `<div class="card"><div><b>Етап ${cur + 1}: ${nx.n}</b><small>${nx.d} · ${nx.days} доби</small><div class="chips">${Object.keys(nx.need).map(k => `<span class="chip ${cnt(k) >= nx.need[k] ? 'ok' : 'no'}">${nm(k)} ${Math.min(cnt(k), 9999)}/${nx.need[k]}</span>`).join('')}</div></div><button data-z="build" ${ok ? '' : 'disabled'}>Почати</button></div>`;
+                const claim = meN() && !R.o, full = claim && ownN() >= MAXR;
+                const ok = !full && Object.keys(nx.need).every(k => cnt(k) >= nx.need[k]);
+                const ok0 = Object.keys(nx.need).every(k => cnt(k) >= nx.need[k]);
+                h += `<div class="card"><div><b>Етап ${cur + 1}: ${nx.n}</b><small>${nx.d} · ${nx.days} доби</small><div class="chips">${Object.keys(nx.need).map(k => `<span class="chip ${cnt(k) >= nx.need[k] ? 'ok' : 'no'}">${nm(k)} ${Math.min(cnt(k), 9999)}/${nx.need[k]}</span>`).join('')}</div></div><button data-z="build" ${ok ? '' : 'disabled'}>${full ? 'Ліміт ' + MAXR + ' руїни' : (claim ? 'Зайняти й почати' : 'Почати')}</button></div>`;
             } else h += '<div class="card"><div>✨ Святилище повністю відбудоване.</div></div>';
-            if (cur >= 2) { const left = Math.max(0, (R.cd - gameTime) / DAYH); h += `<div class="card"><div>🎁 Давній запас<small>${left > 0 ? 'Знову наповниться за ≈ ' + Math.ceil(left) + ' год. гри' : 'Готово до отримання (раз на добу, спільно для всіх)'}</small></div><button data-z="loot" ${left > 0 ? 'disabled' : ''}>Забрати</button></div>`; }
+            if (cur >= 2) { const left = Math.max(0, (R.cd - gameTime) / DAYH); h += `<div class="card"><div>🎁 Давній запас<small>${left > 0 ? 'Знову наповниться за ≈ ' + Math.ceil(left) + ' год. гри' : 'Готово до отримання (раз на добу)'}</small></div><button data-z="loot" ${left > 0 ? 'disabled' : ''}>Забрати</button></div>`; }
             if (cur >= 3) {
-                const list = (currentWorld.ruins || []).filter(q => q !== r && ((rb()[key(q)] || {}).s | 0) >= 3);
+                const list = (currentWorld.ruins || []).filter(q => q !== r && ((rb()[key(q)] || {}).s | 0) >= 3 && canUse(rb()[key(q)]));
                 h += '<div class="msg"><b>🔆 Маяк: перехід</b></div>' + (list.length ? list.map((q, i) => `<div class="card"><div>${T(q).ic || '🏛'} ${T(q).n || 'Руїна'}<small>x ${q.x}</small></div><button data-z="tp" data-i="${currentWorld.ruins.indexOf(q)}">Перейти</button></div>`).join('') : '<div class="card"><div>Інших відбудованих святилищ поки немає.</div></div>');
             }
             return h;
         }, (z, d) => {
-            const R = rec(r), x = window.__zpfx;
-            if (z === 'build') { const nx = ST[R.s + 1]; if (!nx || R.bu) return; for (const k in nx.need) if (cnt(k) < nx.need[k]) return; for (const k in nx.need) consumeItemCount(k, nx.need[k]); R.bu = gameTime + nx.days * DAY; sync(r, R); try { updateInventoryUI(); } catch (e) { } toast('🔨 Будівництво розпочато: ' + nx.n); if (x) { const P = plaque(r); x.burst(P.x * 32 + 16, P.y * 32 - 20, '#ffd27a', 16, 2.5); } }
+            const R = rec(r), x = window.__zpfx; if (!canUse(R)) return;
+            if (z === 'build') { const nx = ST[R.s + 1]; if (!nx || R.bu) return; if (meN() && !R.o) { if (ownN() >= MAXR) return; R.o = meN(); } for (const k in nx.need) if (cnt(k) < nx.need[k]) return; for (const k in nx.need) consumeItemCount(k, nx.need[k]); R.bu = gameTime + nx.days * DAY; sync(r, R); try { updateInventoryUI(); } catch (e) { } toast('🔨 Будівництво розпочато: ' + nx.n); if (x) { const P = plaque(r); x.burst(P.x * 32 + 16, P.y * 32 - 20, '#ffd27a', 16, 2.5); } }
             else if (z === 'loot') { if (R.s < 2 || R.cd > gameTime) return; R.cd = gameTime + DAY; sync(r, R); for (const [id, n] of lootFor(r)) { try { giveItem(id, n); } catch (e) { } } try { updateInventoryUI(); playSound('pickup'); } catch (e) { } toast('🎁 Ти забрав давній запас'); if (x) x.burst(player.x + 12, player.y, '#ffd27a', 20, 3); }
-            else if (z === 'tp') { const q = (currentWorld.ruins || [])[d.i | 0]; if (!q || ((rb()[key(q)] || {}).s | 0) < 3 || R.s < 3) return; const P = plaque(q), o = plaque(r); if (x) { x.burst(player.x + 12, player.y + 20, '#9ff4ff', 40, 4); x.wave(o.x * 32 + 16, o.y * 32 + 32, '#9ff4ff', 120); } player.x = P.x * 32; player.y = (P.y - 2) * 32; player.vx = 0; player.vy = 0; Z.close(); Z.flash('#bff8ff'); if (x) { x.burst(player.x + 12, player.y + 20, '#9ff4ff', 40, 4); x.wave(P.x * 32 + 16, P.y * 32 + 32, '#9ff4ff', 140); } }
+            else if (z === 'tp') { const q = (currentWorld.ruins || [])[d.i | 0]; if (!q || ((rb()[key(q)] || {}).s | 0) < 3 || R.s < 3 || !canUse(rb()[key(q)])) return; const P = plaque(q), o = plaque(r); if (x) { x.burst(player.x + 12, player.y + 20, '#9ff4ff', 40, 4); x.wave(o.x * 32 + 16, o.y * 32 + 32, '#9ff4ff', 120); } player.x = P.x * 32; player.y = (P.y - 2) * 32; player.vx = 0; player.vy = 0; Z.close(); Z.flash('#bff8ff'); if (x) { x.burst(player.x + 12, player.y + 20, '#9ff4ff', 40, 4); x.wave(P.x * 32 + 16, P.y * 32 + 32, '#9ff4ff', 140); } }
         });
     }
     window.__zruin = { rb, ST, panel };
+})();
+// ===== v46.3 «Власні поселення» (мультиплеєр): кожен гравець будує, розвиває й радить у своєму поселенні =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const on = id => { try { return window.__zfeat.on(id); } catch (e) { return true; } };
+    const me = () => { try { return Z.mpOn() ? (MP.name || '') : ''; } catch (e) { return ''; } };
+    const fo = k => { try { return currentWorld.furn[k]; } catch (e) { return null; } };
+    const mine = k => { if (!Z.mpOn() || !on('own')) return true; const f = fo(k); return !f || !f.own || f.own === me(); };
+    // кожен предмет меблів запам’ятовує, хто його поставив (ліжко = дім мешканця)
+    furnPlace = (function (o) {
+        return function (t, x, y) {
+            const r = o.apply(this, arguments);
+            try { if (Z.mpOn() && on('own')) { const f = fo(x + ',' + y); if (f && !f.own) f.own = me(); } } catch (e) { }
+            return r;
+        };
+    })(furnPlace);
+    const all = v22Housed;
+    v22Housed = function () { const a = all.apply(this, arguments); if (!Z.mpOn() || !on('own')) return a; return a.filter(h => mine(h.o && h.o.home)); };
+    // усі поселення світу: власник → { n, x, y, online }
+    function towns() {
+        const R = {}, names = new Set([me()]);
+        try { if (MP && MP.players) for (const id in MP.players) names.add(MP.players[id].name || ''); } catch (e) { }
+        try {
+            for (const h of all()) {
+                const k = h.o && h.o.home; if (!k) continue; const f = fo(k), ow = (f && f.own) || '', p = String(k).split(',').map(Number); if (!(p[0] > 0)) continue;
+                const t = R[ow] || (R[ow] = { n: 0, sx: 0, sy: 0 }); t.n++; t.sx += p[0]; t.sy += p[1];
+            }
+        } catch (e) { }
+        for (const ow in R) { const t = R[ow]; t.x = t.sx / t.n; t.y = t.sy / t.n; t.online = !Z.mpOn() || !ow || names.has(ow); t.owner = ow; }
+        return R;
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        if (!Z.mpOn() || !on('own') || !currentWorld.furn) return; const F = window.__zpfx; if (!F) return;
+        for (const k in currentWorld.furn) {
+            const f = currentWorld.furn[k]; if (f.t !== 'bed' || !f.own || f.own === me()) continue; const X = (f.x + 1) * 32; if (X < x0 || X > x1 || Math.abs(Z.px() - f.x) > 5 || Math.abs(Z.py() - f.y) > 4) continue;
+            F.label(X, f.y * 32 - 12, '🏠 Дім гравця ' + f.own, '#ffd27a');
+        }
+    });
+    window.__zown = { me, mine, towns };
 })();
 // ===== v45.95 «Лабораторія експериментів» (68): змішуй інгредієнти — шукай нові суміші =====
 (function () {
@@ -40181,6 +40259,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     Z.meta('mirror_shard', 'Осколок відбиття', 'Рідкісний', '#d9c8ff', 'Ресурс', 'Холодний уламок із дзеркального світу. Годиться в лабораторію як інгредієнт удачі.', 'Збирається у дзеркальних світах');
     Z.icon('mirror_shard', cx => { cx.fillStyle = '#5a4a9a'; cx.beginPath(); cx.moveTo(16, 3); cx.lineTo(24, 14); cx.lineTo(19, 29); cx.lineTo(11, 27); cx.lineTo(7, 12); cx.closePath(); cx.fill(); cx.fillStyle = '#d9c8ff'; cx.beginPath(); cx.moveTo(16, 5); cx.lineTo(21, 14); cx.lineTo(17, 26); cx.lineTo(13, 13); cx.closePath(); cx.fill(); cx.fillStyle = '#fff'; cx.fillRect(15, 9, 2, 5); });
     const mr = () => currentWorld && currentWorld.mr;
+    const MINLV = 20;
     const gates = () => (mr() && mr().g) || [];
     const cdKey = () => 'zmr_cd_' + ((currentWorld && currentWorld.name) || 'w');
     const cdGet = () => { try { return JSON.parse(localStorage.getItem(cdKey()) || '{}'); } catch (e) { return {}; } };
@@ -40212,7 +40291,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     }
     function gen() {
         const cw = currentWorld, W = cw.width, M = { g: [] }, used = []; cw.mr = M;
-        const kinds = ['sand', 'jungle', 'winter', 'swamp'];
+        const kinds = ['sand', 'jungle', 'winter', 'swamp'].sort(() => Math.random() - 0.5).slice(0, 2); // рідкісні: лише 2 арки на світ
         kinds.forEach((k, ki) => {
             let gx = -1;
             if (k === 'swamp') { if (cw.swp) gx = cw.swp.x1 + 5; }
@@ -40229,6 +40308,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const S = { in: null, until: 0, spawnT: 0 };
     const mm = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     function enter(g) {
+        if ((RPG.level | 0) < MINLV) { toast('🪞 Арка мовчить. Повернись, коли зміцнієш (рівень ' + MINLV + ')'); return; }
         const CD = cdGet(), left = (CD[g.k] || 0) - Date.now(); if (left > 0) { toast('🪞 Арка ще остигає: ' + mm(left)); return; }
         S.in = g; S.until = Date.now() + STAB; S.spawnT = Date.now() + 18000; player.x = g.cx * 32; player.y = (g.cy - 1) * 32; player.vx = 0; player.vy = 0; try { createParticles(player.x + 12, player.y + 20, TH[g.k].col, 30, 3, 3, 40); Z.flash(TH[g.k].col); const F = window.__zpfx; if (F) { F.burst(player.x + 12, player.y + 18, TH[g.k].col, 50, 4.5); F.wave(player.x + 12, player.y + 40, '#ffffff', 130); } } catch (e) { }
         toast(TH[g.k].ic + ' ' + TH[g.k].n + ': зібрати кристали, поки відображення стабільне');
@@ -40804,6 +40884,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         sandworm: { n: 'Піщаний черв’як', w: 44, h: 58, hp: 330, dmg: 26, xp: 96, col: '#d8b070', sight: 440, heavy: 1, cause: 'Вас проковтнув піщаний черв’як' },
         frogshaman: { n: 'Жаб’ячий шаман', w: 30, h: 34, hp: 220, dmg: 17, xp: 80, col: '#6ac84a', sight: 560, cause: 'Вас закляв жаб’ячий шаман' }
     };
+    window.ZEGG_MOBS = window.ZEGG_MOBS || {}; for (const k in DM) window.ZEGG_MOBS[k] = { hp: DM[k].hp, w: DM[k].w, h: DM[k].h, col: DM[k].col };
     for (const k in DM) { XP_BASE[k] = DM[k].xp; V18DMG[k] = DM[k].dmg; V376_NAV.add(k); }
     v16MobCol = (function (o) { return function (t) { return DM[t] ? DM[t].col : o(t); }; })(v16MobCol);
     v18Sp = (function (o) { return function (t) { return !!DM[t] || o(t); }; })(v18Sp);
@@ -41360,6 +41441,902 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     })(rpgHit);
     window.__zdrake = { ZD, drawDrake, WG, hall };
 })();
+// ===== v46.2 «Дерево ремесел» (103): три нові гілки професій — Коваль, Інженер, Пасічник (вбудовані в P → Професії) =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    if (typeof PB === 'undefined' || typeof PB_ORDER === 'undefined') return;
+    const tierOf = id => { try { if (WEAPONS[id]) return WEAPONS[id].tier || 1; if (ACC[id]) return ACC[id][1] || 1; const m = ITEM_METADATA[id]; if (m) { const r = RPG_TIERS.findIndex(q => q.r === m.rarity); return Math.max(1, r); } } catch (e) { } return 1; };
+    const isGear = id => { try { return !!(WEAPONS[id] || ACC[id] || /_(helmet|chestplate|leggings|boots)$/.test(id)); } catch (e) { return false; } };
+    const held = () => { try { const h = inventory[selectedHotbarSlot]; return h && WEAPONS[h.id] ? WEAPONS[h.id] : null; } catch (e) { return null; } };
+    PB.smith = {
+        name: 'Коваль', ico: '⚒', item: 'iron_sword', col: '#ff9a5a', col2: '#6a2a0a', tag: 'Зброя, броня й загартування', how: 'XP: крафт зброї, броні та аксесуарів (чим вищий ґатунок — тим більше)',
+        perks: {
+            s_edge: { x: 0, y: 0, max: 5, item: 'iron_sword', name: 'Гострий клинок', d: r => `+${r * 2}% шкоди зброєю`, de: 'Добре заточена сталь ріже глибше.' },
+            s_plate: { x: 2, y: 0, max: 5, item: 'iron_chestplate', name: 'Міцні лати', d: r => `+${r} захисту`, de: 'Правильно підігнана броня тримає удар.' },
+            s_thrift: { x: 0, y: 1, max: 3, req: ['s_edge'], lvl: 3, item: 'iron_ingot', name: 'Ощадливе кування', d: r => `${r * 8}% шанс повернути 1 злиток після крафту зброї чи броні`, de: 'Ковалі не викидають окалину.' },
+            s_temper: { x: 2, y: 1, max: 3, req: ['s_plate'], lvl: 3, item: 'coal_ore', name: 'Гарт', d: r => `${r * 3}% шанс оглушити ворога на мить при ударі`, de: 'Загартований метал б’є, наче молот.' },
+            s_master: { x: 1, y: 2, max: 1, req: ['s_thrift', 's_temper'], lvl: 7, item: 'gold_ingot', name: 'Знак майстра', d: r => 'Зброя 3-го ґатунку й вище: +6% шкоди та +3 захисту', de: 'Клеймо, яке впізнають усі.' }
+        }
+    };
+    PB.eng = {
+        name: 'Інженер', ico: '⚙', item: 'torch', col: '#6ac8ff', col2: '#0f3a5a', tag: 'Знаряддя, меблі й механізми', how: 'XP: крафт інструментів, меблів і корисних речей',
+        perks: {
+            e_gear: { x: 0, y: 0, max: 5, item: 'iron_pickaxe', name: 'Підшипники', d: r => `+${r * 2}% швидкості бігу`, de: 'Усе крутиться легше.' },
+            e_frame: { x: 2, y: 0, max: 5, item: 'wood', name: 'Міцний каркас', d: r => `+${r * 8} здоров’я`, de: 'Конструкція не розсиплеться.' },
+            e_spring: { x: 0, y: 1, max: 3, req: ['e_gear'], lvl: 3, item: 'gel', name: 'Пружини', d: r => `+${r * 5}% висоти стрибка`, de: 'Підошви з пружинами.' },
+            e_plan: { x: 2, y: 1, max: 3, req: ['e_frame'], lvl: 3, item: 'ancient_page', name: 'Креслення', d: r => `+${r * 3}% досвіду`, de: 'Вивчений процес — менше помилок.' },
+            e_master: { x: 1, y: 2, max: 1, req: ['e_spring', 'e_plan'], lvl: 7, item: 'crystal_shard', name: 'Механічний майстер', d: r => '+6% швидкості атаки та +20 мани', de: 'Точний механізм у кожному русі.' }
+        }
+    };
+    PB.bee = {
+        name: 'Пасічник', ico: '🐝', item: 'honey', col: '#ffd24a', col2: '#6a4a08', tag: 'Бджоли, вулики й мед', how: 'XP: ловити диких бджіл, збирати мед і воскові соти',
+        perks: {
+            b_hive: { x: 0, y: 0, max: 5, item: 'honey', name: 'Солодкий нектар', d: r => `+${r * 8}% швидкості виробництва меду`, de: 'Квіти даються бджолам легше.' },
+            b_swarm: { x: 2, y: 0, max: 3, item: 'flower_seeds', name: 'Великий рій', d: r => `+${r} бджола в кожному вулику`, de: 'У вулику тісно — а бджолам весело.' },
+            b_net: { x: 0, y: 1, max: 3, req: ['b_hive'], lvl: 3, item: 'vines', name: 'Спритна сітка', d: r => `+${r * 15}% шансу піймати бджолу`, de: 'Рука не тремтить, сітка не рветься.' },
+            b_royal: { x: 2, y: 1, max: 3, req: ['b_swarm'], lvl: 3, item: 'lavender', name: 'Маточне молочко', d: r => `${r * 6}% шанс отримати маточне молочко при зборі меду`, de: 'Рідкісний дар вулика.' },
+            b_queen: { x: 1, y: 2, max: 1, req: ['b_net', 'b_royal'], lvl: 7, item: 'sunflower', name: 'Королева рою', d: r => 'Бджоли поруч захищають: жалять ворогів і лікують тебе', de: 'Рій слухає тебе.' }
+        }
+    };
+    PB_ORDER.push('smith', 'eng', 'bee');
+    // кружечки досвіду в HUD для нових гілок (оригінальні створені до модулів)
+    try {
+        const feed = document.getElementById('v20-feed');
+        if (feed && V20UI && V20UI.pill) for (const b of ['smith', 'eng', 'bee']) { const p = document.createElement('div'); p.className = 'pf-pill'; p.style.setProperty('--bc', PB[b].col); p.innerHTML = '<canvas width="52" height="52"></canvas><span class="nm"></span> <em></em><span class="bar"><i></i></span>'; feed.appendChild(p); V20UI.pill[b] = p; v20Medal(p.querySelector('canvas'), b); }
+    } catch (e) { console.error('zprof pills', e); }
+    // ---------- ефекти перків ----------
+    accSum = (function (o) {
+        return function (k) {
+            let v = o.apply(this, arguments);
+            try {
+                if (k === 'spd') v += 0.02 * pr('e_gear'); else if (k === 'hp') v += 8 * pr('e_frame'); else if (k === 'jump') v += 0.05 * pr('e_spring');
+                else if (k === 'xp') v += 0.03 * pr('e_plan'); else if (k === 'aspd') v += pr('e_master') ? 0.06 : 0; else if (k === 'mana') v += pr('e_master') ? 20 : 0;
+            } catch (e) { } return v;
+        };
+    })(accSum);
+    playerDefense = (function (o) { return function () { let d = o.apply(this, arguments); try { d += pr('s_plate'); if (pr('s_master')) { const w = held(); if (w && (w.tier || 1) >= 3) d += 3; } } catch (e) { } return d; }; })(playerDefense);
+    rpgHit = (function (o) {
+        return function (t, dmg, opt) {
+            try {
+                const e = pr('s_edge'), m = pr('s_master'); let k = 1 + 0.02 * e;
+                if (m) { const w = held(); if (w && (w.tier || 1) >= 3) k += 0.06; }
+                if (k !== 1 && t && (t.k === 'mob' || t.k === 'lmob' || t.k === 'xboss' || t.k === 'lboss' || t.k === 'chronos')) dmg = Math.round(dmg * k);
+                const g = pr('s_temper'); if (g && t && t.k === 'mob' && Math.random() < 0.03 * g && typeof v19FreezeMob === 'function') { v19FreezeMob(t.o, 18, 0); const F = window.__zpfx; if (F) F.burst(t.x, t.y, '#ffb36a', 8, 3); }
+            } catch (er) { }
+            return o.call(this, t, dmg, opt);
+        };
+    })(rpgHit);
+    // ---------- досвід за крафт ----------
+    const last = {};
+    craftItem = (function (o) {
+        return function (itemId, count) {
+            const rec = recipes.find(r => r.result === itemId), cnt = Z.cnt;
+            let before = 0; try { before = cnt(itemId); } catch (e) { }
+            const r = o.apply(this, arguments);
+            try {
+                if (rec && cnt(itemId) > before && !POTIONS[itemId] && !(typeof FOOD !== 'undefined' && FOOD[itemId])) {
+                    const now = Date.now(), fresh = !last[itemId] || now - last[itemId] > 20000; last[itemId] = now;
+                    if (isGear(itemId)) {
+                        const ti = tierOf(itemId);
+                        if (fresh) profXp('smith', 5 + ti * 4);
+                        const th = pr('s_thrift'); if (th && Math.random() < 0.08 * th) { const ing = ['iron_ingot', 'gold_ingot', 'crystal_ingot'].find(k => rec.req[k] >= 4); if (ing) { giveItem(ing, 1); floatingTexts.push({ x: player.x - 6, y: player.y - 30, text: '⚒ Злиток вцілів!', color: '#ffb36a', life: 60 }); const F = window.__zpfx; if (F) F.burst(player.x + 12, player.y + 14, '#ffb36a', 14, 3); } }
+                    } else if (fresh) profXp('eng', 4);
+                }
+            } catch (e) { }
+            return r;
+        };
+    })(craftItem);
+    window.__zprof = { tierOf };
+})();
+// ===== v46.2 «Ферми» (67): живі бджоли (сітка → банка → вулик → пилок → мед) і кристалічна грядка =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const { on, toast, cnt, px, py, surf, host, send } = Z;
+    const TAU = Math.PI * 2, HCAP = 6, STG = 360; // мед у вулику до 6; стадія кристала ≈ 6 хв
+    const X = () => window.__zpfx;
+    const low = () => { try { return !!(window.__zlife && window.__zlife.cfg && window.__zlife.cfg.low) || !(X() && X().rich()); } catch (e) { return false; } };
+    const tn = (a, b, c, d, e, o) => { try { if (audioCtx && audioVolume > 0) tone(a, b, c, d, e, o || {}); } catch (er) { } };
+    const day = () => Math.sin(gameTime) > 0;
+    const pr_ = id => { try { return pr(id); } catch (e) { return 0; } };
+    const fkey = f => f.x + ',' + f.y;
+    const hv = (a, b) => { let h = (Math.imul(a | 0, 73856093) ^ Math.imul(b | 0, 19349663)) >>> 0; h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; return (h >>> 0) / 4294967296; };
+    // ---------- предмети ----------
+    Z.meta('bee_net', 'Сітка для бджіл', 'Незвичайний', '#e8d8a0', 'Інструмент', 'Тримай у руці й клікни ПКМ по дикій бджолі поруч: вона потрапить у банку. Не завжди з першого разу.', 'ПКМ по бджолі · шанс 55%+');
+    Z.meta('live_bee', 'Бджола в банці', 'Незвичайний', '#ffd24a', 'Живий матеріал', 'Жива бджола. Тримай її в руці й клікни ПКМ по вулику — вона там оселиться, збиратиме пилок і робитиме мед.', 'ПКМ по вулику: оселити');
+    Z.meta('royal_jelly', 'Маточне молочко', 'Рідкісний', '#fff3b8', '🍖 Їжа', 'Рідкісний дар вулика. Дуже поживне й смачне.', '+34 ситості');
+    Z.icon('bee_net', cx => { cx.strokeStyle = '#6a4a2a'; cx.lineWidth = 3; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(5, 28); cx.lineTo(17, 14); cx.stroke(); cx.strokeStyle = '#e8d8a0'; cx.lineWidth = 2; cx.beginPath(); cx.ellipse(21, 10, 8, 6.5, -0.7, 0, 7); cx.stroke(); cx.strokeStyle = 'rgba(232,216,160,.55)'; cx.lineWidth = 1; for (let i = -6; i <= 6; i += 3) { cx.beginPath(); cx.moveTo(21 + i, 4); cx.lineTo(21 + i - 3, 16); cx.stroke(); } cx.beginPath(); cx.moveTo(15, 10); cx.lineTo(28, 10); cx.stroke(); });
+    Z.icon('live_bee', cx => { cx.fillStyle = 'rgba(190,230,255,.45)'; cx.strokeStyle = '#9ac8e0'; cx.lineWidth = 1.4; cx.beginPath(); cx.roundRect ? cx.roundRect(8, 8, 16, 20, 4) : cx.rect(8, 8, 16, 20); cx.fill(); cx.stroke(); cx.fillStyle = '#7a5a3a'; cx.fillRect(9, 5, 14, 4); cx.fillStyle = 'rgba(255,255,255,.7)'; cx.beginPath(); cx.ellipse(14, 15, 3, 1.4, -0.5, 0, 7); cx.ellipse(18, 15, 3, 1.4, 0.5, 0, 7); cx.fill(); cx.fillStyle = '#f6c53a'; cx.beginPath(); cx.ellipse(16, 19, 4.5, 3.2, 0, 0, 7); cx.fill(); cx.fillStyle = '#2a1a08'; cx.fillRect(14, 16, 1.4, 6); cx.fillRect(17.4, 16, 1.4, 6); cx.beginPath(); cx.arc(21, 19, 2, 0, 7); cx.fill(); });
+    Z.icon('royal_jelly', cx => { cx.fillStyle = 'rgba(255,248,210,.5)'; cx.strokeStyle = '#d8c88a'; cx.lineWidth = 1.4; cx.beginPath(); cx.roundRect ? cx.roundRect(8, 10, 16, 17, 5) : cx.rect(8, 10, 16, 17); cx.fill(); cx.stroke(); cx.fillStyle = '#d8b84a'; cx.fillRect(10, 6, 12, 5); cx.fillStyle = '#fff0a8'; cx.beginPath(); cx.moveTo(16, 14); cx.quadraticCurveTo(22, 21, 16, 25); cx.quadraticCurveTo(10, 21, 16, 14); cx.fill(); cx.fillStyle = '#fff'; cx.fillRect(14, 18, 2, 3); });
+    HELD_TOOLS.bee_net = 1;
+    FOOD.royal_jelly = { n: 'Маточне молочко', v: 34, col: '#fff3b8', d: 'Рідкісний дар вулика. Дуже поживне й смачне.' };
+    [{ result: 'bee_net', count: 1, req: { vines: 8, wood: 6 }, lvl: 3 }].forEach(r => recipes.push(r));
+    // ---------- меблі: кристалічна грядка ----------
+    const R_ = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+    v378Furn('crystal_bed', { n: 'Кристалічна грядка', w: 2, h: 1, st: 'floor', col: '#9fe8ff', type: '🌱 Сад', stat: 'Поклади осколок кристала (ПКМ) — за кілька хвилин виросте скупчення', d: 'Рунна кам’яна грядка з рідкісним ґрунтом. Посади осколок кристала: вночі кристали ростуть швидше, а врожай — 2–3 осколки. Дорога у виготовленні й окупається повільно.' },
+        function (c) {
+            c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(1, 30, 62, 2);
+            R_(c, 1, 14, 62, 16, '#14101e'); R_(c, 2, 15, 60, 14, '#3a3556'); // обідок
+            for (let i = 0; i < 6; i++) { R_(c, 2 + i * 10, 15, 9, 6, i % 2 ? '#575184' : '#645e96'); R_(c, 2 + i * 10, 15, 9, 1.5, '#8d86c4'); R_(c, 2 + i * 10, 20, 9, 1, 'rgba(0,0,0,.28)'); R_(c, 2 + i * 10 + (i % 2 ? 0 : 5), 22, 4, 7, i % 2 ? '#4a4574' : '#3f3a63'); }
+            R_(c, 2, 26, 60, 3, '#2a2644'); R_(c, 2, 28, 60, 1.5, '#14101e');
+            c.fillStyle = '#1b1530'; c.fillRect(5, 9, 54, 7); c.fillStyle = '#2d2250'; for (let i = 0; i < 14; i++) c.fillRect(6 + i * 3.8, 9 + (i * 7 % 3), 2.4, 2);
+            c.fillStyle = '#6fe0ff'; for (const x of [11, 24, 38, 52]) c.fillRect(x, 11, 1.6, 1.6);
+            for (let i = 0; i < 6; i++) { const x = 6 + i * 10; c.fillStyle = '#5fe8ff'; c.fillRect(x + 3, 17, 1.4, 3); c.fillRect(x + 2, 18, 3.4, 1); }
+            c.fillStyle = '#3f8a5a'; for (const [x, w] of [[3, 5], [27, 4], [57, 5]]) { c.fillRect(x, 13, w, 2); c.fillRect(x + 1, 12, w - 2, 1); }
+            for (const x of [1, 59]) { c.fillStyle = '#8a84b8'; c.beginPath(); c.moveTo(x + 1, 14); c.lineTo(x + 2.5, 7); c.lineTo(x + 4, 14); c.fill(); c.fillStyle = '#bfefff'; c.fillRect(x + 2, 9, 1, 3); }
+        }, { stone: 60, crystal_shard: 14, crystal_ingot: 4, gold_ingot: 5, gel: 8 }, 24);
+    FDRAW.beehive = function (c) {
+        const o = '#2a1a08';
+        c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(2, 62, 28, 2);
+        R_(c, 5, 49, 4, 14, '#5a3e1e'); R_(c, 23, 49, 4, 14, '#5a3e1e'); R_(c, 5, 49, 1.5, 14, '#7a5a30'); R_(c, 23, 49, 1.5, 14, '#7a5a30'); R_(c, 8, 55, 16, 2, '#6a4a26');
+        R_(c, 3, 46, 26, 4, o); R_(c, 4, 46.5, 24, 3, '#8a6a3a'); R_(c, 4, 46.5, 24, 1, '#b08a52'); // стіл
+        const boxes = [[35, 11, '#f3b83a', '#d89a22'], [24, 11, '#fff0c0', '#e0cc92'], [13, 11, '#f3b83a', '#d89a22']];
+        boxes.forEach(([y, h, a, b], i) => { R_(c, 4, y - 0.5, 24, h + 1, o); R_(c, 5, y, 22, h, a); for (let k = 0; k < 4; k++) R_(c, 5, y + 1 + k * 2.6, 22, 0.8, b); R_(c, 5, y, 22, 1.4, 'rgba(255,255,255,.35)'); R_(c, 5, y + h - 1.6, 22, 1.6, 'rgba(0,0,0,.22)'); R_(c, 5, y, 1.6, h, 'rgba(255,255,255,.25)'); R_(c, 25.6, y, 1.4, h, 'rgba(0,0,0,.2)'); R_(c, 9, y + 3, 2, 5, 'rgba(0,0,0,.18)'); R_(c, 21, y + 3, 2, 5, 'rgba(0,0,0,.18)'); });
+        R_(c, 11, 41, 10, 5, '#1c0e04'); R_(c, 11, 41, 10, 1.4, '#3a2410'); R_(c, 9, 45, 14, 2, '#c8a060'); R_(c, 9, 45, 14, 0.8, '#e8c888');
+        c.fillStyle = o; c.beginPath(); c.moveTo(1, 14); c.lineTo(16, 2); c.lineTo(31, 14); c.closePath(); c.fill();
+        c.fillStyle = '#b85a2a'; c.beginPath(); c.moveTo(3, 13); c.lineTo(16, 3.5); c.lineTo(29, 13); c.closePath(); c.fill();
+        c.fillStyle = '#d87a42'; c.beginPath(); c.moveTo(16, 3.5); c.lineTo(29, 13); c.lineTo(16, 13); c.closePath(); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.3)'; c.beginPath(); c.moveTo(16, 3.5); c.lineTo(18, 5); c.lineTo(8, 13); c.lineTo(5, 13); c.closePath(); c.fill();
+        for (let i = 0; i < 4; i++) R_(c, 6 + i * 5, 10 - (i % 2), 3, 1, 'rgba(0,0,0,.2)');
+        R_(c, 14, 1, 4, 3, '#6a3a18'); R_(c, 15, 0, 2, 2, '#ffd24a');
+        c.fillStyle = '#e8a21a'; c.beginPath(); c.moveTo(24, 24); c.lineTo(27, 24); c.lineTo(26, 31); c.quadraticCurveTo(25.5, 33, 24.6, 31); c.closePath(); c.fill(); R_(c, 24.5, 24, 1, 5, '#ffe08a');
+    };
+    furnInitSprites();
+    // ---------- вулик: стан ----------
+    const cap = () => 3 + pr_('b_swarm');
+    const hive = f => { if (!f.zb) f.zb = { b: f.bh ? 2 : 0, h: 0, p: 0 }; return f.zb; };
+    const FLC = new WeakMap();
+    function flowers(f) {
+        const now = performance.now(), c = FLC.get(f); if (c && now - c.t < 2000) return c;
+        const pts = []; let n = 0;
+        try {
+            const FLs = (window.__zlife && window.__zlife.FL) || {}, cx = f.x + 0.5, cy = f.y;
+            for (const k in currentWorld.furn) {
+                const q = currentWorld.furn[k]; if (Math.abs(q.x - cx) > 12 || Math.abs(q.y - cy) > 8) continue;
+                if (q.t === 'flower_bed') { n++; if (pts.length < 8) pts.push([(q.x + (q.w || 1) / 2) * 32, q.y * 32 + 6]); }
+                else if (q.t === 'planter' && q.pl) q.pl.forEach(p => { if (p && (V378_PL[p.id] && (V378_PL[p.id].deco || FLs[p.id]))) { n++; if (pts.length < 8) pts.push([(q.x + (q.w || 1) / 2) * 32 + (pts.length % 3 - 1) * 8, q.y * 32 + 2]); } });
+            }
+        } catch (e) { }
+        const r = { t: now, n: Math.min(6, n), pts }; FLC.set(f, r); return r;
+    }
+    const rate = f => { const z = hive(f), n = flowers(f).n; return z.b * (0.35 + 0.65 * n / 6) / 520 * (1 + 0.08 * pr_('b_hive')); };
+    // ---------- взаємодія (господар виконує, гість просить) ----------
+    function giveTo(id, n, x, y) { try { if (canTake(id)) giveItem(id, n); else floatingItems.push({ x, y, vx: 0, vy: -3, itemId: id, count: n }); } catch (e) { } }
+    function useFurn(f, held) { // повертає { msg, give:[id,n], take:id, fx, kind }
+        if (f.t === 'beehive') {
+            const z = hive(f), cp = cap();
+            if (held === 'live_bee') { if (z.b >= cp) return { msg: '🐝 У вулику вже ' + z.b + '/' + cp + ' бджіл — тісно' }; z.b++; return { msg: '🐝 Бджола оселилась! ' + z.b + '/' + cp, take: 'live_bee', fx: 'in', ok: 1 }; }
+            if (z.h >= 1) {
+                const n = Math.floor(z.h); z.h -= n; const g = [['honey', n]];
+                if (n >= 2 && Math.random() < 0.02 + 0.06 * pr_('b_royal')) g.push(['royal_jelly', 1]);
+                return { msg: '🍯 +' + n + ' мед' + (g.length > 1 ? ' · ✨ Маточне молочко!' : ''), give: g, fx: 'honey', n, ok: 1 };
+            }
+            const fl = flowers(f).n; return { msg: z.b ? '🐝 Бджіл ' + z.b + '/' + cp + ' · квітів поруч: ' + fl + (day() ? ' · мед збирається…' : ' · бджоли сплять до ранку') : '🐝 Вулик порожній — піймай бджіл сіткою й поклади банку (ПКМ)' };
+        }
+        if (f.t === 'crystal_bed') {
+            const z = f.cb || (f.cb = { s: 0, p: 0 });
+            if (z.s === 0) { if (held !== 'crystal_shard') return { msg: '💎 Поклади в грядку осколок кристала (тримай його й ПКМ)' }; z.s = 1; z.p = 0; return { msg: '💎 Осколок посаджено', take: 'crystal_shard', fx: 'plant', ok: 1 }; }
+            if (z.s === 3) { const n = 2 + (Math.random() < 0.25 ? 1 : 0); z.s = 0; z.p = 0; return { msg: '💎 +' + n + ' осколки кристала', give: [['crystal_shard', n]], fx: 'crystal', n, ok: 1 }; }
+            return { msg: '💎 Кристали ростуть… ' + Math.round(((z.s - 1) * STG + z.p) / (2 * STG) * 100) + '%' };
+        }
+    }
+    function applyFx(f, r, who) {
+        const x = (f.x + (f.w || 1) / 2) * 32, y = f.y * 32 + 8, F = X();
+        if (r.fx === 'honey' && F) { F.burst(x, y, '#ffd24a', 22, 3.2); F.wave(x, y + 8, '#ffe9a8', 60, { life: 0.5 }); tn('sine', 520, 780, 0.22, 0.06, { rev: 1 }); tn('triangle', 800, 1000, 0.16, 0.04, { delay: 0.08 }); }
+        else if (r.fx === 'in' && F) { F.burst(x, y + 10, '#fff2a0', 14, 2.4); tn('sine', 600, 900, 0.18, 0.05); }
+        else if (r.fx === 'plant' && F) { F.burst(x, y + 6, '#9fe8ff', 14, 2.4); tn('sine', 700, 1000, 0.2, 0.05); }
+        else if (r.fx === 'crystal' && F) { F.burst(x, y - 6, '#bfefff', 30, 4); F.wave(x, y + 4, '#9fe8ff', 80, { life: 0.6 }); tn('sine', 900, 1500, 0.3, 0.07, { rev: 1 }); tn('triangle', 1200, 1800, 0.22, 0.04, { delay: 0.08 }); }
+    }
+    Z.RC.push((bx, by, pressed) => {
+        if (!on('farm') || !pressed) return false;
+        const h = Z.held();
+        // сітка: ловимо дику бджолу
+        if (h === 'bee_net') {
+            const mx = bx * 32 + 16, my = by * 32 + 16; let best = null, bd = 60;
+            for (const b of WB) { const d = Math.hypot(b.x - mx, b.y - my); if (d < bd && Math.hypot(b.x - (player.x + 12), b.y - (player.y + 22)) < 170) { bd = d; best = b; } }
+            if (best || Math.hypot(mx - player.x, my - player.y) < 160) { netSwing(mx, my, best); return !!best || false; }
+            return false;
+        }
+        let f = null; try { f = furnAt(bx, by); } catch (e) { }
+        if (!f || (f.t !== 'beehive' && f.t !== 'crystal_bed')) return false;
+        if (Math.hypot(player.x + 12 - (f.x + (f.w || 1) / 2) * 32, player.y + 22 - (f.y + (f.h || 1) / 2) * 32) > 220) return false;
+        mouse.rightDown = false;
+        if (!host() && Z.mpOn()) { send({ t: 'x_zf', op: 'use', x: f.x, y: f.y, pid: MP.id, held: h || '' }); return true; }
+        const r = useFurn(f, h); if (!r) return false; finish(f, r, null); return true;
+    });
+    function finish(f, r, pid) {
+        if (pid != null) { send({ t: 'x_zfr', pid, r: { msg: r.msg, give: r.give, take: r.take, fx: r.fx, n: r.n, ok: r.ok }, fx_: f.x, fy_: f.y }); }
+        else { if (r.take) { try { consumeItemCount(r.take, 1); updateInventoryUI(); } catch (e) { } } if (r.give) r.give.forEach(([id, n]) => giveTo(id, n, (f.x + 0.5) * 32, f.y * 32)); toast(r.msg, 2600); xpFor(r); }
+        applyFx(f, r); try { v378Sync(); } catch (e) { }
+    }
+    const xpFor = r => { try { if (r.fx === 'honey') profXp('bee', 3 * (r.n || 1)); else if (r.fx === 'crystal') profXp('farm', 8); else if (r.fx === 'in') profXp('bee', 2); } catch (e) { } };
+    Z.MSG.x_zf = m => { try { if (!host() || !on('farm') || m.op !== 'use') return; const f = (currentWorld.furn || {})[m.x + ',' + m.y] || Object.values(currentWorld.furn || {}).find(q => q.x === m.x && q.y === m.y); if (!f) return; const r = useFurn(f, typeof m.held === 'string' ? m.held : ''); if (!r) return; // гість забирає собі
+        const rr = r; send({ t: 'x_zfr', pid: m.pid, r: { msg: rr.msg, give: rr.give, take: rr.take, fx: rr.fx, n: rr.n, ok: rr.ok }, fx_: f.x, fy_: f.y }); applyFx(f, r); try { v378Sync(); } catch (e) { } } catch (e) { console.error('zfarm host', e); } };
+    Z.MSG.x_zfr = m => { try { if (m.pid !== MP.id || !m.r) return; const r = m.r; if (r.take) { consumeItemCount(r.take, 1); updateInventoryUI(); } if (Array.isArray(r.give)) r.give.forEach(([id, n]) => { if (ITEM_METADATA[id]) giveTo(id, n | 0, player.x, player.y); }); toast(String(r.msg || ''), 2600); xpFor(r); applyFx({ x: m.fx_, y: m.fy_, w: 1 }, r); } catch (e) { } };
+    // ---------- дикі бджоли ----------
+    const WB = []; let spawnAt = 0, netCd = 0;
+    function netSwing(mx, my, b) {
+        if (netCd > performance.now()) return; netCd = performance.now() + 700; const F = X(), x = player.x + 12 + player.facing * 22, y = player.y + 12;
+        if (F) { F.wave(x, y, '#f4e8c0', 40, { life: 0.3 }); F.burst(mx, my, '#fff', 4, 2); } tn('triangle', 500, 220, 0.14, 0.04);
+        if (!b) return;
+        const ch = Math.min(0.95, 0.55 + 0.15 * pr_('b_net'));
+        if (Math.random() < ch) {
+            WB.splice(WB.indexOf(b), 1); spawnAt = performance.now() + 25000; giveTo('live_bee', 1, b.x, b.y);
+            if (F) { F.burst(b.x, b.y, '#ffd24a', 18, 3); F.wave(b.x, b.y, '#fff2a0', 50, { life: 0.45 }); }
+            floatingTexts.push({ x: b.x - 20, y: b.y - 18, text: '🐝 Піймано!', color: '#ffd24a', life: 60 }); tn('sine', 700, 1100, 0.2, 0.06); try { profXp('bee', 4); updateInventoryUI(); } catch (e) { }
+        } else { b.flee = 90; b.vx = (b.x > player.x ? 1 : -1) * 3; floatingTexts.push({ x: b.x - 14, y: b.y - 14, text: 'Втекла!', color: '#e8d8a0', life: 40 }); }
+    }
+    function spawnWild() {
+        const mx = low() ? 2 : 3; if (WB.length >= mx || performance.now() < spawnAt) return;
+        const bio = v16Bio(px() | 0); if (bio === 'd' || bio === 's') return;
+        const x = px() + (Math.random() < 0.5 ? -1 : 1) * (9 + Math.random() * 12), s = surf(x); if (!s) return;
+        WB.push({ x: x * 32, y: (s - 1.5 - Math.random() * 2) * 32, vx: 0, vy: 0, tx: x * 32, ty: (s - 2) * 32, ht: 0, life: 4200 + Math.random() * 2400, ph: Math.random() * 9, dir: 1, pol: 0, flee: 0 });
+        spawnAt = performance.now() + 14000;
+    }
+    Z.TICK.push(() => {
+        if (!on('farm')) { WB.length = 0; return; }
+        const d = day(); if (d) spawnWild();
+        for (let i = WB.length - 1; i >= 0; i--) {
+            const b = WB[i]; b.life--; if (b.life < 0 || !d || Math.abs(b.x / 32 - px()) > 48) { WB.splice(i, 1); continue; }
+            if (b.flee > 0) b.flee--;
+            if (--b.ht <= 0) { b.ht = 70 + Math.random() * 110; b.tx = b.x + (Math.random() - 0.5) * 220; const s = surf(b.tx / 32); b.ty = (s - 1.1 - Math.random() * 2.6) * 32; b.pol = Math.random() < 0.5 ? 1 : 0; }
+            const k = b.flee > 0 ? 0.02 : 0.045; b.vx += (b.tx - b.x) * 0.0025 + Math.sin(b.ph + b.life * 0.07) * 0.12; b.vy += (b.ty - b.y) * 0.0035 + Math.cos(b.ph + b.life * 0.09) * 0.1; b.vx *= 0.93; b.vy *= 0.93;
+            b.x += b.vx; b.y += b.vy; if (Math.abs(b.vx) > 0.3) b.dir = b.vx > 0 ? 1 : -1;
+        }
+        // королева рою
+        if (pr_('b_queen') && (gameTime * 100 | 0) % 120 === 0) {
+            try {
+                let hh = null; for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t === 'beehive' && f.zb && f.zb.b >= 2 && Math.hypot((f.x + 0.5) * 32 - player.x, f.y * 32 - player.y) < 520) { hh = f; break; } }
+                QB.on = hh ? Math.min(3, hh.zb.b) : 0;
+                if (hh && player.health > 0 && player.health < player.maxHealth) { player.health = Math.min(player.maxHealth, player.health + 1); floatingTexts.push({ x: player.x + 4, y: player.y - 30, text: '+1 🍯', color: '#ffd24a', life: 40 }); }
+                if (hh) { const T = rpgTargets().filter(t => t.k === 'mob' && Math.hypot(t.x - player.x - 12, t.y - player.y - 22) < 190)[0]; if (T) { rpgHit(T, 4 + 2 * hh.zb.b, { col: '#ffd24a', pcol: '#f6c53a', kb: 0.5, dir: T.x > player.x ? 1 : -1 }); const F = X(); if (F) F.burst(T.x, T.y, '#ffd24a', 8, 2.6); } }
+            } catch (e) { }
+        }
+    });
+    const QB = { on: 0 };
+    // ---------- виробництво (господар) ----------
+    let ft = 0;
+    Z.TICK.push(() => {
+        if (!on('farm') || !host() || !currentWorld || !currentWorld.furn || ++ft % 60 !== 7) return;
+        let ch = false; const nt = !day();
+        for (const k in currentWorld.furn) {
+            const f = currentWorld.furn[k];
+            if (f.t === 'beehive') { const z = hive(f); if (z.b > 0 && !nt && z.h < HCAP) { const o = Math.floor(z.h); z.h = Math.min(HCAP, z.h + rate(f)); if (Math.floor(z.h) !== o) ch = true; } }
+            else if (f.t === 'crystal_bed' && f.cb && f.cb.s > 0 && f.cb.s < 3) { const z = f.cb; z.p += nt ? 1.4 : 1; if (z.p >= STG) { z.p = 0; z.s++; ch = true; } }
+        }
+        if (ch) try { v378Sync(); } catch (e) { }
+    });
+    // ---------- малювання ----------
+    function bee(x, y, dir, t, pol, s, a) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(dir * s * 1.25, s * 1.25); if (a !== undefined) ctx.globalAlpha = a;
+        const ph = Math.sin(t * 95 + x * 0.7), F = X();
+        ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(0, 6, 4, 1, 0, 0, 7); ctx.fill();
+        ctx.lineWidth = 0.5; ctx.strokeStyle = 'rgba(150,190,220,.8)'; ctx.fillStyle = 'rgba(228,246,255,.6)';
+        for (const [wx, r] of [[-1.4, -0.9], [1, 0.55]]) { ctx.save(); ctx.translate(wx, -2); ctx.rotate(r * (0.35 + 0.65 * ph) - 0.3); ctx.beginPath(); ctx.ellipse(0, -3.2, 1.9, 3.6, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); }
+        ctx.strokeStyle = '#2a1a08'; ctx.lineWidth = 0.7; for (const lx of [-2, 0, 2]) { ctx.beginPath(); ctx.moveTo(lx, 2); ctx.lineTo(lx - 0.8, 4.4 + Math.sin(t * 20 + lx) * 0.4); ctx.stroke(); }
+        if (pol) { ctx.fillStyle = '#ff9a1a'; ctx.beginPath(); ctx.arc(-0.6, 4.6, 1.6, 0, 7); ctx.arc(1.8, 4.4, 1.3, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd86a'; ctx.fillRect(-1.2, 3.8, 0.8, 0.8); }
+        ctx.fillStyle = '#e8a81c'; ctx.beginPath(); ctx.ellipse(-0.5, 0, 5, 3.3, 0, 0, 7); ctx.fill();
+        ctx.save(); ctx.beginPath(); ctx.ellipse(-0.5, 0, 5, 3.3, 0, 0, 7); ctx.clip(); ctx.fillStyle = '#26160a'; ctx.fillRect(-3.4, -4, 1.5, 8); ctx.fillRect(-0.4, -4, 1.4, 8); ctx.fillStyle = 'rgba(255,240,170,.55)'; ctx.fillRect(-4, -3.2, 8, 1.1); ctx.restore();
+        ctx.fillStyle = '#7a4a10'; ctx.beginPath(); ctx.ellipse(2.4, -0.2, 2.2, 2.4, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd24a'; ctx.beginPath(); ctx.ellipse(2.2, -0.6, 1.4, 1.2, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = '#1a0e04'; ctx.beginPath(); ctx.arc(4.6, 0, 2, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(5, -0.8, 0.9, 0.9);
+        ctx.strokeStyle = '#1a0e04'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(5.4, -1.2); ctx.quadraticCurveTo(7.2, -3.6, 8.4, -2.6); ctx.stroke();
+        ctx.fillStyle = '#1a0e04'; ctx.beginPath(); ctx.moveTo(-5.4, -0.8); ctx.lineTo(-7.4, 0); ctx.lineTo(-5.4, 0.8); ctx.fill();
+        ctx.restore();
+        if (pol && F && F.rich() && Math.random() < 0.12) F.emit(x, y + 4, { vx: (Math.random() - 0.5) * 0.3, vy: 0.2, life: 0.9, s: 1.3, c: '#ffd24a', a: 0.9 });
+    }
+    function flowerDraw(x, y, col, t) { ctx.strokeStyle = '#3f9a4a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + Math.sin(t * 1.4 + x) * 1.4, y - 5, x + Math.sin(t * 1.4 + x) * 2, y - 10); ctx.stroke(); ctx.fillStyle = col; const fx = x + Math.sin(t * 1.4 + x) * 2; for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; ctx.beginPath(); ctx.arc(fx + Math.cos(a) * 2.4, y - 10 + Math.sin(a) * 2.4, 1.7, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(fx, y - 10, 1.4, 0, 7); ctx.fill(); }
+    const WFC = ['#ff7aa8', '#c98bff', '#fff', '#ff9a5a', '#7ab8ff'];
+    function drawHive(f, t, x0, x1) {
+        const z = hive(f), hx = (f.x + 0.5) * 32, door = f.y * 32 + 37, F = X(), nt = !day(), fl = flowers(f), cp = cap();
+        if (hx < x0 - 160 || hx > x1 + 160) return;
+        if (z.h >= 1) { // повна баночка меду
+            const bob = Math.sin(t * 3) * 2, n = Math.floor(z.h); if (F) F.glow(hx, f.y * 32 - 4 + bob, 20, '#ffd24a', 0.55);
+            ctx.save(); ctx.font = '700 12px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; const s = '🍯' + (n > 1 ? ' ×' + n : ''); ctx.strokeText(s, hx, f.y * 32 - 6 + bob); ctx.fillText(s, hx, f.y * 32 - 6 + bob); ctx.restore();
+        }
+        if (nt) { if (F && z.b) F.glow(hx, door, 16, '#ffb050', 0.45); if (z.b) { ctx.save(); ctx.font = '700 10px sans-serif'; ctx.fillStyle = 'rgba(200,220,255,.85)'; ctx.fillText('z', hx + 16, f.y * 32 + 6 - ((t * 10) % 8)); ctx.fillText('Z', hx + 22, f.y * 32 - 2 - ((t * 10 + 4) % 8)); ctx.restore(); } }
+        else {
+            const T0 = 17, now = Date.now() / 1000, nb = Math.min(z.b, low() ? 3 : 7);
+            for (let i = 0; i < nb; i++) {
+                const per = T0 + i * 0.7, off = i * 3.3 + (f.x * 1.7 + f.y) % 5, u = ((now + off) % per) / per, cyc = Math.floor((now + off) / per);
+                const tgt = fl.pts.length ? fl.pts[(cyc + i) % fl.pts.length] : [hx + Math.cos(i * 2.4 + cyc) * 110, f.y * 32 - 40 + Math.sin(i * 1.7 + cyc) * 20];
+                const tx = tgt[0] + (hv(cyc, i) - 0.5) * 14, ty = tgt[1] - 10, cx = (hx + tx) / 2, cy = Math.min(door, ty) - 26 - hv(i, cyc) * 18;
+                let x, y, pol = 0, a = 1, sc = 1;
+                const q = (p, a0, b0, c0) => (1 - p) * (1 - p) * a0 + 2 * (1 - p) * p * b0 + p * p * c0;
+                if (u < 0.07) { x = hx; y = door; a = u / 0.07; sc = 0.5 + a * 0.5; }
+                else if (u < 0.40) { const p = (u - 0.07) / 0.33; x = q(p, hx, cx, tx); y = q(p, door, cy, ty); }
+                else if (u < 0.62) { const p = (u - 0.40) / 0.22, an = t * 7 + i * 2; x = tx + Math.cos(an) * 6; y = ty + Math.sin(an * 1.3) * 3 - 2; pol = p > 0.5 ? 1 : 0; if (F && F.rich() && Math.random() < 0.18) F.emit(tx, ty + 6, { vx: (Math.random() - 0.5) * 0.4, vy: -0.4, life: 1.1, s: 1.6, c: '#ffd24a', a: 0.9 }); }
+                else if (u < 0.93) { const p = (u - 0.62) / 0.31; x = q(p, tx, cx, hx); y = q(p, ty, cy, door); pol = 1; }
+                else { const p = (u - 0.93) / 0.07; x = hx; y = door; a = 1 - p; sc = 1 - p * 0.5; pol = 1; if (p < 0.2 && F && F.rich() && Math.random() < 0.3) F.emit(hx, door, { vx: (Math.random() - 0.5), vy: -0.6, life: 0.8, s: 1.4, c: '#ffe27a', a: 0.9 }); }
+                const wob = Math.sin(t * 9 + i) * 1.6, dir = (u > 0.62 && u < 0.93) ? (hx > tx ? 1 : -1) : (tx > hx ? 1 : -1);
+                bee(x, y + wob, u >= 0.40 && u < 0.62 ? (hv(cyc, 3) > 0.5 ? 1 : -1) : dir, t, pol, sc, a);
+            }
+            if (!z.b) { ctx.save(); ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,120,120,.85)'; ctx.fillText('порожній', hx, f.y * 32 - 4); ctx.restore(); }
+        }
+        // живі деталі: тепле сяйво входу, краплі меду, квітка-віник, пилкова хмаринка
+        const ft = (f.x * 7 + f.y) % 5;
+        if (z.b && !nt && F) F.glow(hx, f.y * 32 + 43, 11 + Math.sin(t * 3 + ft) * 2, '#ffcf6a', 0.32);
+        if (z.h >= 1) { const k = ((t * 0.5 + ft * 0.3) % 1); ctx.fillStyle = '#ffc22a'; ctx.beginPath(); ctx.ellipse(hx + 8, f.y * 32 + 31 + k * 22, 1.7, 2.3 + k, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(hx + 7.4, f.y * 32 + 30 + k * 22, 0.8, 1.2); if (F && k > 0.93 && F.rich()) F.burst(hx + 8, f.y * 32 + 54, '#ffc22a', 4, 1.4); }
+        if (z.h >= 3 && F) F.glow(hx, f.y * 32 + 28, 24, '#ffd24a', 0.18 + 0.08 * Math.sin(t * 2));
+        { const bx = hx - 17, by = (f.y + 2) * 32 - 1, sw = Math.sin(t * 1.5 + ft) * 1.6; ctx.strokeStyle = '#3f9a4a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx + sw * 0.6, by - 7, bx + sw, by - 13); ctx.stroke(); ctx.fillStyle = ['#ff7aa8', '#ffd24a', '#c98bff', '#ff9a5a', '#7ab8ff'][ft]; for (let i = 0; i < 6; i++) { const an = i / 6 * TAU + t * 0.3; ctx.beginPath(); ctx.arc(bx + sw + Math.cos(an) * 2.8, by - 13 + Math.sin(an) * 2.8, 1.9, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(bx + sw, by - 13, 1.8, 0, 7); ctx.fill(); }
+        if (Math.abs(px() - f.x - 0.5) < 4 && Math.abs(py() - f.y) < 4 && F) F.label(hx, f.y * 32 - 30, '🐝 ' + z.b + '/' + cp + ' · 🍯 ' + z.h.toFixed(1) + '/' + HCAP + ' · 🌸 ' + fl.n, '#ffd24a');
+    }
+    function drawBed(f, t, x0, x1) {
+        const bx = (f.x + 1) * 32, by = f.y * 32 + 14, F = X(); if (bx < x0 - 100 || bx > x1 + 100) return; const z = f.cb || { s: 0, p: 0 }, s = z.s, k = s ? (s - 1 + z.p / STG) / 2 : 0;
+        if (!s) { if (Math.abs(px() - f.x - 1) < 4 && F) F.label(bx, by - 26, '💎 Грядка · ПКМ з осколком', '#9fe8ff'); return; }
+        const n = 3 + (s >= 2 ? 2 : 0) + (s >= 3 ? 2 : 0);
+        for (let i = 0; i < n; i++) {
+            const off = (i - (n - 1) / 2) * 7.5, h = (4 + hv(i, f.x) * 9 + k * 22) * (s === 1 ? 0.45 : 1) * (1 - Math.abs(i - (n - 1) / 2) / n * 0.5), x = bx + off, w = 3 + k * 2.6;
+            ctx.lineJoin = 'round'; ctx.lineWidth = 1.3; ctx.strokeStyle = '#0f2f52'; ctx.fillStyle = '#2a78c0'; ctx.beginPath(); ctx.moveTo(x, by - h); ctx.lineTo(x + w, by - h * 0.35); ctx.lineTo(x + w * 0.6, by); ctx.lineTo(x - w * 0.8, by); ctx.lineTo(x - w, by - h * 0.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#4fc0f0'; ctx.beginPath(); ctx.moveTo(x, by - h); ctx.lineTo(x + w, by - h * 0.35); ctx.lineTo(x + w * 0.6, by); ctx.lineTo(x + 1, by - h * 0.3); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#c8f4ff'; ctx.beginPath(); ctx.moveTo(x, by - h); ctx.lineTo(x - w, by - h * 0.4); ctx.lineTo(x - w * 0.8, by); ctx.lineTo(x - 1, by - h * 0.25); ctx.closePath(); ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
+            ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(x - w * 0.55, by - h * 0.72, 1.3, h * 0.38); ctx.fillRect(x - w * 0.55, by - h * 0.28, 1.3, 1.3);
+        }
+        if (F) { F.glow(bx, by - 10 - k * 8, 14 + k * 20 + Math.sin(t * 2.4) * 3, '#5fd0ff', 0.14 + k * 0.2); if (s === 3) { for (let i = 0; i < 3; i++) { const an = t * 1.5 + i * 2.1; F.spark(bx + Math.cos(an) * 24, by - 22 + Math.sin(an) * 7, 2.4, '#fff', 0.85, an); } if (Math.abs(px() - f.x - 1) < 4) F.label(bx, by - 52, '💎 Готово — ПКМ', '#bfefff'); } else if (F.rich() && Math.random() < 0.05) F.emit(bx + (Math.random() - 0.5) * 30, by - 8, { vx: 0, vy: -0.3, life: 1.6, s: 1.5, c: '#bfefff', a: 0.8 }); }
+        { // рунне коло, сяючі смуги світла по гранях, мерехтіння ґрунту
+            const pw = 0.3 + 0.7 * Math.min(1, (s - 1 + z.p / STG) / 2 + 0.2); ctx.save(); ctx.globalAlpha = 0.25 + 0.2 * pw * (0.6 + 0.4 * Math.sin(t * 2.4)); ctx.strokeStyle = '#7ae8ff'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(bx, by + 14, 38, 6, 0, 0, TAU); ctx.stroke();
+            for (let i = 0; i < 8; i++) { const an = i / 8 * TAU + t * 0.4; ctx.fillStyle = '#bff4ff'; ctx.fillRect(bx + Math.cos(an) * 38 - 1, by + 14 + Math.sin(an) * 6 - 1, 2, 2); } ctx.restore();
+            const sw = ((t * 0.35) % 1.6) - 0.3; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 * pw; ctx.fillStyle = '#ffffff'; ctx.beginPath(); const gx = bx - 30 + sw * 60; ctx.moveTo(gx, by); ctx.lineTo(gx + 5, by - 6 - k * 24); ctx.lineTo(gx + 9, by - 6 - k * 24); ctx.lineTo(gx + 4, by); ctx.closePath(); ctx.fill(); ctx.restore();
+            if (F && F.rich() && Math.random() < 0.08) F.emit(bx + (Math.random() - 0.5) * 50, by + 8, { vx: 0, vy: -0.5, life: 1.8, s: 1.8, c: '#9fe8ff', a: 0.85 });
+        }
+        if (s < 3) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(bx - 20, by + 16, 40, 3); ctx.fillStyle = '#9fe8ff'; ctx.fillRect(bx - 20, by + 16, 40 * ((s - 1 + z.p / STG) / 2), 3); }
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        if (!on('farm') || !currentWorld) return;
+        for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t === 'beehive') drawHive(f, t, x0, x1); else if (f.t === 'crystal_bed') drawBed(f, t, x0, x1); }
+        const F = X(), h = Z.held();
+        for (const b of WB) {
+            if (b.x < x0 - 40 || b.x > x1 + 40) continue;
+            if (b.ht > 0 && Math.abs(b.vx) < 0.5) { const s = surf(b.x / 32); if (b.pol || 1) flowerDraw(b.x - (b.x % 1), s * 32, WFC[(b.x / 32 | 0) % WFC.length], t); }
+            bee(b.x, b.y, b.dir, t + b.ph, b.pol, 1.25);
+            if (h === 'bee_net' && Math.hypot(b.x - player.x, b.y - player.y) < 200 && F) F.label(b.x, b.y - 18, 'ПКМ — піймати', '#ffe9a8');
+        }
+        if (QB.on && pr_('b_queen')) for (let i = 0; i < QB.on; i++) { const an = t * 2.2 + i * TAU / QB.on; bee(player.x + 12 + Math.cos(an) * 26, player.y + 8 + Math.sin(an * 1.6) * 14, Math.cos(an) > 0 ? -1 : 1, t, 0, 1.1); }
+    });
+    Z.LIGHT.push(L => { if (!on('farm')) return; for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t === 'crystal_bed' && f.cb && f.cb.s) L((f.x + 1) * 32, f.y * 32, 70 + f.cb.s * 28); } });
+    window.__zfarm = { WB, hive, cap, rate, flowers, useFurn };
+})();
+// ===== v46.2 «Щити й дворучна зброя» (80): утримуй F — блок, перший миг — парирування; дворучна зброя лишає щит у спокої =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const G = window.__zgear; if (!G) return;
+    const { on, toast, px, py, send } = Z;
+    const X = () => window.__zpfx;
+    const T = i => RPG_TIERS[i];
+    const tn = (a, b, c, d, e, o) => { try { if (audioCtx && audioVolume > 0) tone(a, b, c, d, e, o || {}); } catch (er) { } };
+    const now = () => performance.now();
+    // ---------- щити (аксесуар, утримуй F) ----------
+    const SH = [null,
+        { red: 0.40, pool: 0.55, pw: 170, c1: '#c89a5a', c2: '#6a4a22', em: '#e8d0a0' },
+        { red: 0.55, pool: 0.8, pw: 190, c1: '#c8d2da', c2: '#5a6a78', em: '#7ab8e8' },
+        { red: 0.65, pool: 1.1, pw: 210, c1: '#9fe8ff', c2: '#3a6a9a', em: '#ffffff' },
+        { red: 0.72, pool: 1.4, pw: 230, c1: '#ff8a4a', c2: '#7a2a0a', em: '#ffd46a' }];
+    const SHD = [
+        ['oak_buckler', 'Дубовий баклер', 1, 1, { def: 1 }, 'Легкий дерев’яний щит з залізним умбоном. Утримуй F: блокує 40% шкоди.'],
+        ['iron_kite', 'Залізний щит', 2, 2, { def: 3 }, 'Важкий міцний щит. Утримуй F: блокує 55% шкоди; запас сил більший.'],
+        ['crystal_aegis', 'Кристалічна егіда', 3, 3, { def: 4, mana: 20 }, 'Щит із живого кристала. Блокує 65% шкоди; парирування вибухає уламками.'],
+        ['drake_bulwark', 'Бастіон Ігнарох', 4, 4, { def: 6, hp: 20 }, 'Лускатий щит із драконячої луски. Блокує 72% шкоди; парирування — вогняна хвиля.']
+    ];
+    ACC_LABEL.zshield = v => 'Утримуй F: блок ' + Math.round(SH[v].red * 100) + '% шкоди · перший миг — парирування';
+    function shieldSpr(lv) {
+        const s = SH[lv]; return generateSprite(cx => {
+            cx.lineJoin = 'round'; cx.lineWidth = 2; cx.strokeStyle = '#14100a';
+            cx.fillStyle = s.c2; cx.beginPath(); cx.moveTo(16, 3); cx.lineTo(27, 7); cx.lineTo(26, 18); cx.quadraticCurveTo(24, 25, 16, 30); cx.quadraticCurveTo(8, 25, 6, 18); cx.lineTo(5, 7); cx.closePath(); cx.fill(); cx.stroke();
+            cx.fillStyle = s.c1; cx.beginPath(); cx.moveTo(16, 5); cx.lineTo(24.5, 8.5); cx.lineTo(23.5, 17.5); cx.quadraticCurveTo(22, 23, 16, 27); cx.quadraticCurveTo(10, 23, 8.5, 17.5); cx.lineTo(7.5, 8.5); cx.closePath(); cx.fill();
+            cx.fillStyle = 'rgba(255,255,255,.35)'; cx.beginPath(); cx.moveTo(16, 5); cx.lineTo(24.5, 8.5); cx.lineTo(16, 12); cx.closePath(); cx.fill();
+            cx.fillStyle = s.em; if (lv === 1) { cx.fillRect(15, 7, 2, 18); cx.fillRect(9, 14, 14, 2); } else if (lv === 2) { cx.beginPath(); cx.arc(16, 15, 4.5, 0, 7); cx.fill(); cx.fillStyle = s.c2; cx.beginPath(); cx.arc(16, 15, 2, 0, 7); cx.fill(); } else if (lv === 3) { cx.beginPath(); cx.moveTo(16, 8); cx.lineTo(21, 15); cx.lineTo(16, 23); cx.lineTo(11, 15); cx.closePath(); cx.fill(); cx.fillStyle = s.c1; cx.beginPath(); cx.moveTo(16, 11); cx.lineTo(18.5, 15); cx.lineTo(16, 19); cx.closePath(); cx.fill(); } else { for (let i = 0; i < 3; i++) { cx.beginPath(); cx.moveTo(10 + i * 6, 9); cx.lineTo(13 + i * 6, 14); cx.lineTo(10 + i * 6, 19); cx.lineTo(8 + i * 6, 14); cx.closePath(); cx.fill(); } }
+        });
+    }
+    SHD.forEach(([id, nm, ti, lv, st, desc]) => {
+        ACC[id] = [nm, ti, Object.assign({ zshield: lv }, st), desc, 'ring', SH[lv].c1, SH[lv].c2];
+        ITEM_METADATA[id] = { name: nm, rarity: T(ti).r, color: T(ti).c, type: '🛡 Щит · Аксесуар', stat: ACC_LABEL.zshield(lv) + ' · ' + Object.keys(st).map(k => ACC_LABEL[k](st[k])).join(' · '), desc };
+        itemSprites[id] = shieldSpr(lv);
+    });
+    // ---------- дворучна зброя ----------
+    const TH = [
+        ['stone_maul', 'Кам’яна кувалда', 'sword', 'iron', 58, 38, 1, {}, 'Дворучна: щит не працює. 20% шанс приголомшити ворога. Важка, тому повільна.', 'hammer'],
+        ['iron_claymore', 'Залізний клеймор', 'sword', 'steel', 92, 34, 2, {}, 'Дворучна: щит не працює. Широкий замах зачіпає і сусідніх ворогів (40% шкоди).', 'sword'],
+        ['crystal_halberd', 'Кристалічна алебарда', 'spear', 'crystal', 148, 30, 3, { reach: 150 }, 'Дворучна: щит не працює. Довга. Кожен 3-й удар пускає кристалічну хвилю по землі.', 'spear'],
+        ['drake_greataxe', 'Сокира Ігнарох', 'sword', 'drake', 330, 40, 4, {}, 'Дворучна: щит не працює. Замах зачіпає всіх навколо (50%), а кожен 3-й удар здіймає вогняну хвилю.', 'hammer']
+    ];
+    const TWO = new Set(TH.map(w => w[0]));
+    for (const [id, nm, k, pal, dmg, cd, tier, opt, desc, spr] of TH) {
+        WEAPONS[id] = Object.assign({ name: nm, t: 'melee', k, pal, dmg, cd, tier, desc, aim: k === 'sword' ? 0 : 1, two: 1, nochest: 1 }, opt);
+        HELD_TOOLS[id] = 1; if (tier >= 3) SWORD_GLOW[id] = 1; try { SWCOL[id] = RPG_PAL[pal].L; } catch (e) { }
+        ITEM_METADATA[id] = { name: nm, rarity: T(tier).r, color: T(tier).c, type: '⚔ Ближній бій · Дворучна', stat: 'Шкода: ' + dmg + ' · Повільна · без щита', desc };
+        itemSprites[id] = G.wspr(spr, pal);
+    }
+    [
+        { result: 'oak_buckler', count: 1, req: { wood: 24, iron_ingot: 2 }, lvl: 3 },
+        { result: 'iron_kite', count: 1, req: { iron_ingot: 14, wood: 6, coal_ore: 4 }, lvl: 10 },
+        { result: 'crystal_aegis', count: 1, req: { crystal_ingot: 6, crystal_shard: 12, gold_ingot: 4 }, lvl: 22 },
+        { result: 'drake_bulwark', count: 1, req: { drake_scale: 12, drake_heart: 1, magma_ingot: 10, obsidian: 8 }, lvl: 38 },
+        { result: 'stone_maul', count: 1, req: { stone: 40, wood: 8, iron_ingot: 2 }, lvl: 6 },
+        { result: 'iron_claymore', count: 1, req: { iron_ingot: 16, coal_ore: 10, wood: 4 }, lvl: 12 },
+        { result: 'crystal_halberd', count: 1, req: { crystal_ingot: 8, crystal_shard: 10, iron_ingot: 8, gold_ingot: 4 }, lvl: 22 },
+        { result: 'drake_greataxe', count: 1, req: { drake_scale: 9, drake_fang: 3, drake_heart: 1, magma_ingot: 10, obsidian: 8 }, lvl: 38 }
+    ].forEach(r => recipes.push(r));
+    // ---------- стан блоку ----------
+    const S = { blk: false, lv: 0, t0: 0, rel: -9999, stam: 100, sl: 0, brk: 0, rip: [], parryT: 0, shown: 0, busy: 0 };
+    const RM = {}; // віддалені гравці: id -> { on, lv, pt }
+    const held = () => { try { return inventory[selectedHotbarSlot]; } catch (e) { return null; } };
+    const two = () => { const h = held(); return !!(h && TWO.has(h.id)); };
+    const shieldLv = () => { let l = 0; try { for (const it of player.acc) if (it && ACC[it.id] && ACC[it.id][2].zshield) l = Math.max(l, ACC[it.id][2].zshield); } catch (e) { } return l; };
+    const canUi = () => gameState === 'PLAYING' && !Z.isOpen() && !(typeof inventoryOpen !== 'undefined' && inventoryOpen);
+    function setBlk(v) {
+        if (v === S.blk) return;
+        if (v) {
+            const lv = shieldLv(); if (!on('shield') || !lv || !canUi() || player.health <= 0 || (player.stun | 0) > 0) return;
+            if (two()) { if (now() - S.shown > 3000) { S.shown = now(); toast('🛡 Дворучна зброя в руках — щит не підняти'); } return; }
+            if (now() < S.brk) { if (now() - S.shown > 1500) { S.shown = now(); toast('🛡 Щит ще відходить після пролому'); } return; }
+            S.lv = lv; if (S.stam < 25) S.stam = Math.min(100, S.stam + 15);
+            S.blk = true; S.t0 = now(); S.canParry = now() - S.rel > 1100; tn('sine', 220, 300, 0.14, 0.05);
+            const F = X(); if (F && S.canParry) F.wave(player.x + 12 + player.facing * 14, player.y + 18, '#fff', 26, { life: 0.28 });
+        } else { S.blk = false; S.rel = now(); }
+        if (Z.mpOn()) send({ t: 'x_zsh', id: MP.id, on: S.blk ? 1 : 0, lv: S.lv });
+    }
+    window.addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat && !/INPUT|TEXTAREA/.test((e.target && e.target.tagName) || '')) setBlk(true); }, true);
+    window.addEventListener('keyup', e => { if (e.code === 'KeyF') setBlk(false); }, true);
+    window.addEventListener('blur', () => setBlk(false));
+    function parry() {
+        const F = X(), x = player.x + 12, y = player.y + 20, L = SH[S.lv]; S.canParry = false; S.stam = Math.min(100, S.stam + 25);
+        player.damageCooldown = Math.max(player.damageCooldown, 26);
+        if (F) { F.wave(x + player.facing * 16, y, L.em, 90, { life: 0.55 }); F.wave(x + player.facing * 16, y, L.c1, 60, { life: 0.4 }); F.burst(x + player.facing * 18, y, L.em, 26, 4.4); F.glow(x + player.facing * 16, y, 70, L.c1, 0.8); }
+        try { shake = Math.max(shake, 5); } catch (e) { } floatingTexts.push({ x: x - 34, y: player.y - 30, text: '✦ ПАРИРУВАННЯ!', color: L.em, life: 55 });
+        tn('sine', 380, 190, 0.28, 0.08, { rev: 1 }); tn('triangle', 760, 1200, 0.2, 0.05, { delay: 0.04 });
+        const dmg = 40 + 38 * S.lv; S.busy = 1;
+        try { for (const t of rpgTargets()) { if (Math.hypot(t.x - x, t.y - y) > 140 + (t.r || 0)) continue; rpgHit(t, dmg, { col: L.em, pcol: L.c1, kb: 5, dir: t.x > x ? 1 : -1 }); if (t.k === 'mob' && typeof v19FreezeMob === 'function') v19FreezeMob(t.o, 36, 0); if (F) F.burst(t.x, t.y, L.em, 8, 3); } } catch (e) { } finally { S.busy = 0; }
+        if (S.lv === 4) { try { spawnProj({ k: 'wave', x, y: y - 6, vx: player.facing * 8, vy: 0, dmg: rollDmg(120, 'melee', 0).d, col: '#ff8a4a', pierce: 99, r: 26, life: 34, melee: 1 }); } catch (e) { } if (F) F.burst(x, y, '#ff8a4a', 30, 5); }
+        if (S.lv === 3 && F) F.burst(x, y, '#9fe8ff', 30, 5);
+        S.rip.push({ t: 0, x: 18, big: 1 }); if (Z.mpOn()) send({ t: 'x_zshp', id: MP.id });
+        try {  } catch (e) { }
+    }
+    function guard(raw, opt, est) {
+        if (!S.blk || !on('shield') || (opt && opt.dot) || player.damageCooldown > 0 || gameState !== 'PLAYING') return 1;
+        const L = SH[S.lv]; if (!L) return 1;
+        if (S.canParry && now() - S.t0 < L.pw) { parry(); return 0; }
+        S.stam -= Math.max(2, est / (L.pool * Math.max(60, player.maxHealth)) * 100); S.rip.push({ t: 0, x: 18 + Math.random() * 6 }); const F = X(); if (F) F.burst(player.x + 12 + player.facing * 18, player.y + 20, L.em, 8, 2.6);
+        tn('sine', 160, 120, 0.16, 0.06); try { shake = Math.max(shake, 3); } catch (e) { }
+        if (S.stam <= 0) { S.stam = 0; S.blk = false; S.rel = now(); S.brk = now() + 4500; player.stun = Math.max(player.stun || 0, 50); if (F) { F.burst(player.x + 12, player.y + 20, L.c1, 34, 5); F.wave(player.x + 12, player.y + 20, '#ffb0a0', 80, { life: 0.5 }); } floatingTexts.push({ x: player.x - 10, y: player.y - 34, text: '🛡 Щит пробито!', color: '#ff9a8a', life: 70 }); tn('sawtooth', 200, 60, 0.35, 0.07); if (Z.mpOn()) send({ t: 'x_zsh', id: MP.id, on: 0, lv: S.lv }); return 1 - L.red * 0.35; }
+        return 1 - L.red;
+    }
+    rpgHurt = (function (o) { return function (base, cause, tag) { const k = guard(base, null, base * rpgMobDmg() * (1 - defReduction())); if (k === 0) return false; return o.call(this, k === 1 ? base : base * k, cause, tag); }; })(rpgHurt);
+    bHurt = (function (o) { return function (dmg, c, t, opt) { const k = guard(dmg, opt, dmg * (1 - defReduction() * 0.5)); if (k === 0) return false; return o.call(this, k === 1 ? dmg : dmg * k, c, t, opt); }; })(bHurt);
+    killPlayer = (function (o) { return function () { S.blk = false; return o.apply(this, arguments); }; })(killPlayer);
+    // ---------- дворучна: пасивки ----------
+    let cnt = 0, mute = 0;
+    rpgHit = (function (o) {
+        return function (t, dmg, opt) {
+            const r = o.call(this, t, dmg, opt);
+            try {
+                const h = held();
+                if (r && h && TWO.has(h.id) && !S.busy && now() > mute && t && t.o && !(opt && opt.dot)) {
+                    const id = h.id, F = X(), W = WEAPONS[id], x = t.x, y = t.y; cnt++;
+                    if (id === 'stone_maul') { if (Math.random() < 0.2 && t.k === 'mob' && typeof v19FreezeMob === 'function') { v19FreezeMob(t.o, 24, 0); if (F) { F.burst(x, y, '#d8cdb0', 14, 3.4); F.wave(x, y + 8, '#d8cdb0', 44, { life: 0.35 }); } } else if (F) F.burst(x, y, '#b8ae98', 4, 2.4); try { shake = Math.max(shake, 2); } catch (e) { } }
+                    else {
+                        const R = id === 'iron_claymore' ? 90 : id === 'drake_greataxe' ? 120 : 0, K = id === 'iron_claymore' ? 0.4 : 0.5;
+                        if (R) { S.busy = 1; try { for (const q of rpgTargets()) { if (q.o === t.o || Math.hypot(q.x - x, q.y - y) > R + (q.r || 0)) continue; rpgHit(q, Math.max(1, Math.round(dmg * K)), { col: '#fff', kb: 3, dir: q.x > x ? 1 : -1 }); if (F) F.burst(q.x, q.y, id === 'drake_greataxe' ? '#ff9a4a' : '#e8eef4', 5, 2.6); } } finally { S.busy = 0; } if (F) F.wave(x, y, id === 'drake_greataxe' ? '#ff8a4a' : '#e8eef4', R, { life: 0.4 }); }
+                        if ((id === 'crystal_halberd' || id === 'drake_greataxe') && cnt % 3 === 0) {
+                            const col = id === 'drake_greataxe' ? '#ff8a4a' : '#9fe8ff', X0 = player.x + 12, Y0 = player.y + 30; mute = now() + 150;
+                            try { spawnProj({ k: 'wave', x: X0 + player.facing * 20, y: Y0, vx: player.facing * 8.5, vy: 0, dmg: rollDmg(W.dmg * 0.5, 'melee', 0).d, col, pierce: 99, r: 22, life: 30, melee: 1 }); } catch (e) { }
+                            if (F) { F.burst(X0 + player.facing * 20, Y0, col, 16, 4); F.wave(X0 + player.facing * 18, Y0 + 6, col, 50, { life: 0.4 }); }
+                        }
+                    }
+                }
+            } catch (e) { console.error('zshield hit', e); }
+            return r;
+        };
+    })(rpgHit);
+    // ---------- тік ----------
+    Z.TICK.push(() => {
+        if (!on('shield')) { S.blk = false; return; }
+        const lv = shieldLv(), mx = 100; if (lv && !S.sl) S.stam = 100; S.sl = lv;
+        if (S.blk) { if (!lv || two() || !canUi() || (player.stun | 0) > 0) setBlk(false); else { player.vx *= 0.7; } }
+        else if (lv && S.stam < mx && now() > S.brk) S.stam = Math.min(mx, S.stam + mx / 210);
+        if (!S.blk && two() && Math.abs(player.vx) > 0.1) player.vx *= 0.95;
+        for (let i = S.rip.length - 1; i >= 0; i--) { S.rip[i].t++; if (S.rip[i].t > 20) S.rip.splice(i, 1); }
+        for (const id in RM) if (now() - RM[id].pt > 9000) delete RM[id];
+    });
+    Z.MSG.x_zsh = m => { try { if (m.id === MP.id) return; RM[m.id] = { on: m.on ? 1 : 0, lv: Math.max(1, Math.min(4, m.lv | 0)), pt: now() }; } catch (e) { } };
+    Z.MSG.x_zshp = m => { try { if (m.id === MP.id) return; const q = MP.players && MP.players[m.id]; const F = X(); if (q && F) { F.wave(q.x + 12, q.y + 20, '#fff', 90, { life: 0.5 }); F.burst(q.x + 12, q.y + 20, '#fff', 20, 4); } tn('sine', 380, 190, 0.2, 0.04); } catch (e) { } };
+    // ---------- малювання ----------
+    function drawShield(x, y, dir, lv, raised, t, ripples) {
+        const L = SH[lv], F = X(); ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1);
+        if (raised) {
+            const pulse = 0.5 + 0.5 * Math.sin(t * 6);
+            if (F) F.glow(x + dir * 2, y, 34, L.c1, 0.25 + 0.15 * pulse);
+            ctx.scale(1.3, 1.3);
+        } else { ctx.rotate(-0.25); ctx.scale(0.62, 0.62); }
+        const w = 15, h = 21; ctx.lineJoin = 'round'; ctx.lineWidth = 1.6; ctx.strokeStyle = '#14100a'; ctx.fillStyle = L.c2;
+        ctx.beginPath(); ctx.moveTo(0, -h * 0.5); ctx.lineTo(w * 0.5, -h * 0.38); ctx.lineTo(w * 0.46, h * 0.1); ctx.quadraticCurveTo(w * 0.3, h * 0.38, 0, h * 0.5); ctx.quadraticCurveTo(-w * 0.3, h * 0.38, -w * 0.46, h * 0.1); ctx.lineTo(-w * 0.5, -h * 0.38); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = L.c1; ctx.beginPath(); ctx.moveTo(0, -h * 0.42); ctx.lineTo(w * 0.4, -h * 0.32); ctx.lineTo(w * 0.36, h * 0.08); ctx.quadraticCurveTo(w * 0.24, h * 0.3, 0, h * 0.4); ctx.quadraticCurveTo(-w * 0.24, h * 0.3, -w * 0.36, h * 0.08); ctx.lineTo(-w * 0.4, -h * 0.32); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = L.em; ctx.beginPath(); ctx.arc(0, -1, 3.2, 0, 7); ctx.fill(); ctx.fillStyle = L.c2; ctx.beginPath(); ctx.arc(0, -1, 1.3, 0, 7); ctx.fill();
+        if (ripples) for (const r of ripples) { const k = r.t / 20; ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = L.em; ctx.lineWidth = r.big ? 3 : 2; ctx.beginPath(); ctx.arc(2, 0, 10 + k * (r.big ? 34 : 18), -1.2, 1.2); ctx.stroke(); }
+        ctx.restore();
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        if (!on('shield')) return; const F = X();
+        const lv = shieldLv();
+        if (lv && !two()) {
+            const dir = player.facing || 1, bx = player.x + 12, by = player.y + 22;
+            if (S.blk) drawShield(bx + dir * 15, by - 2, dir, S.lv, true, t, S.rip); else drawShield(bx - dir * 9, by - 3, -dir, lv, false, t);
+            const mx = 100;
+            if (S.blk || S.stam < mx - 1) { const w = 30, k = Math.max(0, Math.min(1, S.stam / mx)); ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(bx - w / 2, player.y - 12, w, 4); ctx.fillStyle = k > 0.3 ? SH[lv].c1 : '#ff7a6a'; ctx.fillRect(bx - w / 2 + 0.5, player.y - 11.5, (w - 1) * k, 3); if (now() < S.brk) { ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffb0a0'; ctx.fillText('пробито', bx, player.y - 16); ctx.textAlign = 'start'; } }
+        }
+        for (const id in RM) { const q = MP.players && MP.players[id]; if (!q || !RM[id].on) continue; const d = q.facing || q.dir || 1; if (q.x < x0 - 50 || q.x > x1 + 50) continue; drawShield(q.x + 12 + d * 15, q.y + 20, d, RM[id].lv, true, t); }
+    });
+    window.__zshield = { SH, S, TWO, shieldLv, guard };
+})();
+// ===== v46.2 «Події світу» (108): мандрівний цирк, нашестя, лихоманка й свято врожаю — рідкісні, коротші за добу, зі скромними нагородами =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const { on, toast, cnt, nm, px, py, surf, send, host } = Z;
+    const X = () => window.__zpfx;
+    const TAU = Math.PI * 2;
+    const tn = (a, b, c, d, e, o) => { try { if (audioCtx && audioVolume > 0) tone(a, b, c, d, e, o || {}); } catch (er) { } };
+    const KIND = {
+        circus: { ic: '🎪', n: 'Мандрівний цирк', col: '#ff6a8a', dur: 480, sub: 'Шатро поруч! Вистава, попкорн і скринька фокусника.', day: 1 },
+        harvest: { ic: '🎃', n: 'Свято врожаю', col: '#ffb040', dur: 480, sub: 'Посіви ростуть швидше! Принеси врожай на конкурс.', day: 1 },
+        invasion: { ic: '⚔', n: 'Нашестя', col: '#ff4a4a', dur: 420, sub: 'Три хвилі ворогів іде на тебе. Тримайся — буде нагорода.', night: 1 },
+        plague: { ic: '🤢', n: 'Лихоманка', col: '#8ad84a', dur: 330, sub: 'Повітря хворе. Мед, чай чи зілля життя лікують.', pl: 1 }
+    };
+    let lastPl = Date.now() - 3600000, cur = null, cd = null, last = '', B = { joy: 0, joyOff: 0 }, bc_t = 0;
+    const mem = {}; // що вже зроблено цією людиною в цій події
+    const alive = () => cur && Date.now() < cur.end;
+    const left = () => cur ? Math.max(0, Math.ceil((cur.end - Date.now()) / 1000)) : 0;
+    // ---------- інтерфейс ----------
+    const css = document.createElement('style'); css.textContent = `
+#zev-ban{position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:99980;pointer-events:none;text-align:center;opacity:0;font-family:"Segoe UI",sans-serif;color:#fff;text-shadow:0 2px 12px #000}
+#zev-ban.go{animation:zevB 5.2s ease-out forwards}
+#zev-ban .a{font-size:46px;letter-spacing:.14em;font-weight:800;background:linear-gradient(90deg,#fff,var(--c),#fff);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px var(--c));animation:zevS 2.4s linear infinite}
+#zev-ban .a .e{-webkit-text-fill-color:#fff;color:#fff;font-size:40px;margin-right:6px;filter:none}
+#zev-ban .b{font-size:17px;margin-top:6px;opacity:.95}
+@keyframes zevB{0%{opacity:0;transform:translate(-50%,-26px) scale(.8)}12%{opacity:1;transform:translate(-50%,0) scale(1.05)}20%{transform:translate(-50%,0) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-10px)}}
+@keyframes zevS{to{background-position:-220% 0}}
+#zev-hud{position:fixed;left:14px;top:268px;z-index:9000;display:none;min-width:190px;padding:8px 12px;border-radius:12px;background:linear-gradient(rgba(30,22,40,.88),rgba(14,10,22,.88));border:1px solid var(--c);color:#fff;font:600 13px "Segoe UI",sans-serif;box-shadow:0 0 16px -5px var(--c);pointer-events:none}
+#zev-hud .t{font-size:14px}#zev-hud .s{opacity:.85;font-weight:500;margin-top:2px}
+#zev-hud .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:6px;overflow:hidden}#zev-hud .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--c),#fff);transition:width .8s linear}
+#zev-hud .f{margin-top:5px;color:#c8ff9a}`;
+    document.head.appendChild(css);
+    const ban = document.createElement('div'); ban.id = 'zev-ban'; document.body.appendChild(ban);
+    const hud = document.createElement('div'); hud.id = 'zev-hud'; document.body.appendChild(hud);
+    function announce(k, txt) { const K = KIND[k]; ban.style.setProperty('--c', K.col); ban.innerHTML = '<div class="a"><span class="e">' + K.ic + '</span>' + (txt || K.n.toUpperCase()) + '</div><div class="b">' + K.sub + '</div>'; ban.classList.remove('go'); void ban.offsetWidth; ban.classList.add('go'); }
+    function horn(k) { if (k === 'invasion') { tn('sawtooth', 110, 90, 0.9, 0.05, { rev: 1 }); tn('sine', 80, 60, 1.1, 0.07, { delay: 0.1 }); } else if (k === 'plague') { tn('sine', 200, 120, 0.8, 0.05, { rev: 1 }); } else { tn('sine', 520, 780, 0.3, 0.05, { rev: 1 }); tn('triangle', 780, 1040, 0.3, 0.04, { delay: 0.14 }); tn('sine', 1040, 1560, 0.4, 0.04, { delay: 0.3 }); } }
+    // ---------- розклад (господар) ----------
+    const flatX = (c0) => { const W = currentWorld.width; if (c0 == null) c0 = px(); let bx = 0, bv = 1e9; for (let t = 0; t < 14; t++) { const x = Math.max(8, Math.min(W - 9, Math.floor(c0 + (Math.random() < 0.5 ? -1 : 1) * (14 + Math.random() * 14)))); let lo = 1e9, hi = -1e9; for (let d = -5; d <= 5; d++) { const s = surf(x + d); lo = Math.min(lo, s); hi = Math.max(hi, s); } if (hi - lo < bv) { bv = hi - lo; bx = x; } } return bx; };
+    const busy = () => { try { return rpgBosses.length || libBoss || boss || (window.__zmirror && window.__zmirror.S.in) || (window.__zmaze && window.__zmaze.S.in); } catch (e) { return false; } };
+    const bestTown = () => { let b = null; try { const T = window.__zown.towns(); for (const o in T) if (T[o].n >= 3 && T[o].online && (!b || T[o].n > b.n)) b = T[o]; } catch (e) { } return b; };
+    function start(k, town) {
+        const K = KIND[k]; cur = { id: Date.now() % 1e9, k, end: Date.now() + K.dur * 1000, w: 0, wt: 0, fin: 0 };
+        if (k === 'circus' || k === 'harvest') { cur.x = flatX(town ? town.x : null); let g = 99999; for (let d = -4; d <= 4; d++) g = Math.min(g, surf(cur.x + d)); cur.gy = g; }
+        if (k === 'invasion') { cur.x = Math.floor(town ? town.x : px()); cur.w = 1; cur.wt = Date.now() + 2500; cur.spawned = 0; }
+        last = k; announce(k); horn(k); bc();
+    }
+    function bc() { if (Z.mpOn() && host()) send({ t: 'x_zev', c: cur ? Object.assign({}, cur, { left: left() }) : null }); }
+    Z.MSG.x_zev = m => { try { if (host()) return; const c = m.c; if (!c) { if (cur) endLocal(); cur = null; return; } if (!KIND[c.k]) return; const isNew = !cur || cur.id !== c.id; cur = { id: c.id | 0, k: c.k, end: Date.now() + Math.max(0, +c.left || 0) * 1000, w: c.w | 0, fin: c.fin | 0, x: +c.x || 0, gy: +c.gy || 0 }; if (isNew) { announce(c.k); horn(c.k); } } catch (e) { } };
+    function endLocal() { if (cur && cur.k === 'plague') plagueEnd(); }
+    function endEvent(ok) {
+        if (!cur) return; const k = cur.k; if (host()) { if (k === 'invasion') for (let i = mobs.length - 1; i >= 0; i--) if (mobs[i] && mobs[i]._inv) mobs.splice(i, 1); }
+        endLocal(); toast(KIND[k].ic + ' ' + KIND[k].n + (ok ? ' завершилось' : ' минуло'), 4000); cur = null; cd = 2400 + Math.random() * 1800; bc();
+    }
+    // ---------- нашестя ----------
+    function spawnWave() {
+        const lv = RPG.level | 0, n = Math.min(12, 4 + Math.floor(lv / 10) + cur.w * 2), types = ['zombie', 'skeleton', 'slime'].filter(t => { try { return window.__zegg.spec(t); } catch (e) { return false; } }); if (!types.length) return;
+        for (let i = 0; i < n; i++) {
+            const side = i % 2 ? 1 : -1, bx = Math.max(4, Math.min(currentWorld.width - 5, Math.floor((cur.x || px()) + side * (22 + Math.random() * 8)))), t = types[Math.floor(Math.random() * types.length)], L0 = mobs.length;
+            setTimeout(() => { try { if (!cur || cur.k !== 'invasion') return; window.__zegg.summon('egg_m_' + t, bx, surf(bx) - 2); if (mobs.length > L0) { const m = mobs[mobs.length - 1]; if (m) m._inv = 1; } } catch (e) { } }, i * 350);
+        }
+        cur.spawned = Date.now(); const F = X(); if (F) { F.wave(player.x + 12, player.y + 20, '#ff4a4a', 120, { life: 0.7 }); } announce('invasion', 'ХВИЛЯ ' + cur.w + ' / 3'); tn('sawtooth', 130, 100, 0.6, 0.05, { rev: 1 }); bc();
+    }
+    const invAlive = () => { let n = 0; for (const m of mobs) if (m && m._inv && m.hp > 0) n++; return n; };
+    // ---------- лихоманка (локально) ----------
+    const PL = { fever: 0, imm: 0, cures: 0, ever: 0, inv: -1 };
+    const CURE = ['honey', 'flower_tea', 'royal_jelly', 'life_potion'], cureCnt = () => CURE.reduce((s, i) => s + cnt(i), 0);
+    function plagueEnd() {
+        if (PL.fever) PL.fever = 0; if (PL.inv !== (cur && cur.id)) return; const lv = RPG.level | 0;
+        if (PL.cures >= 2) { giveItem('life_potion', 2); try { profXp('alch', 30); } catch (e) { } toast('⚕ Ти допоміг іншим і вилікувався: +2 зілля життя', 5000); }
+        else if (!PL.ever) { giveItem('honey', 1); toast('🍯 Ти не захворів — тримай мед', 4000); }
+        PL.cures = 0; PL.ever = 0;
+    }
+    let cc = 0;
+    function plagueTick() {
+        const now = Date.now(); if (PL.inv !== cur.id) { PL.inv = cur.id; PL.fever = 0; PL.imm = 0; PL.cures = 0; PL.ever = 0; PL.cc = cureCnt(); }
+        const c = cureCnt();
+        if (PL.fever && c < PL.cc) { PL.fever = 0; PL.imm = now + 180000; PL.cures++; toast('✚ Лихоманку збито! Імунітет на 3 хв', 3500); const F = X(); if (F) { F.burst(player.x + 12, player.y + 20, '#c8ff9a', 26, 3.6); F.wave(player.x + 12, player.y + 30, '#e8ffd0', 70, { life: 0.5 }); } try { profXp('alch', 6); } catch (e) { } }
+        PL.cc = c;
+        if (!on('plague')) return;
+        if (!PL.fever && now > PL.imm && py() <= surf(px()) + 3 && Math.random() < 0.012) { PL.fever = now + 70000; PL.ever = 1; toast('🤢 Лихоманка! −10% швидкості, рани не гояться. Лікує мед, чай чи зілля життя', 5000); }
+        if (PL.fever) {
+            if (now > PL.fever) { PL.fever = 0; PL.imm = now + 60000; toast('Лихоманка минула сама', 2500); return; }
+            player.vx *= 0.95; if (++cc % 360 === 0 && player.health > player.maxHealth * 0.4) { player.health -= 1; floatingTexts.push({ x: player.x + 6, y: player.y - 26, text: '-1 🤢', color: '#a8e86a', life: 40 }); }
+            const F = X(); if (F && F.rich() && Math.random() < 0.2) F.emit(player.x + 12 + (Math.random() - 0.5) * 20, player.y + 6, { vx: 0, vy: -0.5, life: 1.4, s: 2.2, c: '#a8e86a', a: 0.7 });
+        }
+    }
+    // ---------- головний цикл ----------
+    let ft = 0;
+    Z.TICK.push(() => {
+        if (!on('events')) { if (cur) { endLocal(); cur = null; } hud.style.display = 'none'; return; }
+        const now = Date.now();
+        if (cur && now > cur.end + 1500) { if (host()) endEvent(false); else { endLocal(); cur = null; } }
+        if (host() && ++ft % 60 === 5) {
+            if (!cur) {
+                if (cd == null || isNaN(cd)) cd = 1500 + Math.random() * 900;
+                else if (cd <= 0) {
+                    if ((RPG.level | 0) >= 8 && !busy()) {
+                        const nt = Math.sin(gameTime) <= 0, bt = bestTown(), town = !!bt, pOk = on('plague') && Date.now() - lastPl > 5400000 && (RPG.level | 0) >= 10;
+                        let pool = town ? ['circus', 'harvest', 'invasion'].filter(k => k !== last && (!KIND[k].day || !nt) && (!KIND[k].night || nt)) : [];
+                        if (pOk && (!pool.length || Math.random() < 0.2)) pool = ['plague'];
+                        if (pool.length) { lastPl = pool[0] === 'plague' ? Date.now() : lastPl; start(pool[Math.floor(Math.random() * pool.length)], bt); } else cd = 120;
+                    }
+                } else cd -= 1;
+            } else {
+                if (cur.k === 'invasion' && !cur.fin) {
+                    if (!cur.spawned && now > cur.wt) spawnWave();
+                    else if (cur.spawned && (invAlive() <= 1 && now - cur.spawned > 8000 || now - cur.spawned > 80000)) {
+                        if (cur.w >= 3 && invAlive() <= 1) { cur.fin = 1; bc(); announce('invasion', 'ПЕРЕМОГА!'); setTimeout(() => { if (cur && cur.fin) endEvent(true); }, 6000); }
+                        else if (cur.w < 3) { cur.w++; cur.spawned = 0; cur.wt = now + 5000; bc(); }
+                    }
+                } else if (cur.k === 'harvest' && currentWorld.crops) { for (const k in currentWorld.crops) { const c = currentWorld.crops[k]; if (c.s < 3 && Math.random() < 0.3) c.a++; } }
+                if (ft % 300 === 5) bc();
+            }
+        }
+        if (cur && cur.k === 'invasion' && cur.fin && PL.winId !== cur.id) { PL.winId = cur.id; const lv = RPG.level | 0; [['gold_ingot', 3], ['crystal_shard', 3], ['life_potion', 1]].forEach(([i, n]) => giveItem(i, n)); if (Math.random() < 0.25) giveItem('ancient_page', 1); try { rpgOrbsAt(player.x + 12, player.y, 80 + lv * 10); profXp('hunt', 20); } catch (e) { } toast('🏆 Нашестя відбито! Нагорода отримана', 5000); const F = X(); if (F) { F.burst(player.x + 12, player.y + 10, '#ffe9a8', 50, 5); F.wave(player.x + 12, player.y + 30, '#fff', 140, { life: 0.7 }); } }
+        if (cur && cur.k === 'plague') plagueTick();
+        // бафи
+        if (B.joy && now > B.joy) { B.joy = 0; try { recalcStats(); } catch (e) { } }
+        // HUD
+        if (alive()) {
+            const K = KIND[cur.k], tot = K.dur, p = Math.max(0, Math.min(100, left() / tot * 100)); let ex = '';
+            if (cur.k === 'invasion') ex = cur.fin ? 'Перемога!' : 'Хвиля ' + Math.max(1, cur.w) + '/3 · ворогів: ' + invAlive();
+            else if (cur.k === 'plague') ex = PL.fever ? '<div class="f">🤢 Ти хворий — випий мед/чай/зілля</div>' : (now < PL.imm ? '<div class="f">✚ Імунітет</div>' : 'Тримайся подалі від негоди');
+            else if (cur.k === 'circus') ex = 'До шатра: ' + Math.round(Math.abs(px() - cur.x)) + ' бл.';
+            else if (cur.k === 'harvest') ex = 'Конкурс: ' + (mem['h' + cur.id] ? 'готово ✓' : '5 врожаїв до столу');
+            const h = '<div class="t">' + K.ic + ' <b>' + K.n + '</b> · ' + Math.floor(left() / 60) + ':' + String(left() % 60).padStart(2, '0') + '</div><div class="s">' + ex + '</div><div class="bar"><i style="width:' + p.toFixed(1) + '%"></i></div>';
+            if (hud.innerHTML !== h) hud.innerHTML = h; hud.style.setProperty('--c', K.col); hud.style.display = 'block';
+        } else hud.style.display = 'none';
+    });
+    accSum = (function (o) { return function (k) { let v = o.apply(this, arguments); if (k === 'xp' && B.joy && Date.now() < B.joy) v += 0.1; return v; }; })(accSum);
+    // ---------- малювання ----------
+    const CONF = ['#ff6a8a', '#ffd24a', '#6ac8ff', '#9aff9a', '#c98bff'];
+    function tent(cx, gy, t) {
+        const W = 112, H = 118, F = X();
+        for (let i = 0; i < 8; i++) { const a = -W + i * (W * 2 / 8), b = a + W * 2 / 8; ctx.fillStyle = i % 2 ? '#fff0dc' : '#e8405a'; ctx.beginPath(); ctx.moveTo(cx + a, gy - 56); ctx.lineTo(cx + b, gy - 56); ctx.lineTo(cx + (b / W) * 10, gy - H - 26 + Math.abs(b / W) * 6); ctx.lineTo(cx + (a / W) * 10, gy - H - 26 + Math.abs(a / W) * 6); ctx.closePath(); ctx.fill(); }
+        for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? '#e8405a' : '#fff0dc'; ctx.fillRect(cx - W + i * (W * 2 / 8), gy - 56, W * 2 / 8, 56); }
+        ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(cx - W, gy - 14, W * 2, 14);
+        ctx.strokeStyle = '#7a1a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx - W, gy - 56); ctx.quadraticCurveTo(cx, gy - 44, cx + W, gy - 56); ctx.stroke();
+        for (let i = 0; i < 10; i++) { const x = cx - W + i * (W * 2 / 9); ctx.fillStyle = i % 2 ? '#ffd24a' : '#6ac8ff'; ctx.beginPath(); ctx.moveTo(x - 8, gy - 56); ctx.lineTo(x + 8, gy - 56); ctx.lineTo(x, gy - 42 + Math.sin(t * 3 + i) * 2); ctx.closePath(); ctx.fill(); }
+        ctx.fillStyle = '#2a0e18'; ctx.beginPath(); ctx.moveTo(cx - 24, gy); ctx.lineTo(cx - 24, gy - 40); ctx.quadraticCurveTo(cx, gy - 62, cx + 24, gy - 40); ctx.lineTo(cx + 24, gy); ctx.closePath(); ctx.fill();
+        if (F) F.glow(cx, gy - 18, 44 + Math.sin(t * 5) * 4, '#ffb050', 0.55);
+        ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, gy - H - 26); ctx.lineTo(cx, gy - H - 52); ctx.stroke(); const w = Math.sin(t * 5) * 4; ctx.fillStyle = '#ffd24a'; ctx.beginPath(); ctx.moveTo(cx, gy - H - 52); ctx.lineTo(cx + 26 + w, gy - H - 44 + w * 0.3); ctx.lineTo(cx + 2, gy - H - 36); ctx.closePath(); ctx.fill();
+        ctx.font = '800 15px "Segoe UI",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#7a1a2a'; ctx.lineWidth = 4; ctx.strokeText('ЦИРК', cx, gy - 66); ctx.fillText('ЦИРК', cx, gy - 66); ctx.textAlign = 'start';
+        for (let i = 0; i < 12; i++) { const x = cx - W + i * (W * 2 / 11), y = gy - 56 + Math.sin(i / 11 * Math.PI) * 14, on_ = (Math.sin(t * 4 + i) > 0); ctx.fillStyle = on_ ? '#ffe27a' : '#9a7a3a'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); if (on_ && F) F.glow(x, y, 12, '#ffe27a', 0.5); }
+        // жонглер
+        const jx = cx - W - 36; ctx.fillStyle = '#4a3a8a'; ctx.fillRect(jx - 5, gy - 30, 10, 20); ctx.fillStyle = '#f0c8a0'; ctx.beginPath(); ctx.arc(jx, gy - 36, 6, 0, 7); ctx.fill(); ctx.fillStyle = '#e8405a'; ctx.beginPath(); ctx.moveTo(jx - 7, gy - 40); ctx.lineTo(jx + 7, gy - 40); ctx.lineTo(jx, gy - 56); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#2a2a3a'; ctx.fillRect(jx - 5, gy - 10, 4, 10); ctx.fillRect(jx + 1, gy - 10, 4, 10);
+        for (let i = 0; i < 3; i++) { const a = t * 4 + i * 2.1; ctx.fillStyle = CONF[i]; ctx.beginPath(); ctx.arc(jx + Math.cos(a) * 15, gy - 52 - Math.abs(Math.sin(a)) * 18, 3.2, 0, 7); ctx.fill(); }
+        // кульки
+        for (let i = 0; i < 4; i++) { const bx = cx + W + 26 + i * 6, by = gy - 80 - i * 10 + Math.sin(t * 1.4 + i) * 4; ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx + W + 24, gy - 6); ctx.lineTo(bx, by + 8); ctx.stroke(); ctx.fillStyle = CONF[(i + 1) % 5]; ctx.beginPath(); ctx.ellipse(bx, by, 6, 8, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx - 3, by - 5, 2, 4); }
+        if (F && F.rich()) { if (Math.random() < 0.35) F.emit(cx + (Math.random() - 0.5) * 220, gy - H - 10, { vx: (Math.random() - 0.5) * 0.8, vy: 0.5 + Math.random(), life: 2.6, s: 2, c: CONF[(Math.random() * 5) | 0], sw: 0.7, a: 0.9, shape: 1 }); }
+        if (Math.random() < 0.025) floatingTexts.push({ x: cx + (Math.random() - 0.5) * 80, y: gy - 100, text: Math.random() < 0.5 ? '♪' : '♫', color: '#ffd24a', life: 70 });
+    }
+    function fest(cx, gy, t) {
+        const F = X(), W = 130;
+        ctx.strokeStyle = '#6a4a2a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cx - W, gy); ctx.lineTo(cx - W, gy - 96); ctx.moveTo(cx + W, gy); ctx.lineTo(cx + W, gy - 96); ctx.stroke();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#3a2a14'; ctx.beginPath(); for (let i = 0; i <= 20; i++) { const x = cx - W + i * W / 10, y = gy - 92 + Math.sin(i / 20 * Math.PI) * 16; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+        for (let i = 0; i <= 9; i++) { const x = cx - W + (i + 0.5) * W * 2 / 10, y = gy - 92 + Math.sin((i + 0.5) / 10 * Math.PI) * 16 + 8, fl = (Math.sin(t * 5 + i * 1.3) > 0.2); ctx.fillStyle = '#7a3a0a'; ctx.fillRect(x - 1, y - 8, 2, 6); ctx.fillStyle = fl ? '#ffcc66' : '#e8903a'; ctx.beginPath(); ctx.arc(x, y + 2, 6, 0, 7); ctx.fill(); if (F) F.glow(x, y + 2, 20, '#ffb040', fl ? 0.7 : 0.4); }
+        for (const [dx, s] of [[-84, 1], [-52, 0.8], [58, 0.9], [92, 1.1]]) { const px_ = cx + dx; ctx.fillStyle = '#e8801a'; ctx.beginPath(); ctx.ellipse(px_, gy - 11 * s, 14 * s, 11 * s, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#c86a0a'; ctx.beginPath(); ctx.ellipse(px_, gy - 11 * s, 5 * s, 11 * s, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#4a7a1a'; ctx.fillRect(px_ - 1, gy - 24 * s, 3, 5); ctx.fillStyle = '#2a1a08'; ctx.fillRect(px_ - 6 * s, gy - 14 * s, 3, 3); ctx.fillRect(px_ + 3 * s, gy - 14 * s, 3, 3); }
+        ctx.fillStyle = '#c8a850'; ctx.fillRect(cx - 18, gy - 14, 36, 14); ctx.fillStyle = '#a88830'; ctx.fillRect(cx - 18, gy - 14, 36, 3);
+        ctx.fillStyle = '#6a4a2a'; ctx.fillRect(cx - 26, gy - 34, 52, 6); ctx.fillRect(cx - 24, gy - 28, 4, 28); ctx.fillRect(cx + 20, gy - 28, 4, 28);
+        ctx.fillStyle = '#e8d060'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(cx - 14 + i * 9, gy - 38, 3.5, 5, 0.3, 0, 7); ctx.fill(); } ctx.fillStyle = '#ee8a3c'; ctx.fillRect(cx + 12, gy - 42, 4, 8);
+        // феєрверк
+        const ph = (t % 14) / 14; if (F && ph < 0.4) { const k = ph / 0.4, fx = cx + Math.sin(Math.floor(t / 14)) * 80, fy = gy - 130 - Math.min(1, k * 2.4) * 120; if (k < 0.42) F.spark(fx, fy, 3, '#fff', 1, 0); if (k > 0.4 && k < 0.44 && !fest.b) { fest.b = 1; const cc = CONF[(Math.floor(t / 14)) % 5]; F.burst(fx, fy, cc, 40, 5); F.wave(fx, fy, cc, 80, { life: 0.8 }); F.burst(fx, fy, '#ffffff', 16, 3); tn('sine', 200, 90, 0.5, 0.05, { rev: 1 }); } if (k > 0.5) fest.b = 0; }
+        if (F && F.rich() && Math.random() < 0.15) F.emit(cx + (Math.random() - 0.5) * 260, gy - 130, { vx: (Math.random() - 0.5) * 0.6, vy: 0.5, life: 2.8, s: 2, c: Math.random() < 0.5 ? '#ffb040' : '#e8601a', sw: 0.6, a: 0.85, shape: 1 });
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        if (!on('events') || !alive()) return; const F = X();
+        if (cur.k === 'circus' || cur.k === 'harvest') {
+            const cx = cur.x * 32 + 16, gy = cur.gy * 32; if (cx < x0 - 220 || cx > x1 + 220) return;
+            if (cur.k === 'circus') tent(cx, gy, t); else fest(cx, gy, t);
+            if (Math.abs(px() - cur.x) < 6 && F) F.label(cx, gy - (cur.k === 'circus' ? 190 : 130), cur.k === 'circus' ? '🎪 Цирк — ПКМ' : '🎃 Конкурс врожаю — ПКМ', KIND[cur.k].col);
+        } else if (cur.k === 'invasion') {
+            for (const m of mobs) if (m && m._inv && m.hp > 0 && m.x > x0 - 40 && m.x < x1 + 40) { if (F) F.glow(m.x + (m.w || 24) / 2, m.y + 6, 22 + Math.sin(t * 6 + m.x) * 3, '#ff3a2a', 0.45); if (F && F.rich() && Math.random() < 0.15) F.emit(m.x + 8, m.y, { vx: 0, vy: -0.7, life: 0.9, s: 2, c: '#ff6a3a', a: 0.8 }); }
+            if (F && F.rich() && Math.random() < 0.3) { const sx = Math.random() < 0.5 ? x0 : x1; F.emit(sx, camera.y + Math.random() * canvas.height, { vx: sx === x0 ? 1.4 : -1.4, vy: -0.2, life: 2, s: 2, c: '#ff6a3a', a: 0.8 }); }
+        } else if (cur.k === 'plague' && PL.fever && F) F.glow(player.x + 12, player.y + 20, 36 + Math.sin(t * 4) * 4, '#a8e86a', 0.3);
+    });
+    // ---------- взаємодія ----------
+    function circusPanel() {
+        const M = () => mem['c' + cur.id] || (mem['c' + cur.id] = { show: 0, pop: 0, box: 0 });
+        const row = (ic, tt, d, cost, bt, act, dis) => '<div class="card"><div style="font-size:26px">' + ic + '</div><div style="flex:1"><b>' + tt + '</b><small>' + d + '</small><div class="chips">' + cost + '</div></div><button data-z="' + act + '"' + (dis ? ' disabled' : '') + '>' + bt + '</button></div>';
+        Z.open('🎪 Мандрівний цирк', '#ff6a8a', () => { const m = M(), g = cnt('gel'), au = cnt('gold_ingot'); return '<div class="msg">Ласкаво просимо! Усе по разу (попкорн — тричі) на цей приїзд цирку.</div>' +
+            row('🤹', 'Вистава жонглера', 'Захват: +10% досвіду на 3 хвилини.', '<span class="chip ok">безкоштовно</span>', m.show ? 'Дивився' : 'Дивитись', 'show', m.show) +
+            row('🍿', 'Гарячий попкорн', 'Два пакети: ситна їжа. До 3 разів.', '<span class="chip ' + (g >= 6 ? 'ok' : 'no') + '">6 слизу (' + g + ')</span>', 'Купити', 'pop', m.pop >= 3 || g < 6) +
+            row('🎩', 'Скринька фокусника', 'Сюрприз: зілля, кристали чи навіть рідкісний сувій. Не завжди вигідно!', '<span class="chip ' + (au >= 4 ? 'ok' : 'no') + '">4 золоті злитки (' + au + ')</span>', m.box ? 'Відкрито' : 'Відкрити', 'box', m.box || au < 4); },
+            (a) => { if (!alive() || cur.k !== 'circus') { Z.close(); return; } const m = M(), F = X();
+                if (a === 'show' && !m.show) { m.show = 1; B.joy = Date.now() + 180000; try { recalcStats(); } catch (e) { } toast('🤹 Захват! +10% досвіду на 3 хв'); if (F) { F.burst(player.x + 12, player.y + 10, '#ffd24a', 40, 5); F.wave(player.x + 12, player.y + 24, '#ff6a8a', 120, { life: 0.7 }); } tn('triangle', 600, 900, 0.3, 0.05); tn('sine', 900, 1300, 0.3, 0.04, { delay: 0.12 }); }
+                else if (a === 'pop' && m.pop < 3 && cnt('gel') >= 6) { consumeItemCount('gel', 6); giveItem('popcorn', 2); m.pop++; toast('🍿 Тримай попкорн'); if (F) F.burst(player.x + 12, player.y + 10, '#fff3b0', 16, 3); tn('sine', 700, 900, 0.18, 0.04); }
+                else if (a === 'box' && !m.box && cnt('gold_ingot') >= 4) { consumeItemCount('gold_ingot', 4); m.box = 1; const r = Math.random(), g = r < 0.5 ? ['life_potion', 2] : r < 0.75 ? ['mana_potion', 2] : r < 0.9 ? ['crystal_shard', 3] : r < 0.98 ? ['ancient_page', 2] : ['time_essence', 1]; giveItem(g[0], g[1]); toast('🎩 Усередині: ' + nm(g[0]) + ' ×' + g[1], 4500); if (F) { F.burst(player.x + 12, player.y + 6, '#c98bff', 36, 5); F.wave(player.x + 12, player.y + 24, '#ffd24a', 100, { life: 0.6 }); } tn('sine', 500, 1400, 0.4, 0.06, { rev: 1 }); }
+                try { updateInventoryUI(); } catch (e) { } Z.render(); });
+    }
+    FOOD.popcorn = { n: 'Попкорн', v: 22, col: '#fff3b0', d: 'Гарячий і хрусткий — з цирку.' };
+    ITEM_METADATA.popcorn = { name: 'Попкорн', rarity: 'Незвичайний', color: '#fff3b0', type: '🍖 Їжа', stat: '+22 ситості · ПКМ — з’їсти', desc: FOOD.popcorn.d };
+    Z.icon('popcorn', cx => { cx.fillStyle = '#e8405a'; cx.beginPath(); cx.moveTo(8, 14); cx.lineTo(24, 14); cx.lineTo(21, 29); cx.lineTo(11, 29); cx.closePath(); cx.fill(); cx.fillStyle = '#fff'; for (const x of [11, 15, 19]) cx.fillRect(x, 14, 2.4, 15); cx.fillStyle = '#fff3b0'; for (const [x, y] of [[10, 12], [14, 9], [19, 10], [22, 13], [16, 12], [12, 15], [20, 15]]) { cx.beginPath(); cx.arc(x, y, 3.2, 0, 7); cx.fill(); } cx.fillStyle = '#ffd24a'; cx.fillRect(15, 7, 3, 3); });
+    function festPanel() {
+        const CR = ['wheat', 'carrot', 'potato'], have = () => CR.reduce((s, i) => s + cnt(i), 0);
+        Z.open('🎃 Конкурс врожаю', '#ffb040', () => { const d = mem['h' + cur.id], h = have(); return '<div class="msg">Принеси суддям 5 будь-яких овочів чи злаків — отримай подяку фермерів.</div><div class="card"><div style="font-size:26px">🌾</div><div style="flex:1"><b>Подношення</b><small>Пшениця, морква чи картопля — будь-яка комбінація.</small><div class="chips"><span class="chip ' + (h >= 5 ? 'ok' : 'no') + '">5 врожаїв (' + h + ')</span><span class="chip ok">→ 2 меду · 3 насіння квітів · досвід фермера</span></div></div><button data-z="gift"' + (d || h < 5 ? ' disabled' : '') + '>' + (d ? 'Подякували ✓' : 'Віддати') + '</button></div>'; },
+            (a) => { if (!alive() || cur.k !== 'harvest') { Z.close(); return; } if (a === 'gift' && !mem['h' + cur.id]) { let need = 5; for (const i of CR) { const n = Math.min(need, cnt(i)); if (n > 0) { consumeItemCount(i, n); need -= n; } } if (need > 0) return; mem['h' + cur.id] = 1; giveItem('honey', 2); giveItem('flower_seeds', 3); try { profXp('farm', 20); updateInventoryUI(); } catch (e) { } toast('🎃 Суддя усміхається: дякуємо за врожай!', 4500); const F = X(); if (F) { F.burst(player.x + 12, player.y + 10, '#ffb040', 40, 5); F.wave(player.x + 12, player.y + 24, '#ffe9a8', 110, { life: 0.7 }); } tn('triangle', 600, 900, 0.3, 0.05); Z.render(); } });
+    }
+    Z.RC.push((bx, by, pressed) => {
+        if (!on('events') || !pressed || !alive()) return false;
+        if ((cur.k === 'circus' || cur.k === 'harvest') && Math.abs(bx - cur.x) <= (cur.k === 'circus' ? 4 : 5) && by >= cur.gy - 6 && by <= cur.gy && Math.abs(px() - cur.x) < 8) { if (cur.k === 'circus') circusPanel(); else festPanel(); return true; }
+        return false;
+    });
+    window.__zevent = { KIND, start, get cur() { return cur; }, PL, B };
+})();
+// ===== v46.2 «Лабіринт тижня» (90): підземний лабіринт з новою схемою щопонеділка, рекордом часу й нагородою раз на тиждень =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const { on, toast, hs, surf, send, host, px, py } = Z;
+    const CW = 13, CH = 5, CS = 4, BW = CW * CS + 1, BH = CH * CS + 1, MINLV = 15, MOBS = 6;
+    const X = () => window.__zpfx;
+    const tn = (a, b, c, d, e, o) => { try { if (audioCtx && audioVolume > 0) tone(a, b, c, d, e, o || {}); } catch (er) { } };
+    const week = () => Math.floor((Math.floor(Date.now() / 86400000) + 3) / 7);
+    const lb = () => currentWorld && currentWorld.lb;
+    const isSolid = id => !!(id && BLOCKS[id] && BLOCKS[id].solid && !BLOCKS[id].liquid);
+    const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)), c = Math.floor((ms % 1000) / 100); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + '.' + c; };
+    const sk = () => 'zlb_' + ((currentWorld && currentWorld.name) || 'w');
+    const rd = () => { try { return JSON.parse(localStorage.getItem(sk()) || '{}'); } catch (e) { return {}; } };
+    const wr = o => { try { localStorage.setItem(sk(), JSON.stringify(o)); } catch (e) { } };
+    // ---------- схема лабіринту (детермінована від тижня) ----------
+    const MC = {};
+    function maze(wk) {
+        if (MC[wk]) return MC[wk];
+        let n = 0; const rnd = () => hs(wk * 977 + (n++), wk, 11), vis = new Set(), P = new Set(), key = (i, j) => i + ',' + j;
+        const st = [[0, 2]]; vis.add(key(0, 2));
+        while (st.length) {
+            const [i, j] = st[st.length - 1], c = [];
+            for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = i + di, b = j + dj; if (a >= 0 && a < CW && b >= 0 && b < CH && !vis.has(key(a, b))) c.push([a, b]); }
+            if (!c.length) { st.pop(); continue; }
+            const [a, b] = c[Math.floor(rnd() * c.length)]; P.add(key(i, j) + '-' + key(a, b)); P.add(key(a, b) + '-' + key(i, j)); vis.add(key(a, b)); st.push([a, b]);
+        }
+        for (let i = 0; i < CW; i++) for (let j = 0; j < CH; j++) { if (i + 1 < CW && rnd() < 0.07) { P.add(key(i, j) + '-' + key(i + 1, j)); P.add(key(i + 1, j) + '-' + key(i, j)); } if (j + 1 < CH && rnd() < 0.07) { P.add(key(i, j) + '-' + key(i, j + 1)); P.add(key(i, j + 1) + '-' + key(i, j)); } }
+        // найкоротший шлях (підказка)
+        const prev = { [key(0, 2)]: null }, q = [[0, 2]];
+        while (q.length) { const [i, j] = q.shift(); for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = i + di, b = j + dj, k = key(a, b); if (a >= 0 && a < CW && b >= 0 && b < CH && !(k in prev) && P.has(key(i, j) + '-' + k)) { prev[k] = [i, j]; q.push([a, b]); } } }
+        const path = []; let cur = [CW - 1, 2]; while (cur) { path.unshift(cur); cur = prev[key(cur[0], cur[1])]; }
+        return (MC[wk] = { P, path });
+    }
+    // ---------- генерація ----------
+    function findSpot() {
+        const cw = currentWorld, W = cw.width, rs = cw.ruins || [], mr = (cw.mr && cw.mr.g) || [];
+        for (let t = 0; t < 900; t++) {
+            const x0 = 14 + Math.floor(hs(t, 5, 21) * (W - BW - 28)), y0 = 74 + Math.floor(hs(t, 6, 22) * 22);
+            if (mr.some(g => x0 < g.x0 + 50 && x0 + BW + 10 > g.x0)) continue;
+            if (rs.some(r => x0 < r.x + r.w + 8 && x0 + BW > r.x - 8 && y0 < r.y + r.h + 8 && y0 + BH > r.y - 8)) continue;
+            let sol = 0, tot = 0; for (let y = y0; y < y0 + BH; y += 2) for (let x = x0; x < x0 + BW; x += 3) { tot++; if (isSolid(worldMap[y] && worldMap[y][x])) sol++; }
+            if (sol >= tot * 0.94) return { x0, y0 };
+        }
+        return null;
+    }
+    function carve(L) {
+        const wk = week(), M = maze(wk), set = (x, y, id) => { if (worldMap[y] && x >= 0 && x < currentWorld.width) worldMap[y][x] = id; };
+        for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) set(L.x0 + x, L.y0 + y, 105);
+        const open = (x, y, w, h) => { for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) set(L.x0 + x + xx, L.y0 + y + yy, 0); };
+        for (let i = 0; i < CW; i++) for (let j = 0; j < CH; j++) {
+            open(i * CS + 1, j * CS + 1, 3, 3);
+            if (M.P.has(i + ',' + j + '-' + (i + 1) + ',' + j)) open(i * CS + 4, j * CS + 1, 1, 3);
+            if (M.P.has(i + ',' + j + '-' + i + ',' + (j + 1))) open(i * CS + 1, j * CS + 4, 3, 1);
+            if (hs(i, j, wk) < 0.38) set(L.x0 + i * CS + 2, L.y0 + j * CS, 77);
+        }
+        L.wk = wk; L.lamps = []; for (let i = 0; i < CW; i++) for (let j = 0; j < CH; j++) if (worldMap[L.y0 + j * CS] && worldMap[L.y0 + j * CS][L.x0 + i * CS + 2] === 77) L.lamps.push([L.x0 + i * CS + 2, L.y0 + j * CS]);
+    }
+    function gen() {
+        if (lb()) return; const W = currentWorld.width, sp = findSpot(); if (!sp) return;
+        let gx = -1; for (let t = 0; t < 60; t++) { const x = 20 + Math.floor(hs(t, 8, 23) * (W - 40)); if (isSolid(worldMap[surf(x)] && worldMap[surf(x)][x]) && Math.abs(x - W / 2) > 12) { gx = x; break; } }
+        if (gx < 0) return;
+        const L = { x0: sp.x0, y0: sp.y0, gx, gy: surf(gx), wk: -1 }; currentWorld.lb = L; carve(L);
+    }
+    generateWorldData = (function (o) { return function () { const r = o.apply(this, arguments); try { if (on('maze')) gen(); } catch (e) { console.error('zmaze gen', e); } return r; }; })(generateWorldData);
+    const inside = (x, y) => { const L = lb(); return L && x >= L.x0 * 32 && x <= (L.x0 + BW) * 32 && y >= L.y0 * 32 && y <= (L.y0 + BH) * 32; };
+    const others = () => { try { if (MP && MP.players) for (const id in MP.players) { const q = MP.players[id]; if (q && inside(q.x, q.y)) return true; } } catch (e) { } return false; };
+    // ---------- хід забігу ----------
+    const S = { in: false, t0: 0, fin: 0, hint: 0, board: [] };
+    const solo = () => { try { return !Z.mpOn() || Object.keys(MP.players || {}).length === 0; } catch (e) { return true; } };
+    let ft = 0; Z.TICK.push(() => { if (!on('maze') || !Z.host() || !currentWorld) return; if (!lb()) { if (++ft % 180 === 11 && solo()) { try { gen(); } catch (e) { console.error('zmaze lazy', e); } } return; }
+        const L = lb(); if (L.wk !== week() && !S.in && !others() && ++ft % 120 === 3) { carve(L); S.board = []; } });
+    function spawnPt(i, j) { const L = lb(); return [(L.x0 + i * CS + 2) * 32 + 16, (L.y0 + j * CS + 3) * 32]; }
+    function enter() {
+        const L = lb(); if (!L) return;
+        if ((RPG.level | 0) < MINLV) { toast('🧭 Люк замкнено печаттю. Повернись на рівні ' + MINLV + '.'); return; }
+        if (L.wk !== week()) { toast('🧭 Лабіринт перебудовується… за мить'); return; }
+        const [sx, sy] = spawnPt(0, 2); player.x = sx - 12; player.y = sy - 46; player.vx = 0; player.vy = 0; S.in = true; S.t0 = performance.now(); S.fin = 0; S.hint = 0;
+        const F = X(); if (F) { F.burst(player.x + 12, player.y + 20, '#8affc0', 34, 4); F.wave(player.x + 12, player.y + 40, '#d8ffe8', 100, { life: 0.6 }); } try { Z.flash('#8affc0'); } catch (e) { }
+        tn('sine', 300, 700, 0.3, 0.06, { rev: 1 }); toast('🧭 Лабіринт тижня №' + (week() % 100) + ': знайди скриню на сході. Час пішов!');
+    }
+    function leave(why) {
+        const L = lb(); if (!L || !S.in) return; S.in = false; player.x = L.gx * 32 - 12; player.y = (L.gy - 3) * 32; player.vx = 0; player.vy = 0;
+        const F = X(); if (F) { F.burst(player.x + 12, player.y + 20, '#ffe9a8', 30, 4); F.wave(player.x + 12, player.y + 40, '#fff', 90, { life: 0.5 }); } if (why !== 'quiet') toast('🧭 Ти вибрався з лабіринту');
+    }
+    killPlayer = (function (o) { return function () { if (S.in) { S.in = false; } return o.apply(this, arguments); }; })(killPlayer);
+    function finish() {
+        const L = lb(), ms = performance.now() - S.t0, R = rd(), wk = week(), first = R.cl !== wk, rec = R.best === undefined || ms < R.best, wasRec = R.best !== undefined && ms < R.best;
+        S.fin = ms; if (rec) R.best = ms; R['w' + wk] = Math.min(R['w' + wk] || 1e12, ms); if (first) R.cl = wk; wr(R);
+        const [cx, cy] = spawnPt(CW - 1, 2), F = X();
+        if (F) { F.burst(cx, cy - 20, '#ffe9a8', 60, 6); F.wave(cx, cy - 10, '#ffffff', 160, { life: 0.8 }); F.glow(cx, cy - 20, 120, '#ffe9a8', 0.9); }
+        try { Z.flash('#ffe9a8'); shake = Math.max(shake, 5); } catch (e) { }
+        tn('sine', 520, 780, 0.35, 0.08, { rev: 1 }); tn('triangle', 780, 1170, 0.4, 0.06, { delay: 0.12 }); tn('sine', 1040, 1560, 0.45, 0.05, { delay: 0.26 });
+        if (first) {
+            const lv = RPG.level | 0, g = [['gold_ingot', 3 + Math.floor(lv / 15)], ['crystal_ingot', 2 + Math.floor(lv / 20)], ['ancient_page', 2], ['life_potion', 2]], pool = ['smith_charm', 'traveler_cloak', 'angler_necklace', 'ruin_compass', 'mirror_lamp', 'pickaxe_axe'], fe = pool[wk % pool.length];
+            g.push([fe, 1]); if (wasRec) g.push(['crystal_shard', 3]);
+            g.forEach(([id, n], i) => setTimeout(() => { try { if (ITEM_METADATA[id]) { if (canTake(id)) giveItem(id, n); else floatingItems.push({ x: cx, y: cy - 20, vx: (i - 2) * 1.2, vy: -4, itemId: id, count: n }); } } catch (e) { } }, i * 180));
+            try { rpgOrbsAt(cx, cy - 20, 120 + lv * 14); updateInventoryUI(); } catch (e) { }
+            toast('🏆 Лабіринт пройдено за ' + fmt(ms) + (wasRec ? ' — НОВИЙ РЕКОРД!' : '') + ' · нагорода тижня отримана', 7000);
+        } else toast('🧭 Скриня порожня — нагороду вже забрано цього тижня. Твій час: ' + fmt(ms) + (wasRec ? ' — НОВИЙ РЕКОРД!' : ' · рекорд ' + fmt(R.best)), 6500);
+        S.board.push({ n: (MP && MP.name) || 'Ти', ms }); S.board.sort((a, b) => a.ms - b.ms); S.board.length = Math.min(S.board.length, 5);
+        send({ t: 'x_zlbf', n: String((MP && MP.name) || 'Гравець').slice(0, 20), ms: Math.round(ms) });
+    }
+    Z.MSG.x_zlbf = m => { try { if (!isFinite(m.ms)) return; S.board.push({ n: String(m.n || '?').slice(0, 20), ms: +m.ms }); S.board.sort((a, b) => a.ms - b.ms); S.board.length = Math.min(S.board.length, 5); toast('🧭 ' + String(m.n).slice(0, 20) + ' пройшов лабіринт за ' + fmt(+m.ms), 5000); } catch (e) { } };
+    // тік: HUD, мобів, підказка
+    const hudEl = document.createElement('div'); hudEl.style.cssText = 'position:fixed;left:50%;top:78px;transform:translateX(-50%);z-index:9000;display:none;padding:6px 16px;border-radius:14px;background:linear-gradient(rgba(14,40,32,.9),rgba(8,20,16,.9));border:1px solid #8affc0;color:#e8fff2;font:600 14px "Segoe UI",sans-serif;text-shadow:0 1px 2px #000;box-shadow:0 0 18px -4px #8affc0;pointer-events:none;white-space:nowrap'; document.body.appendChild(hudEl);
+    let mf = 0;
+    Z.TICK.push(() => {
+        if (!on('maze')) { S.in = false; hudEl.style.display = 'none'; return; }
+        const L = lb();
+        if (S.in && L) {
+            const el = performance.now() - S.t0, R = rd(); if (!inside(player.x, player.y)) { S.in = false; } else {
+                const best = R.best !== undefined ? ' · рекорд ' + fmt(R.best) : ''; const h = '🧭 ' + (S.fin ? '<b>Готово ' + fmt(S.fin) + '</b>' : '<b>' + fmt(el) + '</b>') + best; if (hudEl.innerHTML !== h) hudEl.innerHTML = h; hudEl.style.display = 'block';
+                if (!S.fin && el > 150000) S.hint = 1;
+                const [ex, ey] = spawnPt(CW - 1, 2); if (!S.fin && Math.hypot(player.x + 12 - ex, player.y + 22 - ey) < 36) { const F = X(); if (F && Math.random() < 0.2) F.emit(ex, ey - 20, { vx: 0, vy: -0.6, life: 1.2, s: 2, c: '#ffe9a8', a: 0.9 }); }
+            }
+        } else hudEl.style.display = 'none';
+        // моби в лабіринті (господар)
+        if (L && Z.host() && ++mf % 300 === 9 && (S.in || others())) {
+            let n = 0; for (const m of mobs) if (m && m.hp > 0 && inside(m.x, m.y)) n++;
+            if (n < MOBS) { const i = 3 + Math.floor(Math.random() * (CW - 4)), j = Math.floor(Math.random() * CH), types = ['zombie', 'skeleton', 'slime'].filter(t => { try { return window.__zegg.spec(t); } catch (e) { return false; } }), t = types[Math.floor(Math.random() * types.length)]; if (t) { const L0 = mobs.length; try { window.__zegg.summon('egg_m_' + t, L.x0 + i * CS + 2, L.y0 + j * CS + 3); } catch (e) { } if (mobs.length > L0) mobs[mobs.length - 1]._maze = 1; } }
+        } else if (L && Z.host() && mf % 300 === 150 && !S.in && !others()) { for (let i = mobs.length - 1; i >= 0; i--) if (mobs[i] && mobs[i]._maze) mobs.splice(i, 1); }
+    });
+    // ---------- малювання ----------
+    Z.DRAW.push((t, x0, x1) => {
+        if (!on('maze')) return; const L = lb(); if (!L) return; const F = X();
+        const GX = L.gx * 32 + 16, GY = L.gy * 32;
+        if (GX > x0 - 100 && GX < x1 + 100 && F) {
+            F.portal(GX, GY, 40, 90, { col: '#5fe8a0', col2: '#d8ffe8', t, power: 1, runes: 9 });
+            if (Math.abs(px() - L.gx - 0.5) < 4 && Math.abs(py() - L.gy) < 5) {
+                const R = rd(); F.label(GX, GY - 124, '🧭 Лабіринт тижня №' + (week() % 100) + ' — ПКМ', '#8affc0');
+                const b = S.board[0]; F.label(GX, GY - 142, (R.best !== undefined ? 'Твій рекорд ' + fmt(R.best) : 'Ще не пройдено') + (b ? ' · найкращий тижня: ' + b.n + ' ' + fmt(b.ms) : '') + (R.cl === week() ? ' · нагороду забрано' : ' · нагорода чекає'), '#d8ffe8');
+            }
+        }
+        if (!S.in && !others()) return;
+        const [sx, sy] = spawnPt(0, 2), [ex, ey] = spawnPt(CW - 1, 2);
+        if (F) {
+            F.portal(sx - 28, sy, 24, 62, { col: '#ffe9a8', col2: '#fff', t, power: 0.8, runes: 6 });
+            if (Math.abs(px() - (sx - 28) / 32) < 3.5) F.label(sx - 28, sy - 80, '↩ Вихід — ПКМ', '#ffe9a8');
+            // скриня
+            const R = rd(), done = R.cl === week(), bob = Math.sin(t * 2) * 1.5; F.glow(ex, ey - 16, 46 + Math.sin(t * 3) * 5, done ? '#8a9aa8' : '#ffe9a8', done ? 0.35 : 0.85);
+            ctx.fillStyle = '#3a2a14'; ctx.fillRect(ex - 15, ey - 22, 30, 22); ctx.fillStyle = done ? '#6a7a88' : '#c89a3a'; ctx.fillRect(ex - 15, ey - 24, 30, 8); ctx.fillStyle = done ? '#8a9aa8' : '#ffd46a'; ctx.fillRect(ex - 15, ey - 18, 30, 3); ctx.fillRect(ex - 2, ey - 20, 4, 8); ctx.fillStyle = '#14100a'; ctx.fillRect(ex - 1, ey - 16, 2, 3);
+            if (!done) for (let i = 0; i < 3; i++) { const a = t * 1.6 + i * 2.1; F.spark(ex + Math.cos(a) * 24, ey - 28 + Math.sin(a) * 8 + bob, 2.4, '#fff', 0.85, a); }
+            if (Math.abs(px() - ex / 32) < 3 && S.in && !S.fin) F.label(ex, ey - 54, '🏆 Скриня — ПКМ', '#ffe9a8');
+            // вогник-підказка
+            if (S.hint && S.in && !S.fin) {
+                const M = maze(L.wk), P = M.path; let bi = 0, bd = 1e9; P.forEach(([i, j], k) => { const [cx, cy] = spawnPt(i, j), d = Math.hypot(cx - player.x - 12, cy - 22 - player.y); if (d < bd) { bd = d; bi = k; } });
+                const [wx, wy] = spawnPt(...P[Math.min(P.length - 1, bi + 2)]); F.glow(wx, wy - 26 + Math.sin(t * 4) * 4, 26, '#8affc0', 0.9); F.spark(wx, wy - 26 + Math.sin(t * 4) * 4, 3, '#fff', 1, t * 3);
+            }
+        }
+    });
+    Z.LIGHT.push(Lf => { if (!on('maze')) return; const L = lb(); if (!L || (!S.in && !others())) return; for (const [x, y] of (L.lamps || [])) Lf(x * 32 + 16, y * 32 + 40, 170); if (S.in) Lf(player.x + 12, player.y + 20, 150); const [ex, ey] = spawnPt(CW - 1, 2); Lf(ex, ey - 20, 200); });
+    Z.RC.push((bx, by, pressed) => {
+        if (!on('maze') || !pressed) return false; const L = lb(); if (!L) return false;
+        if (!S.in && Math.abs(bx - L.gx) <= 1 && by >= L.gy - 3 && by <= L.gy && Math.abs(px() - L.gx) < 6) { enter(); return true; }
+        if (S.in) {
+            const [sx, sy] = spawnPt(0, 2), [ex, ey] = spawnPt(CW - 1, 2);
+            if (Math.hypot(bx * 32 + 16 - (sx - 28), by * 32 + 16 - (sy - 40)) < 60 && Math.abs(player.x + 12 - (sx - 28)) < 150) { leave(); return true; }
+            if (!S.fin && Math.hypot(bx * 32 + 16 - ex, by * 32 + 16 - (ey - 12)) < 52 && Math.hypot(player.x + 12 - ex, player.y + 22 - ey) < 130) { finish(); return true; }
+        }
+        return false;
+    });
+    window.__zmaze = { week, maze, enter, leave, S, gen, lb };
+})();
         // ================= ⚙ v44.9: УСІ НАЛАШТУВАННЯ ГРАВЦЯ — ЛИШЕ У ВКЛАДЦІ «НАЛАШТУВАННЯ» =================
         // Голос, ефекти, звук кроків, привітання, діагностика й резервні копії зібрані тут; з паузи й головного меню прибрані.
         (() => {
@@ -41422,7 +42399,6 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     ${rowOf('zl', 0, 'low', '⚡ Режим для слабких ПК', 'Один перемикач: удвічі менше частинок, без розмиття й тіней, менше хмар і зірок, без блиску, обмежена тряска екрана. Гра йде плавніше', 1)}
                     ${rowOf('zl', 0, 'sky', '🌠 Нічне небо', 'Сузір’я, падаючі зірки й комети. Падає зірка — натисни ` і загадай бажання: вранці отримаєш подарунок')}
                     ${rowOf('zl', 0, 'reel', '🎣 Міні-гра підсікання при риболовлі', 'Влучай у зелену зону тричі — ідеальне підсікання дає шанс на рідкісну рибу')}
-                    ${rowOf('zl', 0, 'bees', '🐝 Бджоли біля вуликів', '')}
                 </details>
                                 <details><summary>⚔ Дуелі (мультиплеєр)</summary>
                     ${rowOf('zd', 0, 'inv', '📨 Приймати виклики на дуель', 'Якщо вимкнено — друзі побачать «не приймає виклики»')}
@@ -41479,12 +42455,29 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.0', 'Ігнарох', 'new'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.3', 'Своє поселення', 'new'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.3': [
+                ['#ffd27a', '🏘 Своє поселення', 'У мультиплеєрі кожен гравець має власне поселення: мешканці живуть у ліжках того, хто їх поставив, а рада поселення своя в кожного. Цирк, свято й нашестя відбуваються біля поселення, де є 3+ жителі.'],
+                ['#e0b060', '🏛 Своя руїна', 'Першу відбудову руїни займає гравець — вона стає його (до 2 руїн на гравця). Лише власник будує, лікується, забирає запас і користується маяком.']
+            ],
+            '46.2': [
+                ['#ffd24a', '🐝 Бджоли й вулики', 'Піймай дику бджолу сіткою (ПКМ) і поклади банку у вулик: бджоли вилітають до квітів, збирають пилок і несуть мед. Вночі вони сплять. Чим більше квітів поруч — тим швидше мед.'],
+                ['#9fe8ff', '💎 Кристалічна грядка', 'Посади осколок кристала — за кілька хвилин виросте скупчення, вночі швидше. Врожай: 2–3 осколки.'],
+                ['#c8d2da', '🛡 Щити й дворучна зброя', 'Утримуй F: щит блокує частину шкоди, а перший миг після натискання — парирування, яке відкидає й оглушає ворогів. Запас сил вичерпується — щит пробивається. Дворучна зброя б’є важче й зачіпає багатьох, але зі щитом несумісна.'],
+                ['#ff9a5a', '⚒ Дерево ремесел', 'У вікні професій (P) з’явились Коваль, Інженер і Пасічник зі своїми перками.'],
+                ['#ff6a8a', '🎪 Події світу', 'Мандрівний цирк, свято врожаю, нашестя й лихоманка — рідко (раз на 40–70 хвилин), лише коли в тебе є поселення з щонайменше 3 жителями; лихоманка — ще рідше й без цієї умови. Вимикаються в «Налаштуваннях».'],
+                ['#8affc0', '🧭 Лабіринт тижня', 'У нових світах є підземний лабіринт, що змінюється щопонеділка. Проходь на час, ставь рекорди й забирай нагороду раз на тиждень (з 15 рівня).']
+            ],
+            '46.1': [
+                ['#e0b060', '🏚 Рідші руїни', 'У нових світах стародавніх руїн стало вдвічі менше — кожна знахідка цінніша.'],
+                ['#9ff4ff', '🪞 Рідкісні портали', 'Дзеркальних арок на світ тепер лише дві (різні біоми), а входити в них можна з 20 рівня — не з самого початку гри.'],
+                ['#ffd27a', '✨ Інтерфейс руїн', 'Вікно відбудови має банер з прогресом і список трьох етапів із замками. Поки воно відкрите, колесо миші більше не перемикає хотбар.']
+            ],
             '46.0': [
                 ['#ff8a4a', '🐉 Ігнарох, Двоголовий дракон', 'Новий бос у залі Горна Вулканічної безодні: одна голова дихає вогнем, друга — кригою. Під час бою голови падають (на 70% і 36% здоров’я), дракон лютує, а після пікірування й падіння відкривається для ударів. Поки не переможеш Володарів Бурі й Магми та Астрала — не збереш Ріг.'],
                 ['#ffd27a', '📜 Ланцюг виклику', 'Ріг Двох Полум’їв кується з Ядра Магми, Ядра Бурі, Душі Безодні, Хітину Піщаного Черв’яка та Тотемів Жаб’ячих Шаманів — тож треба пройти попередніх босів і дістатися до пустелі та болота.'],
@@ -41868,6 +42861,11 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             document.head.appendChild(st);
             guide.adviceList.push('Побачив світловий стовп і підказку «☄ Падіння зорі»? Гуртуйтесь біля уламка — нагороду отримають усі, хто поруч.', 'Alt + клік закріплює предмет (📌): він не потрапить у сортування, смітник і викидання.');
         }
+// ===== Завершальний модуль: перебудова каталогу яєць (моби й боси, додані пізніше за zegg) =====
+(function () {
+    'use strict';
+    try { if (window.__zegg && window.__zegg.refresh) window.__zegg.refresh(); } catch (e) { console.error('zfin eggs', e); }
+})();
     </script>
 </body>
 </html>
