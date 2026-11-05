@@ -11329,7 +11329,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.4', GAME_VER_NAME = 'Легенди й табори';
+        const GAME_VER = '46.5', GAME_VER_NAME = 'Фікс багів';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -27138,17 +27138,20 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             return function () {
                 if (!CZ.cheat || !CZ.fly || gameState !== 'PLAYING' || inventoryOpen || CZ.typing) return o.apply(this, arguments);
                 const k = keys, up = k.Space || k.KeyW || k.ArrowUp, dn = k.ShiftLeft || k.KeyS || k.ArrowDown, sv = [k.Space, k.KeyW, k.ArrowUp], g = player.gravity, sp = player.speed, y0 = player.y;
-                k.Space = k.KeyW = k.ArrowUp = false; player.gravity = 0; player.speed = sp * 1.7; player.vy = up ? -5.6 : dn ? 5.6 : 0; player.onGround = false;
+                k.Space = k.KeyW = k.ArrowUp = false; player.gravity = 0; const fs_ = CZ.fspd || 1; player.speed = sp * 1.7 * fs_; player.vy = up ? -5.6 * fs_ : dn ? 5.6 * fs_ : 0; player.onGround = false;
                 let r; try { r = o.apply(this, arguments); } finally { player.gravity = g; player.speed = sp; k.Space = sv[0]; k.KeyW = sv[1]; k.ArrowUp = sv[2]; }
                 if (!up && !dn) { if (player.y > y0 && player.y - y0 < 0.3) player.y = y0; player.vy = 0; }
                 return r;
             };
         })(updateGame);
+        // --- шкода по гравцю ---
+        updateGame = (function (o) { return function () { const h = player.health; const r = o.apply(this, arguments); try { if (CZ.cheat && CZ.nodmg && gameState === 'PLAYING' && player.health < h) { player.health = h; try { updateHealthHUD(); } catch (e) { } } } catch (e) { } return r; }; })(updateGame);
+        killPlayer = (function (o) { return function () { if (CZ.cheat && CZ.nodmg) { player.health = player.maxHealth; return; } return o.apply(this, arguments); }; })(killPlayer);
         // --- команди ---
         function czSet(kind, on) {
             if (kind === 'cheat') {
                 if (on === CZ.cheat) { czToast('Режим і так ' + (on ? 'увімкнено' : 'вимкнено')); return; }
-                CZ.cheat = on; if (on) { czBuild(); czCtl(true); } else { CZ.fly = false; if (rpgPane === 'cz') rpgTab('inv'); const t = document.getElementById('tab-cz'); if (t) t.remove(); const p = document.getElementById('cz-body'); if (p) p.remove(); czCtl(false); }
+                CZ.cheat = on; if (on) { czBuild(); czCtl(true); } else { CZ.fly = false; CZ.nodmg = false; if (rpgPane === 'cz') rpgTab('inv'); const t = document.getElementById('tab-cz'); if (t) t.remove(); const p = document.getElementById('cz-body'); if (p) p.remove(); czCtl(false); }
                 czToast(on ? '✔ Креатив: увімкнено' : '✔ Креатив: вимкнено', on ? '#6fd07a' : '#e0b030');
             } else {
                 if (!CZ.cheat) { czToast('Спершу увімкни режим', '#ff8a8a'); return; }
@@ -39406,6 +39409,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
 @keyframes zcSh{0%,60%{left:-40%}100%{left:140%}}@keyframes zcTx{to{background-position:-200% 0}}`;
     document.head.appendChild(css);
     let chip = 'all';
+    { const st = document.createElement('style'); st.textContent = `.zc-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.05);font:12px 'Segoe UI';color:#dfe8ff}.zc-ctl button{padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35);color:#fff;cursor:pointer;font:600 12px 'Segoe UI'}.zc-ctl button:hover{border-color:#7ad}.zc-ctl button.off{background:#3a1a1a;border-color:#e05050}.zc-ctl label{display:flex;gap:6px;align-items:center}.zc-ctl .tm{display:flex;gap:4px}`; document.head.appendChild(st); }
     const catId = id => { try { return catOf(id); } catch (e) { return 'misc'; } };
     function chipList() { const a = [['all', '✨', 'Усе'], ['egm', '🥚', 'Яйця мобів', 1], ['egb', '👑', 'Яйця босів', 1]]; try { for (const c of CRAFT_CATS) a.push([c.id, itemSprites[c.i] ? `<img src="${itemSprites[c.i]}">` : '▫', c.n]); } catch (e) { } return a; }
     function inject() {
@@ -39416,6 +39420,15 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         ch.innerHTML = chipList().map(c => `<button data-c="${c[0]}" class="${c[3] ? 'eg ' : ''}${c[0] === chip ? 'on' : ''}"><span>${c[1]}</span>${c[2]}</button>`).join('');
         ch.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; chip = b.dataset.c; ch.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); czGrid(); });
         const sm = top.querySelector('small'); if (sm) sm.style.display = 'none';
+        const ctl = document.createElement('div'); ctl.id = 'cz-ctl'; ctl.className = 'zc-ctl';
+        ctl.innerHTML = `<label>✈ Політ <input type="range" id="cz-fs" min="0.5" max="4" step="0.1"><b id="cz-fsv"></b></label><button id="cz-dm"></button><span class="tm"><button data-t="m">🌅 Ранок</button><button data-t="d">☀ День</button><button data-t="e">🌇 Вечір</button><button data-t="n">🌙 Ніч</button></span>`;
+        ch.after(ctl);
+        const fs = ctl.querySelector('#cz-fs'), fv = ctl.querySelector('#cz-fsv'), dm = ctl.querySelector('#cz-dm');
+        const sync = () => { fs.value = CZ.fspd || 1; fv.textContent = '×' + (+(CZ.fspd || 1)).toFixed(1); dm.textContent = CZ.nodmg ? '🛡 Шкода по мені: вимкнена' : '❤ Шкода по мені: увімкнена'; dm.classList.toggle('off', !!CZ.nodmg); };
+        fs.addEventListener('input', () => { CZ.fspd = +fs.value; sync(); });
+        dm.addEventListener('click', () => { CZ.nodmg = !CZ.nodmg; if (CZ.nodmg) player.health = player.maxHealth; sync(); });
+        ctl.querySelector('.tm').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const T = Math.PI * 2, ph = { m: 0.35, d: Math.PI / 2, e: Math.PI - 0.35, n: Math.PI * 1.5 }[b.dataset.t]; gameTime = Math.floor(gameTime / T) * T + ph; try { if (MP && MP.host) mpSend({ t: 'time', gt: gameTime }); } catch (er) { } try { czToast('✔ Час доби змінено'); } catch (er) { } });
+        sync();
     }
     czBuild = (function (o) { return function () { const r = o.apply(this, arguments); try { inject(); } catch (e) { console.error('zegg ui', e); } return r; }; })(czBuild);
     czList = function () {
@@ -39429,7 +39442,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const czGive0 = czGive;
     czGive = function (id, one) { if (/^egg_[mb]_/.test(id)) { if (!v22Fits(id)) { toast('Інвентар повний', '#ff8a8a'); return; } giveItem(id, 1); try { playSound('pickup'); } catch (e) { } return; } return czGive0.apply(this, arguments); };
     czGrid = function () {
-        const gd = document.getElementById('cz-grid'); if (!gd) return; const ids = czList(), MAXN = 600; gd.innerHTML = '';
+        const gd = document.getElementById('cz-grid'); if (!gd) return; const ids = czList(), MAXN = 4000; gd.innerHTML = '';
         const n = document.getElementById('zc-n'); if (n) n.textContent = ids.length + ' шт.';
         const fr = document.createDocumentFragment();
         ids.slice(0, MAXN).forEach((id, i) => {
@@ -43990,12 +44003,15 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.4', 'Легенди й табори', 'new'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.5', 'Фікс багів', 'new'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.5': [
+                ['#9ac8ff', '🛠 Фікс багів', 'Виправлено дрібні помилки й покращено стабільність.']
+            ],
             '46.4': [
                 ['#ffd27a', '🌍 Світи ×3', 'Нові світи тепер у 3 рази більші: малий 2400, середній 4800, великий 9600 блоків. Старі світи не змінюються.'],
                 ['#aef0ff', '🏹 Легендарні цілі', 'Рідкісні елітні істоти з’являються лише за особливих умов: Місячний Олень, Білий Ґроул, Барханний Мантікор, Багряний Жнець, Кришталевий Тарантул. З них — унікальні матеріали, амулети (набір дає бонуси) й трофеї на стіну.'],
