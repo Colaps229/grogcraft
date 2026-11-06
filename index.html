@@ -11330,7 +11330,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.8', GAME_VER_NAME = 'Фікс багів';
+        const GAME_VER = '46.10', GAME_VER_NAME = 'Океан';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -39404,7 +39404,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
 #cz-chips button.on{background:linear-gradient(#4d7de0,#3252b0);color:#fff;border-color:#a8c4ff;box-shadow:0 0 14px rgba(110,160,255,.55)}
 #cz-chips button.eg{border-color:rgba(255,210,100,.55)}#cz-chips button.eg.on{background:linear-gradient(#e0a83a,#a8741a);border-color:#ffe38a;box-shadow:0 0 14px rgba(255,200,80,.55)}
 #cz-grid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr))!important;grid-auto-rows:max-content!important;gap:8px!important;background:rgba(5,10,24,.45)!important;border:1px solid rgba(120,150,220,.25)!important;border-radius:14px!important}
-#cz-grid .zc-c{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px 6px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid var(--rc,#6a7aa8);cursor:pointer;min-height:86px;box-sizing:border-box;opacity:0;animation:zcIn .4s ease forwards;transition:transform .16s,box-shadow .16s;overflow:hidden}
+#cz-grid .zc-c{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px 6px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid var(--rc,#6a7aa8);cursor:pointer;min-height:86px;box-sizing:border-box;animation:zcIn .4s ease both;transition:transform .16s,box-shadow .16s;overflow:hidden}
 #cz-grid .zc-c:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 6px 16px rgba(0,0,0,.5),0 0 14px var(--rc,#6a7aa8)}
 #cz-grid .zc-c:active{transform:scale(.94)}
 #cz-grid .zc-c:before{content:'';position:absolute;top:0;left:-70%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.24),transparent);transform:skewX(-20deg);transition:left .5s}
@@ -41797,7 +41797,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         const now = performance.now(); let dt = now - last; last = now; if (dt > 250) dt = STEP;
         ema += (Math.min(dt, 50) - ema) * 0.05; acc += dt;
         let n = 0;
-        while (acc >= STEP - 1 && n < 3) { try { snap(); updateGame(); snapAfter(); } catch (e) { rpgErr(e); } acc -= STEP; n++; }
+        while (acc >= STEP - 1 && n < 3) { try { snap(); try { __zBF.pre(); } catch (e) { } updateGame(); try { __zBF.post(); } catch (e) { } snapAfter(); } catch (e) { rpgErr(e); } acc -= STEP; n++; }
         if (acc > STEP) acc = 0;
         const fast = on() && (window.__zfpsForce || (ema < 13.5 && rms < 9)) && gameState === 'PLAYING';
         if (n > 0) { const t0 = performance.now(); render(fast ? Math.max(0, Math.min(1, acc / STEP)) : 1, fast, false); rms += (performance.now() - t0 - rms) * 0.1; nextR = Math.max(nextR + CAP, now - CAP); tail = 0; }
@@ -41809,6 +41809,122 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     };
     window.__zfps = { get ema() { return ema; }, get rms() { return rms; } };
 })();
+// ===== v46.9: боси більше не проходять крізь блоки (всі, зокрема літаючі й арені) =====
+(function () {
+    'use strict';
+    function solidAt(x, y) {
+        if (x < 0 || x >= worldMap[0].length || y < 0) return false;
+        if (y >= worldMap.length) return true;
+        const v = worldMap[y][x]; const B = BLOCKS[v];
+        return !!(B && B.solid && !B.liquid);
+    }
+    function frac(b, x, y) { // частка коробки боса у твердих блоках
+        const x0 = Math.floor(x / 32), x1 = Math.floor((x + b.w - 1) / 32), y0 = Math.floor(y / 32), y1 = Math.floor((y + b.h - 1) / 32);
+        let tot = 0, sol = 0; for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) { tot++; if (solidAt(i, j)) sol++; }
+        return tot ? sol / tot : 0;
+    }
+    const TOL = 0.12; // дрібне зачеплення кутами не рахуємо
+    function fixOne(b, px, py) {
+        if (b.noclip || b.ghost || b.ghostPhase) return;
+        if (frac(b, b.x, b.y) <= TOL) return;
+        // 1) повернути тільки X, 2) тільки Y, 3) обидві осі
+        if (frac(b, px, b.y) <= TOL) { b.x = px; if (b.vx) b.vx *= -0.3; return; }
+        if (frac(b, b.x, py) <= TOL) { b.y = py; if (b.vy) b.vy = b.vy > 0 ? 0 : 0.5; return; }
+        if (frac(b, px, py) <= TOL) { b.x = px; b.y = py; return; }
+        // 4) закопався (спавн/телепорт у стіну): підняти до першого вільного місця
+        let y = b.y; for (let k = 0; k < 60; k++) { y -= 8; if (frac(b, b.x, y) <= TOL) { b.y = y; if (b.vy > 0) b.vy = 0; return; } }
+    }
+    let snap = null;
+    // викликається головним циклом навколо updateGame (після всіх надбудов, що рухають босів)
+    window.__zBF = {
+        pre() {
+            snap = null;
+            try {
+                if (gameState === 'PLAYING' && worldMap) {
+                    snap = [];
+                    for (const b of rpgBosses) if (b && !b.ghost && b.hp > 0) snap.push([b, b.x, b.y]);
+                    if (boss && !boss.ghost && boss.hp > 0 && boss.w) snap.push([boss, boss.x, boss.y]);
+                    if (libBoss && !libBoss.ghost && libBoss.hp > 0 && libBoss.w) snap.push([libBoss, libBoss.x, libBoss.y]);
+                }
+            } catch (e) { snap = null; window.__zbfE = String(e); }
+        },
+        post() { try { if (snap) for (const s of snap) fixOne(s[0], s[1], s[2]); } catch (e) { window.__zbfE = String(e); } snap = null; }
+    };
+})();
+        // ================= 📜 v46.9: ІГРОВІ ПОВЗУНКИ — без браузерних смуг прокрутки =================
+        (() => {
+            const st = document.createElement('style');
+            st.textContent = `*{scrollbar-width:none!important}*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.zsb{position:fixed;z-index:2147483000;width:6px;border-radius:6px;background:rgba(10,12,18,.35);opacity:0;pointer-events:none;transition:opacity .35s ease,width .15s ease,background .2s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.zsb.on{opacity:1}.zsb.hov,.zsb.drag{width:9px;pointer-events:auto;background:rgba(10,12,18,.55)}
+.zsb.on{pointer-events:auto}
+.zsb i{position:absolute;left:0;right:0;top:0;border-radius:6px;background:linear-gradient(180deg,#f0c04a,#a8741a);box-shadow:0 0 8px rgba(240,192,74,.45),inset 0 0 0 1px rgba(255,236,170,.35);transition:filter .15s,box-shadow .2s;min-height:24px}
+.zsb.hov i,.zsb.drag i{filter:brightness(1.18);box-shadow:0 0 12px rgba(255,214,102,.7),inset 0 0 0 1px rgba(255,236,170,.5)}`;
+            document.head.appendChild(st);
+            const M = new Map(); // el -> {bar,thumb,t}
+            let raf = 0;
+            const can = el => {
+                if (!el || el.nodeType !== 1) return false;
+                if (el === document.body || el === document.documentElement) return false;
+                const cs = getComputedStyle(el), o = cs.overflowY;
+                if (o !== 'auto' && o !== 'scroll') return false;
+                return el.scrollHeight > el.clientHeight + 3 && el.clientHeight > 40;
+            };
+            const find = t => { for (let e = t; e && e !== document.body; e = e.parentElement) if (can(e)) return e; return null; };
+            function mk(el) {
+                let r = M.get(el); if (r) return r;
+                const bar = document.createElement('div'); bar.className = 'zsb';
+                const th = document.createElement('i'); bar.appendChild(th); document.body.appendChild(bar);
+                r = { bar, th, t: 0, drag: false }; M.set(el, r);
+                bar.onmouseenter = () => { bar.classList.add('hov'); r.t = performance.now() + 1500; };
+                bar.onmouseleave = () => { if (!r.drag) bar.classList.remove('hov'); };
+                bar.addEventListener('pointerdown', e => {
+                    e.preventDefault(); e.stopPropagation();
+                    const br = bar.getBoundingClientRect(), tr = th.getBoundingClientRect();
+                    let off = tr.height / 2;
+                    if (e.clientY >= tr.top && e.clientY <= tr.bottom) off = e.clientY - tr.top;
+                    r.drag = true; bar.classList.add('drag');
+                    const mv = ev => {
+                        const h = br.height, th_h = tr.height, rng = el.scrollHeight - el.clientHeight;
+                        const p = Math.max(0, Math.min(1, (ev.clientY - br.top - off) / Math.max(1, h - th_h)));
+                        el.scrollTop = p * rng; r.t = performance.now() + 1500;
+                    };
+                    mv(e);
+                    const up = () => { r.drag = false; bar.classList.remove('drag'); removeEventListener('pointermove', mv); removeEventListener('pointerup', up); };
+                    addEventListener('pointermove', mv); addEventListener('pointerup', up);
+                });
+                return r;
+            }
+            function show(el, ms) {
+                const r = mk(el); r.t = performance.now() + (ms || 1100); if (!raf) raf = requestAnimationFrame(tick);
+            }
+            function place(el, r) {
+                const b = el.getBoundingClientRect();
+                if (!el.isConnected || el.offsetParent === null && getComputedStyle(el).position !== 'fixed' || b.width < 4 || !(el.scrollHeight > el.clientHeight + 3)) return false;
+                const pad = 3, h = b.height - pad * 2, vis = el.clientHeight, tot = el.scrollHeight;
+                const th = Math.max(24, h * vis / tot), rng = tot - vis, p = rng > 0 ? el.scrollTop / rng : 0;
+                r.bar.style.left = (b.right - (r.bar.classList.contains('hov') || r.drag ? 11 : 8)) + 'px';
+                r.bar.style.top = (b.top + pad) + 'px'; r.bar.style.height = h + 'px';
+                r.th.style.height = th + 'px'; r.th.style.transform = `translateY(${(h - th) * p}px)`;
+                return true;
+            }
+            function tick() {
+                raf = 0; const now = performance.now(); let any = false;
+                for (const [el, r] of M) {
+                    const live = now < r.t || r.drag;
+                    if (live && place(el, r)) { r.bar.classList.add('on'); any = true; }
+                    else {
+                        if (r.bar.classList.contains('on')) { r.bar.classList.remove('on'); r.bar.classList.remove('hov'); r.dead = now + 450; any = true; }
+                        else if (!live && (!el.isConnected || (r.dead && now > r.dead))) { if (!el.isConnected) { r.bar.remove(); M.delete(el); } }
+                    }
+                }
+                if (any || [...M.values()].some(r => r.bar.classList.contains('on'))) raf = requestAnimationFrame(tick);
+            }
+            addEventListener('scroll', e => { const t = e.target; if (t && t.nodeType === 1 && can(t)) show(t); }, true);
+            addEventListener('wheel', e => { const el = find(e.target); if (el) show(el); }, { passive: true, capture: true });
+            addEventListener('pointerover', e => { if (e.pointerType === 'touch') return; const el = find(e.target); if (el) show(el, 1300); }, { passive: true, capture: true });
+            addEventListener('touchmove', e => { const el = find(e.target); if (el) show(el, 900); }, { passive: true, capture: true });
+        })();
 // ===== v45.95 «Лабораторія експериментів» (68): змішуй інгредієнти — шукай нові суміші =====
 (function () {
     'use strict';
@@ -43068,6 +43184,1074 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     })(rpgHit);
     window.__zdrake = { ZD, drawDrake, WG, hall };
 })();
+// ===== v46.9 «Глибини й мурашник»: Морський змій (бос води) + Мурашник з Королевою (підземна колонія) =====
+(function () {
+    'use strict';
+    const Z = window.__zr, G = window.__zgear; if (!Z || !G) return;
+    const FX = () => window.__zpfx, T = i => RPG_TIERS[i], S = itemSprites, P = zfPoly, C = zfC, F = zfFr;
+    const cl = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a), ri = (a, b) => Math.floor(rnd(a, b + 1));
+    const banner = (a, b) => { try { v26Banner(a, b); } catch (e) { } };
+    const WID = v => v === 13 || v === 42;
+    const isW = (x, y) => { const r = worldMap[y]; return !!r && WID(r[x]); };
+    const say = (t, col) => { try { floatingTexts.push({ x: player.x - 40, y: player.y - 34, text: t, color: col || '#fff', life: 90 }); } catch (e) { } };
+    const mk = (id, name, ti, type, stat, desc) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, stat, desc }; };
+    function snd(type) {
+        if (!audioCtx || audioVolume <= 0) return; try {
+            if (type === 'splash') { noiseHit(0.7, 0.4, 'lowpass', 1800, 200, 1, { rev: 1 }); tone('sine', 110, 50, 0.6, 0.3); }
+            else if (type === 'roar') { noiseHit(0.9, 0.4, 'lowpass', 1200, 140, 1, { rev: 1 }); tone('sawtooth', 100, 44, 0.9, 0.22, { lp: 600, rev: 1 }); }
+            else if (type === 'spit') { noiseHit(0.3, 0.3, 'bandpass', 1400, 600, 1.1); tone('sine', 520, 260, 0.25, 0.1); }
+            else if (type === 'bubble') { tone('sine', 420, 760, 0.18, 0.08, { rev: 1 }); }
+            else if (type === 'skitter') { noiseHit(0.25, 0.22, 'bandpass', 2400, 1200, 1.4); }
+            else if (type === 'call') { tone('sawtooth', 180, 90, 0.8, 0.2, { lp: 900, rev: 1 }); noiseHit(0.8, 0.3, 'bandpass', 900, 300, 1.2, { rev: 1 }); }
+            else if (type === 'crack') { noiseHit(0.2, 0.3, 'highpass', 2600, 1400, 1); tone('triangle', 640, 300, 0.15, 0.08); }
+        } catch (e) { }
+    }
+
+    // ================= ПРЕДМЕТИ =================
+    mk('serpent_scale', 'Луска Морського Змія', 3, 'Ресурс', null, 'Гладка, бірюзова й завжди трохи волога. Падає лише з Морського Змія. З неї кують зброю припливу.');
+    mk('tide_core', 'Серце Припливу', 3, 'Ресурс', null, 'У глибині кришталю пульсує мала течія. Падає з Морського Змія; потрібне для зброї припливу.');
+    mk('ant_chitin', 'Хітин Мурахи', 2, 'Ресурс', null, 'Міцна червонувата пластина. Мурахи-солдати носять її як броню; з неї роблять найрізноманітніше спорядження.');
+    mk('royal_jelly', 'Маточне молочко', 3, 'Ресурс', null, 'Густе, золоте, тепле на дотик. Падає лише з Королеви Мурашника. Без нього не зібрати Розбирач спорядження.');
+    const PEARL = { name: 'Перлина Глибин', tier: 3, boss: 'serpent', desc: 'Будить Морського Змія. Використовуй лише в глибині Океану. Під час бою на глибині закінчується повітря — ловіть бульбашки, які змій залишає після кожного виринання.' };
+    SUMMON.serpent_pearl = PEARL; mk('serpent_pearl', PEARL.name, 3, '⚠️ Призив боса', 'Використати: ЛКМ (одноразово)', PEARL.desc);
+    try {
+        S.serpent_scale = generateSprite(cx => { P(cx, [[16, 3], [27, 9], [27, 22], [16, 29], [5, 22], [5, 9]], '#1d8a8a', '#06262a'); P(cx, [[16, 6], [24, 11], [24, 20], [16, 25], [8, 20], [8, 11]], '#3ec8b4', null); P(cx, [[16, 6], [24, 11], [16, 15], [8, 11]], '#9ff4e0', null); cx.strokeStyle = 'rgba(6,38,42,.6)'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(8, 16); cx.quadraticCurveTo(16, 21, 24, 16); cx.stroke(); });
+        S.tide_core = generateSprite(cx => { const g = cx.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(160,240,255,.6)'); g.addColorStop(1, 'rgba(60,160,230,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32); P(cx, [[16, 3], [26, 12], [22, 27], [10, 27], [6, 12]], '#1f64b4', '#06203a'); P(cx, [[16, 6], [23, 13], [20, 24], [12, 24], [9, 13]], '#4cb8f0', null); cx.strokeStyle = '#e6fbff'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(16, 16, 5, 0.4, 5); cx.stroke(); cx.fillStyle = '#fff'; cx.fillRect(12, 9, 2, 3); });
+        S.serpent_pearl = generateSprite(cx => { const g = cx.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(180,240,255,.5)'); g.addColorStop(1, 'rgba(60,200,230,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32); C(cx, 16, 17, 10, '#2a5a78', '#06202c', 1.4); C(cx, 16, 17, 8.4, '#cfeefa', null, 0); C(cx, 13, 14, 3.6, '#ffffff', null, 0); cx.strokeStyle = '#3ec8b4'; cx.lineWidth = 2; cx.beginPath(); cx.arc(16, 17, 12.5, 3.6, 5.8); cx.stroke(); P(cx, [[16, 2], [19, 6], [13, 6]], '#3ec8b4', '#06202c'); });
+        S.ant_chitin = generateSprite(cx => { P(cx, [[5, 20], [9, 8], [20, 5], [27, 13], [24, 26], [11, 28]], '#8a2a14', '#2a0a04'); P(cx, [[8, 19], [11, 10], [20, 8], [24, 14], [22, 24], [12, 26]], '#c8502a', null); P(cx, [[11, 11], [20, 9], [17, 14], [12, 15]], '#f0a070', null); cx.strokeStyle = 'rgba(42,10,4,.6)'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(10, 20); cx.lineTo(22, 17); cx.stroke(); });
+        S.royal_jelly = generateSprite(cx => { const g = cx.createRadialGradient(16, 18, 1, 16, 18, 14); g.addColorStop(0, 'rgba(255,220,100,.55)'); g.addColorStop(1, 'rgba(255,200,60,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32); F(cx, '#5a3a10', [[10, 5, 12, 4]]); P(cx, [[8, 11], [24, 11], [26, 26], [6, 26]], '#7a5a20', '#2a1a04'); P(cx, [[9, 12], [23, 12], [24, 25], [8, 25]], '#ffc83a', null); P(cx, [[10, 13], [14, 13], [12, 24], [10, 24]], 'rgba(255,255,255,.35)', null); F(cx, '#fff0b0', [[17, 15, 3, 3]]); });
+    } catch (e) { console.error('zdeep sprites', e); }
+
+    // ================= ЗБРОЯ =================
+    Object.assign(RPG_PAL, { ant: { H: '#ffe6c8', L: '#e8905a', M: '#a8381c', D: '#4a1408', O: '#140604' } });
+    const WGd = [
+        ['tide_blade', 'Клинок Припливу', 'melee', 'sword', 'tide', 208, 20, 3, {}, 'Широкий клинок із луски змія. Кожен вдалий удар збирає хвилю: стрибнувши на ворогів, вона вдаряє по всій групі. Кується з луски й Серця Припливу.', 'sword'],
+        ['tide_staff', 'Посох Течії', 'magic', 'staff', 'tide', 148, 24, 3, { mana: 14, orb: 'nebula', aoe: 78 }, 'Випускає водяний згусток, що вибухає бризками по сусідніх ворогах. Кується з луски й Серця Припливу.', 'staff'],
+        ['queen_sting', 'Жало Королеви', 'melee', 'dagger', 'ant', 74, 8, 3, {}, 'Швидкий кинджал із хітину: у відповідь на кожен удар ворог відчуває кислотний опік. Падає та кується з частин Королеви Мурашника.', 'dagger']
+    ];
+    for (const [id, nm, t, k, pal, dmg, cd, tier, opt, desc, spr] of WGd) {
+        WEAPONS[id] = Object.assign({ name: nm, t, k, pal, dmg, cd, tier, desc, aim: 1 }, opt); if (k === 'sword' || k === 'dagger') WEAPONS[id].aim = 0;
+        WEAPONS[id].nochest = 1; HELD_TOOLS[id] = 1; SWORD_GLOW[id] = 1; try { SWCOL[id] = RPG_PAL[pal].L; } catch (e) { }
+        G.mk(id, nm, tier, TYPE_ICON[t] + ' ' + TYPE_NAME[t] + ' · ' + KIND_NAME[k], 'Шкода: ' + dmg + (opt.mana ? ' · Мана: ' + opt.mana : ''), desc);
+        S[id] = G.wspr(spr, pal, pal === 'ant' ? '#ffd24a' : '#9fe6ff');
+    }
+    const rec = (result, req, lvl) => recipes.push({ result, count: 1, req, lvl });
+    rec('serpent_pearl', { gold_ingot: 8, cosmic_ingot: 3, storm_ingot: 3 }, 26);
+    rec('tide_blade', { serpent_scale: 8, tide_core: 1, cosmic_ingot: 8 }, 28);
+    rec('tide_staff', { serpent_scale: 7, tide_core: 1, star_thread: 6 }, 28);
+    rec('queen_sting', { ant_chitin: 10, royal_jelly: 1, cosmic_ingot: 5 }, 26);
+
+    // ================= ЗАГАЛЬНЕ: малювання ефектів =================
+    const ZS = { f: 0, air: 100, got: new Set(), warn: 0 };
+
+    // ================= 🐍 МОРСЬКИЙ ЗМІЙ =================
+    XBOSS.serpent = { name: '🐍 Левіафан, Морський Змій', hp: 380000, w: 230, h: 150, contact: 62, c2: 84, color: '#3ec8b4', bar: 'linear-gradient(90deg,#06262a,#1d8a8a 45%,#9ff4e0 70%,#e6fbff)', xp: 'serpent', def: [90, 120], fixed: 1, fly: 1 };
+    XP_BASE.serpent = 52000;
+    const ZEPs = { swb: 1, swave: 1, sbub: 1, sair: 1, acid: 1, apool: 1, qwave: 1, qmark: 1 };
+    Object.assign(EP2, ZEPs);
+    function surf(tx, ty) {
+        let y = ty; for (let i = 0; i < 26 && !isW(tx, y); i++) y++;
+        if (!isW(tx, y)) { y = ty; for (let i = 0; i < 26 && !isW(tx, y); i++) y--; }
+        if (!isW(tx, y)) return null; while (isW(tx, y - 1)) y--; return y;
+    }
+    const depthOf = (tx, sy) => { let n = 0; while (isW(tx, sy + n) && n < 90) n++; return n; };
+    function extent(tx, sy) { let l = tx, r = tx; while (isW(l - 1, sy + 2) && tx - l < 160) l--; while (isW(r + 1, sy + 2) && r - tx < 160) r++; return [l, r]; }
+    function lake(tx, ty) { // знаходить найближчу воду і перевіряє, чи вона достатньо глибока й широка
+        const O = currentWorld && currentWorld.ocn; if (!O || tx < O.x0 + 8 || tx > O.x1 - 8) return null;
+        for (let dx = 0; dx <= 8; dx = dx > 0 ? -dx : -dx + 1) for (let k = 0; k < 2; k++) {
+            const x = tx + (k ? -dx : dx), s = surf(x, ty); if (s === null) continue;
+            const dp = depthOf(x, s), e = extent(x, s); if (dp >= 8 && e[1] - e[0] >= 26) return { x, sy: s, dp, l: e[0], r: e[1] };
+        }
+        return null;
+    }
+    BOSS2.serpent = {
+        init(b) {
+            const R = BXR || player, L = lake(Math.floor((R.x + 12) / 32), Math.floor((R.y + 22) / 32)) || { x: Math.floor((R.x + 12) / 32), sy: Math.floor((R.y + 22) / 32), dp: 12, l: Math.floor(R.x / 32) - 20, r: Math.floor(R.x / 32) + 20 };
+            b.sy = L.sy * 32; b.dep = L.dp * 32; b.xl = (L.l + 2) * 32 + b.w / 2; b.xr = (L.r - 2) * 32 - b.w / 2; if (b.xr < b.xl) { b.xl = b.xr = (L.l + L.r) * 16; }
+            b.noclip = 1; b.st = 'intro'; b.stT = 110; b.face = 1; b.vuln = 0; b.last = ''; b.tx = 0; b.n = 0; b.dbl = 0; b.tele = 0; b.inv = 1;
+            b.x = cl(R.x + 12 - b.w / 2, b.xl - b.w / 2, b.xr - b.w / 2); b.y = b.sy + Math.min(b.dep - b.h - 20, 220);
+        },
+        upd(b, px, py) {
+            b.stT--; if (b.vuln > 0) b.vuln--;
+            if (b.t % 40 === 0) { const tx = Math.floor((b.x + b.w / 2) / 32), s = surf(tx, Math.floor(b.sy / 32) + 1); if (s !== null) { b.sy = s * 32; b.dep = depthOf(tx, s) * 32; } }
+            const cx = b.x + b.w / 2, dir = px > cx ? 1 : -1, p2 = b.phase === 2, top = b.sy - b.h * 0.72, low = b.sy + Math.max(10, Math.min(b.dep - b.h - 16, 230));
+            const moveX = sp => { const nx = cx + cl((px - cx) * 0.06, -sp, sp); b.x = cl(nx, b.xl, b.xr) - b.w / 2; };
+            const ease = (ty, k) => { b.y += (ty - b.y) * k; };
+            const mouth = () => ({ x: b.x + b.w / 2 + b.face * 96, y: b.y + 26 });
+            const fan = (n, spread, sp, dmg) => { const m = mouth(), a0 = Math.atan2(py - m.y, px - m.x); for (let i = 0; i < n; i++) { const a = a0 + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread); ep({ k: 'swb', x: m.x, y: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg, r: 8, life: 150 }); } snd('spit'); };
+            const bubbles = () => { for (let i = 0; i < 3; i++) ep({ k: 'sair', x: cx + rnd(-220, 220), y: b.sy + rnd(40, 120), vx: 0, vy: 0, life: 520, r: 14 }); };
+            if (b.st === 'intro') {
+                b.inv = 1; b.face = dir; ease(top, 0.035); if (b.stT === 50) { snd('splash'); shake = Math.max(shake, 10); try { const X = FX(); if (X) X.wave(cx, b.sy, '#cfeeff', 260, { life: 1.2 }); } catch (e) { } createParticles(cx, b.sy, '#cfeeff', 30, 6, 6, 40); }
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = 50; b.inv = 0; banner('🐍 ЛЕВІАФАН', 'Під водою вам не вистачить повітря — ловіть бульбашки!'); }
+            } else if (b.st === 'idle') {
+                b.inv = 0; b.face = dir; ease(top, 0.08); moveX(p2 ? 3.4 : 2.6);
+                if (b.stT <= 0) {
+                    const near = Math.abs(py - b.sy) < 150, W = [['spit', 40], ['slam', near ? 40 : 22], ['dive', 30 + (p2 ? 10 : 0)]];
+                    let pick = b.last; for (let g = 0; g < 4 && pick === b.last; g++) { let q = Math.random() * W.reduce((s, w) => s + w[1], 0); for (const w of W) { q -= w[1]; if (q <= 0) { pick = w[0]; break; } } }
+                    b.st = pick; b.last = pick; b.n++; b.dbl = 0; b.stT = { spit: 72, slam: 92, dive: 110 }[pick];
+                }
+            } else if (b.st === 'spit') {
+                b.face = dir; ease(top - 10, 0.1); moveX(1.4);
+                if (b.stT === 36) { fan(p2 ? 5 : 3, p2 ? 0.7 : 0.46, 8.6, 46); }
+                if (p2 && b.stT === 18) fan(3, 0.36, 9.4, 46);
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = p2 ? 36 : 54; }
+            } else if (b.st === 'slam') {
+                b.tele = b.stT > 30 ? 1 : 0; if (b.stT > 38) { ease(top - 46, 0.09); b.face = dir; moveX(1.2); }
+                if (b.stT === 30) { ease(top + 20, 0.6); }
+                if (b.stT === 30 || (p2 && b.stT === 12)) {
+                    const x0 = b.x + b.w / 2; snd('splash'); shake = Math.max(shake, 12);
+                    for (const s of [-1, 1]) ep({ k: 'swave', x: x0 + s * 90, y: b.sy, sy: b.sy, vx: s * (p2 ? 6.4 : 5.4), dmg: 54, r: 26, life: 110 });
+                    createParticles(x0, b.sy, '#cfeeff', 34, 6, 6, 40);
+                }
+                if (b.stT < 30) ease(top + 10, 0.12);
+                if (b.stT <= 0) { b.tele = 0; b.st = 'recover'; b.stT = 70; b.vuln = 70; }
+            } else if (b.st === 'dive') {
+                b.face = dir; if (b.stT > 70) { ease(low, 0.07); if (b.stT < 100) b.inv = 1; moveX(2); b.tx = px; }
+                else {
+                    b.inv = 1; ease(low, 0.2); if (b.stT === 70) { b.tx = px; snd('bubble'); }
+                    b.x += (cl(b.tx, b.xl, b.xr) - b.w / 2 - b.x) * 0.14;
+                    if (b.stT % 8 === 0) ep({ k: 'sbub', x: b.tx, y: b.sy, vx: 0, vy: 0, life: 20, r: 40 });
+                }
+                if (b.stT <= 0) { b.st = 'burst'; b.stT = 52; snd('splash'); }
+            } else if (b.st === 'burst') {
+                b.inv = 0; if (b.stT > 38) { ease(top - 86, 0.34); } else ease(top, 0.1);
+                if (b.stT === 48) { shake = Math.max(shake, 14); createParticles(cx, b.sy, '#cfeeff', 46, 7, 7, 46); try { const X = FX(); if (X) X.wave(cx, b.sy, '#cfeeff', 300, { life: 1.1 }); } catch (e) { } fan(p2 ? 5 : 3, 0.9, 8.6, 46); bubbles(); }
+                if (b.stT <= 0) { if (p2 && !b.dbl) { b.dbl = 1; b.st = 'dive'; b.stT = 74; } else { b.st = 'recover'; b.stT = 80; b.vuln = 80; } }
+            } else if (b.st === 'recover') {
+                b.inv = 0; b.face = dir; ease(top, 0.1); moveX(1.4); if (b.stT <= 0) { b.st = 'idle'; b.stT = 30; }
+            }
+        },
+        local(b) {
+            const X = FX(); if (!X || ZS.f % 6) return; const cx = b.x + b.w / 2;
+            if (b.st !== 'dive') X.emit(cx + rnd(-100, 100), b.sy - 2, { vx: rnd(-0.3, 0.3), vy: -rnd(0.4, 1.2), life: 0.6, s: 2.6, c: '#cfeeff', a: 0.7, g: 0.03 });
+        },
+        loot(b, drop) {
+            drop('serpent_scale', 8 + ri(0, 4)); drop('tide_core', 1 + (Math.random() < 0.35 ? 1 : 0)); drop('gold_coin', 60 + ri(0, 30)); drop('gold_ingot', 8); drop('cosmic_ingot', 4); drop('life_potion', 5); drop('mana_potion', 4);
+            if (Math.random() < 0.22) drop(['tide_blade', 'tide_staff'][ri(0, 1)], 1);
+            if (Math.random() < 0.4) drop('serpent_pearl', 1);
+        }
+    };
+
+    // ---------- виклик ----------
+    useSummon = (function (o) {
+        return function (it) {
+            if (!it || it.id !== 'serpent_pearl') return o.apply(this, arguments);
+            const fail = t => { say(t, '#e67e22'); try { bossSound('warn'); } catch (e) { } return true; };
+            if (rpgBosses.length || boss || libBoss) return fail('Бій уже триває!');
+            const L = lake(Math.floor((player.x + 12) / 32), Math.floor((player.y + 22) / 32)); if (!L) { const O = currentWorld && currentWorld.ocn; return fail(O ? 'Левіафан відгукується лише в глибині океану (' + (Math.floor((player.x + 12) / 32) < O.x0 ? 'на схід' : 'на захід') + ', ~' + Math.abs(Math.round((O.x0 + O.x1) / 2 - (player.x + 12) / 32)) + ' блоків).' : 'У цьому світі немає океану.'); }
+            it.count--; if (it.count <= 0) inventory[selectedHotbarSlot] = null; updateInventoryUI(); spawnXBoss('serpent'); return true;
+        };
+    })(useSummon);
+    bossReduce = (function (o) { return function (b, dmg, opt) { let r = o.apply(this, arguments); if (b.k === 'serpent') { if (b.st === 'intro') return 1; if (b.vuln > 0) r = Math.round(r * 1.25); } else if (b.k === 'antqueen') { if (b.st === 'intro') return 1; const sh = b.eg > 0 ? Math.min(0.9, 0.18 * b.eg) : 0; r = Math.max(1, Math.round(r * (1 - sh) * (b.vuln > 0 ? 1.4 : 1))); } return r; }; })(bossReduce);
+
+    // повітря під водою тепер у zocean.js (спільна система для всіх водойм)
+    Z.TICK.push(() => { ZS.f++; });
+
+    // ---------- снаряди змія ----------
+    function epUpdA(e) {
+        const px = player.x + 12, py = player.y + 22, host = isHostSim(); e.t++; let dead = e.t > e.life; const k = e.k, tx = Math.floor(e.x / 32), ty = Math.floor(e.y / 32), X = FX();
+        if (k === 'swb') {
+            e.x += e.vx; e.y += e.vy; e.vy += 0.025; if (e.t % 2 === 0) createParticles(e.x, e.y, '#9fe6ff', 1, 0.5, 3, 14);
+            const hit = Math.hypot(px - e.x, py - e.y) < e.r + 16;
+            if (hit || isSolid(tx, ty) || (e.t > 10 && isW(tx, ty))) { dead = true; createParticles(e.x, e.y, '#cfeeff', 8, 3, 3, 22); if (hit) epHit(e, 'Вас збив водяний струмінь Левіафана', '🌊', { pc: '#9fe6ff', col: '#cfeeff' }); }
+        } else if (k === 'swave') {
+            e.x += e.vx; e.y = e.sy; if (e.t % 3 === 0) createParticles(e.x, e.sy - 6, '#cfeeff', 1, 1.2, 4, 18);
+            if (Math.abs(px - e.x) < e.r + 12 && py > e.sy - 76 && py < e.sy + 40) { dead = true; epHit(e, 'Вас змила хвиля Левіафана', '🌊', { pc: '#9fe6ff', col: '#cfeeff' }); }
+            if (!isW(tx, Math.floor(e.sy / 32) + 1) || isSolid(tx, Math.floor((e.sy - 10) / 32))) dead = true;
+        } else if (k === 'sair') {
+            if (ZS.got.has(e.u)) return false; e.y -= 0.3; e.x += Math.sin(e.t * 0.08 + e.u) * 0.4;
+            if (Math.hypot(px - e.x, py - 10 - e.y) < 30) { ZS.got.add(e.u); ZS.air = 100; say('💨 Повітря!', '#bff4ff'); snd('bubble'); createParticles(e.x, e.y, '#e6fbff', 10, 2, 3, 24); return false; }
+            if (!isW(tx, ty)) dead = true;
+        } else if (k === 'acid') {
+            e.x += e.vx; e.y += e.vy; e.vy += 0.34; if (e.t % 2 === 0) createParticles(e.x, e.y, '#9be84a', 1, 0.5, 4, 18);
+            const hit = Math.hypot(px - e.x, py - e.y) < e.r + 16;
+            if (hit || isSolid(tx, ty)) { dead = true; createParticles(e.x, e.y, '#b8ff5a', 10, 3, 4, 26); if (hit) epHit(e, 'Вас обпекла кислота Королеви Мурашника', '🧪', { dot: 1, col: '#b8ff5a', pc: '#9be84a' }); if (host) ep({ k: 'apool', x: e.x, y: mxGround(e.x, e.y - 20), life: 220, r: 48, dmg: 14 }); }
+        } else if (k === 'apool') {
+            if (e.t % 5 === 0) createParticles(e.x + rnd(-e.r, e.r), e.y - 2, '#9be84a', 1, 0.4, 3, 20);
+            if (Math.abs(px - e.x) < e.r + 8 && Math.abs(py - e.y) < 44 && e.t % 24 === 0) bHurt(e.dmg, 'Вас роз’їла кислота Королеви Мурашника', '🧪', { dot: 1, col: '#b8ff5a', pc: '#9be84a' });
+        } else if (k === 'qwave') {
+            e.x += e.vx; if (e.t % 3 === 0) createParticles(e.x, e.y - 4, '#a8785a', 2, 1.4, 4, 20);
+            if (Math.abs(px - e.x) < e.r + 10 && py > e.y - 66 && py < e.y + 24) { dead = true; epHit(e, 'Вас розчавила ударна хвиля Королеви Мурашника', '💥', { pc: '#c8905a' }); }
+            if (isSolid(Math.floor((e.x + Math.sign(e.vx) * 14) / 32), Math.floor((e.y - 10) / 32))) dead = true;
+        } else if (k === 'sbub') { if (e.t % 3 === 0 && X) X.emit(e.x + rnd(-30, 30), e.y + rnd(0, 120), { vx: 0, vy: -rnd(0.8, 1.6), life: 0.6, s: 3, c: '#e6fbff', a: 0.8, g: -0.01 }); }
+        else if (k === 'qmark') { /* лише попередження */ }
+        return !dead;
+    }
+    updEP2 = (function (o) { return function (e) { if (ZEPs[e.k]) return epUpdA(e); return o.apply(this, arguments); }; })(updEP2);
+    function epDrawA(e) {
+        const k = e.k, t = e.t || 0; ctx.save();
+        if (k === 'swb') { const a = Math.atan2(e.vy, e.vx); ctx.translate(e.x, e.y); ctx.rotate(a); glowC(0, 0, 28, '#8fe6ff', 0.55); ctx.fillStyle = '#e6fbff'; ctx.strokeStyle = '#1d7aa8'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(14, 0); ctx.quadraticCurveTo(2, -9, -12, 0); ctx.quadraticCurveTo(2, 9, 14, 0); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#7ad0f0'; ctx.beginPath(); ctx.ellipse(-1, 0, 7, 3, 0, 0, 7); ctx.fill(); }
+        else if (k === 'swave') { const s = Math.sign(e.vx) || 1; ctx.translate(e.x, e.sy); ctx.scale(s, 1); const f = Math.min(1, t / 8) * (t > e.life - 20 ? (e.life - t) / 20 : 1); ctx.globalAlpha = 0.9 * f; const g = ctx.createLinearGradient(0, -48, 0, 4); g.addColorStop(0, 'rgba(230,251,255,.95)'); g.addColorStop(1, 'rgba(60,170,220,.5)'); ctx.fillStyle = g; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-30, 4); ctx.quadraticCurveTo(-12, -6, 6, -48 - Math.sin(t * 0.4) * 4); ctx.quadraticCurveTo(14, -30, 32, -8); ctx.lineTo(34, 4); ctx.closePath(); ctx.fill(); ctx.stroke(); glowC(0, -20, 50, '#8fe6ff', 0.25 * f); }
+        else if (k === 'sbub') { /* частинки в epUpdA */ const f = 0.3 + 0.4 * Math.abs(Math.sin(t * 0.5)); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(0, e.y, 0, e.y + 260); g.addColorStop(0, 'rgba(160,240,255,' + f * 0.5 + ')'); g.addColorStop(1, 'rgba(160,240,255,0)'); ctx.fillStyle = g; ctx.fillRect(e.x - 42, e.y, 84, 260); }
+        else if (k === 'sair') { if (ZS.got.has(e.u)) { ctx.restore(); return; } const r = 11 + Math.sin(t * 0.14) * 1.2; glowC(e.x, e.y, 26, '#bff4ff', 0.55); ctx.fillStyle = 'rgba(210,248,255,.35)'; ctx.strokeStyle = '#e6fbff'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(e.x - r * 0.35, e.y - r * 0.35, r * 0.25, 0, 7); ctx.fill(); }
+        else if (k === 'acid') { glowC(e.x, e.y, 30, '#9be84a', 0.6); ctx.fillStyle = '#4a7a1a'; ctx.beginPath(); ctx.arc(e.x, e.y, 10, 0, 7); ctx.fill(); ctx.fillStyle = '#b8ff5a'; ctx.beginPath(); ctx.arc(e.x - 1, e.y - 1, 7.4, 0, 7); ctx.fill(); ctx.fillStyle = '#eaffb0'; ctx.beginPath(); ctx.arc(e.x - 3, e.y - 3, 2.6, 0, 7); ctx.fill(); }
+        else if (k === 'apool') { const f = Math.min(1, t / 10) * (t > e.life - 30 ? (e.life - t) / 30 : 1); ctx.translate(e.x, e.y); ctx.globalAlpha = f; const g = ctx.createRadialGradient(0, 0, 4, 0, 0, e.r); g.addColorStop(0, 'rgba(184,255,90,.75)'); g.addColorStop(1, 'rgba(100,170,40,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, e.r, 12, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(234,255,176,.7)'; for (let i = 0; i < 4; i++) { const ph = (t * 0.03 + i * 0.25) % 1; ctx.beginPath(); ctx.arc(Math.sin(i * 2.1) * e.r * 0.6, -ph * 18, 2 + (1 - ph) * 2, 0, 7); ctx.fill(); } }
+        else if (k === 'qwave') { const s = Math.sign(e.vx) || 1; ctx.translate(e.x, e.y); ctx.scale(s, 1); const f = t > e.life - 16 ? (e.life - t) / 16 : 1; ctx.globalAlpha = 0.9 * f; const g = ctx.createLinearGradient(0, -52, 0, 6); g.addColorStop(0, 'rgba(255,220,170,.9)'); g.addColorStop(1, 'rgba(160,100,60,.4)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-26, 6); ctx.lineTo(-6, -22); ctx.lineTo(8, -52); ctx.lineTo(20, -14); ctx.lineTo(34, 6); ctx.closePath(); ctx.fill(); glowC(0, -16, 44, '#ffb070', 0.22 * f); }
+        ctx.restore();
+    }
+    drawBoss2EP = (function (o) { return function (t) { o.apply(this, arguments); for (const e of rpgEP) if (ZEPs[e.k]) epDrawA(e); }; })(drawBoss2EP);
+
+    // ---------- малювання змія ----------
+    function drawSerpent(b, t, o) {
+        o = o || {}; const cx = b.x + b.w / 2, face = b.face || 1, st = b.st, sy = b.sy, N = 16;
+        const open = st === 'spit' ? (b.stT < 56 && b.stT > 14 ? 1 : 0.3) : st === 'slam' ? (b.stT > 30 ? 0.9 : 0.1) : st === 'burst' ? 1 : 0.15 + 0.1 * Math.sin(t * 3);
+        const pts = []; const ref = Math.min(sy + 6, b.y + 118);
+        for (let i = 0; i <= N; i++) {
+            let x, y; if (i <= 5) { x = cx + face * (84 - i * 15 - (i > 3 ? (i - 3) * 6 : 0)); y = b.y + 28 + [0, 14, 38, 70, 100, 118][i] + Math.sin(t * 2.4 + i * 0.6) * 3; }
+            else { x = cx - face * (6 + (i - 5) * 24); y = ref - Math.max(0, Math.sin((i - 5) * 0.95 + t * 2.1)) * 30 * (1 - (i - 5) / 14) + 8; }
+            pts.push([x, y]);
+        }
+        const rad = i => i === 0 ? 20 : 24 - i * 0.95 + (i < 6 ? 2 : 0);
+        const body = () => {
+            for (let i = N; i >= 0; i--) {
+                const [x, y] = pts[i], r = Math.max(7, rad(i)); const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, 1, x, y, r * 1.1); g.addColorStop(0, '#6fe0c8'); g.addColorStop(0.55, '#1d8a8a'); g.addColorStop(1, '#0a3a46');
+                ctx.fillStyle = g; ctx.strokeStyle = '#04181e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = 'rgba(230,251,235,.5)'; ctx.beginPath(); ctx.ellipse(x + face * 1, y + r * 0.45, r * 0.7, r * 0.36, 0, 0, 7); ctx.fill();
+                if (i % 2 === 0 && i > 0) { ctx.fillStyle = '#e8903a'; ctx.beginPath(); ctx.moveTo(x - 6, y - r + 3); ctx.lineTo(x - 1, y - r - 14 - Math.sin(t * 3 + i) * 2); ctx.lineTo(x + 6, y - r + 3); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#4a1c04'; ctx.lineWidth = 1; ctx.stroke(); }
+                if (i > 0) { ctx.strokeStyle = 'rgba(4,24,30,.45)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r * 0.78, 0.6, 2.6); ctx.stroke(); }
+            }
+            // голова
+            const [hx, hy] = pts[0]; ctx.save(); ctx.translate(hx, hy); ctx.scale(face, 1); ctx.rotate(-0.12 + (st === 'slam' && b.stT > 30 ? -0.4 : 0));
+            glowC(10, -2, 70, '#3ec8b4', 0.22);
+            ctx.save(); ctx.translate(-2, 8); ctx.rotate(open * 0.6); ctx.fillStyle = '#0f5a66'; ctx.strokeStyle = '#04181e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(52, 6); ctx.lineTo(56, 12); ctx.lineTo(4, 16); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff6e0'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(14 + i * 10, 2); ctx.lineTo(17 + i * 10, -6); ctx.lineTo(20 + i * 10, 3); ctx.fill(); } ctx.restore();
+            if (open > 0.5) { ctx.fillStyle = 'rgba(160,240,255,.5)'; ctx.beginPath(); ctx.ellipse(36, 6, 18, 6 + open * 6, 0, 0, 7); ctx.fill(); }
+            const hg = ctx.createLinearGradient(0, -22, 0, 14); hg.addColorStop(0, '#7ff0d4'); hg.addColorStop(0.5, '#1d8a8a'); hg.addColorStop(1, '#0a3a46'); ctx.fillStyle = hg; ctx.strokeStyle = '#04181e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-16, -4); ctx.quadraticCurveTo(-12, -24, 10, -20); ctx.lineTo(56, -6); ctx.quadraticCurveTo(64, 2, 54, 8); ctx.lineTo(8, 12); ctx.quadraticCurveTo(-14, 12, -16, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#e8903a'; ctx.strokeStyle = '#4a1c04'; ctx.lineWidth = 1.4; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-6, -14 + s * 2); ctx.quadraticCurveTo(-30, -34 + s * 10, -46, -28 + s * 14); ctx.lineTo(-24, -10 + s * 4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+            ctx.fillStyle = b.vuln > 0 ? '#ff6a5a' : '#ffe58a'; glowC(20, -8, 16, b.vuln > 0 ? '#ff6a5a' : '#ffe58a', 0.6); ctx.beginPath(); ctx.moveTo(10, -10); ctx.lineTo(28, -8); ctx.lineTo(12, -2); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#04181e'; ctx.beginPath(); ctx.ellipse(48, -2, 2.4, 1.6, 0, 0, 7); ctx.fill();
+            ctx.restore();
+        };
+        ctx.save();
+        // над водою
+        ctx.save(); ctx.beginPath(); ctx.rect(cx - 520, sy - 700, 1040, 700); ctx.clip(); body(); ctx.restore();
+        // під водою — напівпрозоро
+        ctx.save(); ctx.beginPath(); ctx.rect(cx - 520, sy, 1040, 700); ctx.clip(); ctx.globalAlpha = b.inv ? 0.42 : 0.55; body(); ctx.restore();
+        // кільця на воді
+        if (st !== 'dive') { ctx.strokeStyle = 'rgba(230,251,255,.55)'; ctx.lineWidth = 2; for (let k = 0; k < 3; k++) { const ph = (t * 0.6 + k / 3) % 1; ctx.globalAlpha = 0.6 * (1 - ph); ctx.beginPath(); ctx.ellipse(pts[4][0], sy + 2, 30 + ph * 90, 5 + ph * 10, 0, 0, 7); ctx.stroke(); } }
+        if (b.tele && b.stT > 30) { ctx.globalAlpha = 0.5 + 0.4 * Math.abs(Math.sin(t * 12)); ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.beginPath(); ctx.moveTo(cx - 320, sy - 6); ctx.lineTo(cx + 320, sy - 6); ctx.stroke(); }
+        ctx.restore();
+    }
+    drawBoss2 = (function (o) { return function (b, t) { if (b.k === 'serpent') return drawSerpent(b, t); if (b.k === 'antqueen') return drawQueen(b, t); return o.apply(this, arguments); }; })(drawBoss2);
+
+    // ================= 🐜 МУРАШНИК =================
+    XBOSS.antqueen = { name: '🐜 Королева Мурашника', hp: 330000, w: 150, h: 100, contact: 56, c2: 78, color: '#e8903a', bar: 'linear-gradient(90deg,#2a0a04,#a8381c 45%,#ffc83a 75%,#fff0b0)', xp: 'antqueen', def: [80, 110], fixed: 1 };
+    XP_BASE.antqueen = 44000;
+    const AM = {
+        ant_worker: { n: 'Гігантська мураха', w: 32, h: 18, hp: 95, dmg: 11, xp: 22, col: '#a8381c', sight: 420, spd: 1.55, cause: 'Вас закусали мурахи', k: 'w' },
+        ant_soldier: { n: 'Мураха-солдат', w: 46, h: 28, hp: 300, dmg: 24, xp: 70, col: '#5a1c10', sight: 480, spd: 1.35, cause: 'Вас розірвав мураха-солдат', k: 's' },
+        ant_egg: { n: 'Яйце мурашника', w: 26, h: 32, hp: 90, dmg: 0, xp: 12, col: '#f3ead0', sight: 0, spd: 0, cause: '', k: 'e' }
+    };
+    window.ZEGG_MOBS = window.ZEGG_MOBS || {}; for (const k in AM) if (k !== 'ant_egg') window.ZEGG_MOBS[k] = { hp: AM[k].hp, w: AM[k].w, h: AM[k].h, col: AM[k].col };
+    for (const k in AM) { XP_BASE[k] = AM[k].xp; V18DMG[k] = AM[k].dmg; V376_NAV.add(k); if (typeof V373_MOBN !== 'undefined') V373_MOBN[k] = AM[k].n; }
+    v16MobCol = (function (o) { return function (t) { return AM[t] ? AM[t].col : o(t); }; })(v16MobCol);
+    v18Sp = (function (o) { return function (t) { return !!AM[t] || o(t); }; })(v18Sp);
+    v18Cause = (function (o) { return function (t) { return AM[t] ? AM[t].cause : o(t); }; })(v18Cause);
+
+    function legs(c, s, ph, run, col, w) {
+        c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round';
+        for (let i = 0; i < 3; i++) for (const sd of [0, 1]) {
+            const a = ph + i * 2.1 + sd * Math.PI, lift = run ? Math.max(0, Math.sin(a)) * 3 : 0, bx = (i - 1) * 5.6 * s, fx = bx + (i - 1) * 4 * s + (run ? Math.cos(a) * 4 : 0);
+            c.beginPath(); c.moveTo(bx, -7 * s); c.lineTo(fx + (i - 1) * 2, -12 * s - lift * 0.6); c.lineTo(fx + (i - 1) * 3, -1 - lift); c.stroke();
+        }
+    }
+    function drawAnt(c, m, face, D) {
+        const t = performance.now() / 1000, s = D.w / 32, run = Math.abs(m.vx || 0) > 0.25, ph = run ? m.x * 0.28 : t * 1.2, sol = D.k === 's', cast = m._wind || 0;
+        c.translate(0, D.h / 2); c.scale(face, 1);
+        c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(0, 0, 14 * s, 2.6, 0, 0, 7); c.fill();
+        const dk = sol ? '#1c0804' : '#2a0e06', b1 = sol ? '#3a1410' : '#8a3018', b2 = sol ? '#7a2a1a' : '#c8502a', hi = sol ? '#c8603a' : '#f0a070';
+        c.save(); c.scale(s * 1.08, s * 1.08); legs(c, 1, ph, run, dk, 2.2); c.restore();
+        c.save(); c.scale(s, s);
+        const bob = run ? Math.sin(ph * 2) * 0.7 : Math.sin(t * 2) * 0.4;
+        // черевце
+        const g1 = c.createRadialGradient(-12, -13 + bob, 1, -11, -10 + bob, 11); g1.addColorStop(0, b2); g1.addColorStop(1, b1); c.fillStyle = g1; c.strokeStyle = dk; c.lineWidth = 1.5; c.beginPath(); c.ellipse(-11, -10 + bob, 9.5, 7.5, -0.12, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.16)'; c.beginPath(); c.ellipse(-13, -13 + bob, 5, 2.4, -0.2, 0, 7); c.fill(); c.strokeStyle = 'rgba(28,8,4,.4)'; c.lineWidth = 1; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(-11 - i * 1.8, -10 + bob, 7.4 - i * 0.7, -1.2, 1.2); c.stroke(); }
+        // грудна клітка
+        c.fillStyle = g1; c.strokeStyle = dk; c.lineWidth = 1.5; c.beginPath(); c.ellipse(1, -11 + bob, 5, 4.6, 0, 0, 7); c.fill(); c.stroke();
+        // голова
+        const hx = 10, hy = -11 + bob - (cast ? 1.5 : 0), hr = sol ? 6.6 : 5.2; const gh = c.createRadialGradient(hx - 1, hy - 2, 1, hx, hy, hr + 1); gh.addColorStop(0, hi); gh.addColorStop(1, b1); c.fillStyle = gh; c.beginPath(); c.ellipse(hx, hy, hr, hr * 0.88, 0, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = sol ? '#ffb02a' : '#ffe8a0'; c.beginPath(); c.arc(hx + 2, hy - 1.6, 1.7, 0, 7); c.fill(); c.fillStyle = '#140604'; c.beginPath(); c.arc(hx + 2.4, hy - 1.6, 0.8, 0, 7); c.fill();
+        // щелепи
+        const op = cast ? 0.9 : 0.15 + Math.max(0, Math.sin(t * 5 + m.x * 0.1)) * 0.2; c.strokeStyle = dk; c.lineWidth = 2; c.lineCap = 'round';
+        for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(hx + hr - 1, hy + 1.5); c.quadraticCurveTo(hx + hr + 4, hy + 1 + sd * (2 + op * 4), hx + hr + 3, hy + sd * (0.5 + op * 5)); c.stroke(); }
+        // вусики
+        c.lineWidth = 1.3; for (const sd of [0, 1]) { const w = Math.sin(t * 6 + sd * 2 + m.x * 0.1) * 1.6; c.beginPath(); c.moveTo(hx + 3, hy - 3.6); c.quadraticCurveTo(hx + 8 + w, hy - 10, hx + 13 + w, hy - 8 - sd * 2); c.stroke(); }
+        if (sol) { c.fillStyle = '#ffc83a'; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-14 + i * 5, -16 + bob); c.lineTo(-12 + i * 5, -20 + bob); c.lineTo(-10 + i * 5, -16 + bob); c.fill(); } }
+        c.restore();
+    }
+    function drawEgg(c, m, face, D) {
+        const t = performance.now() / 1000, hat = m._hat || 0, sh = hat > 0 ? Math.sin(t * 40) * (hat / 60) * 2 : 0, pul = 1 + Math.sin(t * 2.2 + m.x * 0.05) * 0.03;
+        c.translate(sh, D.h / 2); c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(0, 0, 12, 2.6, 0, 0, 7); c.fill();
+        try { glowC(0, -16, 30, '#ffe6a0', 0.18 + 0.08 * Math.sin(t * 2.2 + m.x * 0.05) + hat / 300); } catch (e) { }
+        c.save(); c.translate(0, -15); c.scale(pul, pul);
+        const g = c.createRadialGradient(-4, -6, 1, 0, 0, 16); g.addColorStop(0, '#fffaf0'); g.addColorStop(0.6, '#f0e2bc'); g.addColorStop(1, '#bda878');
+        c.fillStyle = g; c.strokeStyle = '#6a5a38'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(0, 0, 11, 15, 0, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = 'rgba(120,90,50,.28)'; for (const [x, y, r] of [[-4, 4, 1.6], [3, -4, 1.2], [4, 6, 1.4], [-2, -8, 1]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+        c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(-4, -6, 2.4, 4.6, 0.3, 0, 7); c.fill();
+        if (hat > 0) { c.strokeStyle = '#4a3418'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-6, -4); c.lineTo(-1, 0); c.lineTo(-4, 5); c.moveTo(1, 0); c.lineTo(6, -3); c.stroke(); }
+        c.restore();
+    }
+    V377_DRAW.ant_worker = (c, m, f) => drawAnt(c, m, f, AM.ant_worker); V377_DRAW.ant_soldier = (c, m, f) => drawAnt(c, m, f, AM.ant_soldier); V377_DRAW.ant_egg = (c, m, f) => drawEgg(c, m, f, AM.ant_egg);
+
+    // ---------- ШІ мурах ----------
+    const hop = (m, d, dy) => { try { v377Hop(m, d, dy); } catch (e) { } };
+    const wander = (m, s) => { try { v377Wander(m, s); } catch (e) { } };
+    function steerAnt(m, pDist) {
+        const D = AM[m.type], cx = m.x + m.width / 2, cy = m.y + m.height / 2, Tg = v17T(cx, cy), dyT = Tg.y - cy, adT = Math.hypot(Tg.x - cx, dyT), dir = pDist > 0 ? 1 : -1;
+        m._aggro = Math.max(0, (m._aggro || 0) - 1); m._lc = Math.max(-1, (m._lc || 0) - 1);
+        if (D.k === 'e') { // яйце: стоїть, а коли поруч довго — вилуплюється
+            m.vx = 0; if (adT < 96 && Math.abs(dyT) < 70) { m._hat = (m._hat || 0) + 1; if (m._hat === 30) snd('crack'); if (m._hat >= 150 && isHostSim()) { m._hat = 0; m.hp = 0; m._hatched = 1; for (let i = 0; i < 2; i++) spawnAnt('ant_worker', cx + (i ? 18 : -18), m.y + m.height); } } else m._hat = Math.max(0, (m._hat || 0) - 2);
+            return;
+        }
+        const col = inColony(cx, cy), sight = col ? D.sight * 1.5 : D.sight;
+        if (adT < sight && Math.abs(dyT) < 360) { if (m._aggro < 5) for (const q of mobs) if (q !== m && AM[q.type] && q.type !== 'ant_egg' && Math.abs(q.x - cx) < 360 && Math.abs(q.y - cy) < 220) q._aggro = Math.max(q._aggro || 0, 240); m._aggro = 300; }
+        const chase = m._aggro > 0 && adT < 1200; if (!chase) { wander(m, 0.6); return; }
+        if (m._wind > 0) { m._wind--; m.vx = 0; if (m._wind === 0) { m.vx = dir * 5.4; m.vy = -5.6; m._lc = 100 + (Math.random() * 40 | 0); } return; }
+        m.vx = dir * D.spd * (adT < 220 ? 1.25 : 1);
+        if (D.k === 's' && m.onGround && m._lc <= 0 && adT > 70 && adT < 230 && Math.abs(dyT) < 70) { m._wind = 24; snd('skitter'); }
+        hop(m, dir, dyT);
+    }
+    v375Steer = (function (o) { return function (m, pDist) { if (AM[m.type]) return steerAnt(m, pDist); return o.apply(this, arguments); }; })(v375Steer);
+
+    function spawnAnt(type, x, yFeet) {
+        const D = AM[type], hp = Math.round(D.hp * rpgMobHp()), m = { type, x: x - D.w / 2, y: yFeet - D.h - 0.5, vx: 0, vy: 0, hp, maxHp: hp, width: D.w, height: D.h, frame: Math.random() * 6, onGround: true, _alert: 0 };
+        if (type !== 'ant_egg') m._aggro = 200; mobs.push(m); return m;
+    }
+    const ant = () => (currentWorld && currentWorld.ant) || null;
+    function inColony(x, y) { const A = ant(); return !!A && x > A.bx0 * 32 && x < A.bx1 * 32 && y > A.by0 * 32 && y < A.by1 * 32; }
+
+    v18Loot = (function (o) {
+        return function (m) {
+            o.apply(this, arguments);
+            try {
+                if (!m || !AM[m.type]) return; const A = ant(), cx = m.x + m.width / 2, cy = m.y + m.height / 3, d = (id, n) => { if (ITEM_METADATA[id]) v20Drop(id, n, cx, cy, (Math.random() - 0.5) * 4); };
+                if (m.type === 'ant_egg') { if (A && m.slot >= 0 && A.eggs[m.slot]) A.eggs[m.slot].d = 1; if (!m._hatched) { d('gold_coin', ri(2, 5)); createParticles(cx, cy, '#f3ead0', 16, 3, 4, 30); snd('crack'); } }
+                else { if (Math.random() < (m.type === 'ant_soldier' ? 0.4 : 0.14)) d('ant_chitin', 1); d('gold_coin', ri(2, 6)); if (Math.random() < 0.04) d('life_potion', 1); }
+            } catch (e) { rpgErr(e); }
+        };
+    })(v18Loot);
+    function antIcon(type) {
+        const cv = document.createElement('canvas'); cv.width = 88; cv.height = 88; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+        try { const D = AM[type]; c.translate(44, 40); c.scale(type === 'ant_egg' ? 1.9 : (type === 'ant_soldier' ? 1.35 : 1.7), type === 'ant_egg' ? 1.9 : (type === 'ant_soldier' ? 1.35 : 1.7)); (type === 'ant_egg' ? drawEgg : drawAnt)(c, { x: 0, vx: 0 }, 1, D); } catch (e) { }
+        return cv.toDataURL();
+    }
+    v18MobIcon = (function (o) { return function (type) { if (AM[type]) return antIcon(type); return o(type); }; })(v18MobIcon);
+    V28_MOBS.push(['ant_worker', 'Гігантська мураха', '❤ 95', 'Мурашник під землею. Швидкі й кусючі, кличуть одне одного на допомогу. Дають Хітин Мурахи.']);
+    V28_MOBS.push(['ant_soldier', 'Мураха-солдат', '❤ 300', 'Мурашник. Стрибає на ціль після короткої зупинки — відступи вбік, коли присяде! Хітин випадає частіше.']);
+    V28_MOBS.push(['ant_egg', 'Яйце мурашника', '❤ 90', 'Мурашник. Нерухоме, але вилуплюється, якщо стояти біля нього надто довго. Щоб ослабити Королеву — розбий усі яйця.']);
+
+    // ---------- генерація колонії ----------
+    const BADN = /лава|корінна|базальт|обсидіан|магм|жарник|цегл|шаф|руна|сундук|ліхтар|ланцюг|око |смолоск|двер|скло|стіл|ліжк/i;
+    function antBad(x0, y0, x1, y1) { for (let y = Math.max(1, y0); y <= y1 && y < worldMap.length - 1; y++) for (let x = Math.max(1, x0); x <= x1 && x < worldMap[0].length - 1; x++) { const v = worldMap[y][x]; if (v > 8 && v !== 11 && v !== 13 && BLOCKS[v] && BADN.test(BLOCKS[v].name || '')) return true; } return false; }
+    function mkAnt() {
+        const cw = currentWorld; if (!cw || cw.mode === 'sky' || cw.ant || cw.noAnt) return false; const w = cw.width, h = cw.height, sx = Math.floor(player.x / 32);
+        let cx = -1, sh = 0, yq = 0;
+        for (let t = 0; t < 120 && cx < 0; t++) {
+            const c = 70 + Math.floor(Math.random() * (w - 140)); if (Math.abs(c - sx) < 90 && w > 400) continue; const s = surfaceHeights[c], e = c - 46; if (s == null || surfaceHeights[e] == null) continue;
+            if (worldMap[s - 1][e] !== 0 || WID(worldMap[s][e]) || WID(worldMap[s][c]) || WID(worldMap[s][c - 30]) || WID(worldMap[s][c + 30])) continue;
+            for (let y = s + 36; y + 20 < h - 6; y += 6) if (!antBad(c - 54, y - 21, c + 48, y + 20)) { cx = c; sh = surfaceHeights[e]; yq = y; break; }
+        }
+        if (cx < 0) { cw.noAnt = 1; return false; }
+        const set = (x, y, v) => { if (x >= 1 && x < w - 1 && y >= 1 && y < h - 1) worldMap[y][x] = v; };
+        const ell = (ox, oy, rx, ry) => { for (let y = oy - ry; y <= oy + ry; y++) for (let x = ox - rx; x <= ox + rx; x++) if (((x - ox) / (rx + 0.5)) ** 2 + ((y - oy) / (ry + 0.5)) ** 2 <= 1) set(x, y, 0); };
+        const rect = (x0, y0, x1, y1, v) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, v || 0); };
+        const solidFill = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (worldMap[y][x] === 0 || WID(worldMap[y][x])) set(x, y, 3); };
+        // обсяг: спочатку заповнюємо скелю, щоб колонія була закритою від печер
+        solidFill(cx - 52, yq - 20, cx + 44, yq + 19);
+        ell(cx, yq - 8, 16, 7); rect(cx - 17, yq, cx + 17, yq + 1, 3); // зала Королеви
+        rect(cx - 46, yq - 3, cx - 14, yq - 1); rect(cx + 14, yq - 3, cx + 46, yq - 1); // нижні тунелі
+        rect(cx - 34, yq - 12, cx - 14, yq - 10); rect(cx + 14, yq - 12, cx + 34, yq - 10); // верхні галереї
+        rect(cx - 35, yq - 12, cx - 33, yq - 4); rect(cx + 33, yq - 12, cx + 35, yq - 4); // з’єднання галерей
+        const rooms = [[cx - 36, yq - 5], [cx + 36, yq - 5]]; for (const r of rooms) { ell(r[0], r[1], 7, 4); } // боковi яйцеві
+        rect(cx - 27, yq, cx - 25, yq + 7); rect(cx + 25, yq, cx + 27, yq + 7); ell(cx - 26, yq + 10, 6, 3); ell(cx + 26, yq + 10, 6, 3); // нижні яйцеві
+        rect(cx - 47, sh - 1, cx - 45, yq - 1); // вхід із поверхні
+        // підлоги
+        rect(cx - 50, yq, cx - 14, yq, 3); rect(cx + 14, yq, cx + 50, yq, 3); rect(cx - 33, yq + 14, cx - 19, yq + 14, 3); rect(cx + 19, yq + 14, cx + 33, yq + 14, 3);
+        rect(cx - 50, yq, cx - 14, yq, 3); for (const x of [cx - 26, cx + 26]) rect(x - 1, yq, x + 1, yq, 0); for (const x of [cx - 26, cx + 26]) rect(x - 1, yq + 1, x + 1, yq + 7, 0);
+        const eggs = [], addEgg = (ex, fy) => eggs.push({ x: ex * 32 + 16, y: fy * 32, d: 0 });
+        addEgg(cx - 38, yq); addEgg(cx - 33, yq); addEgg(cx + 33, yq); addEgg(cx + 38, yq); addEgg(cx - 28, yq + 14); addEgg(cx - 23, yq + 14); addEgg(cx + 23, yq + 14); addEgg(cx + 28, yq + 14);
+        const sp = []; for (let x = cx - 44; x <= cx - 18; x += 4) sp.push([x * 32, yq * 32]); for (let x = cx + 18; x <= cx + 44; x += 4) sp.push([x * 32, yq * 32]);
+        cw.ant = { cx, yq, sh, bx0: cx - 52, bx1: cx + 46, by0: yq - 20, by1: yq + 18, ex: cx - 46, eggs, sp, qd: 0, mouths: [[cx - 17, yq - 2], [cx + 17, yq - 2], [cx - 15, yq - 11], [cx + 15, yq - 11]], cham: { x0: (cx - 14) * 32, x1: (cx + 15) * 32, y0: (yq - 15) * 32, y1: yq * 32 } };
+        return true;
+    }
+    generateWorldData = (function (o) { return function () { const r = o.apply(this, arguments); try { mkAnt(); } catch (e) { console.error('zdeep ant', e); } return r; }; })(generateWorldData);
+
+    // ---------- живий стан колонії (господар/одиночна гра) ----------
+    let aT = 0, retro = 0;
+    function eggAlive() { const A = ant(); let n = A ? A.eggs.filter(e => !e.d).length : 0; for (const m of mobs) if (m.type === 'ant_egg' && m.hp > 0 && !(m.slot >= 0)) n++; return n; }
+    function ensureEggs() {
+        const A = ant(); if (!A) return; A.eggs.forEach((e, i) => { if (e.d) return; if (mobs.some(m => m.type === 'ant_egg' && m.slot === i && m.hp > 0)) return; const m = spawnAnt('ant_egg', e.x, e.y); m.slot = i; if (e.hp > 0) m.hp = Math.min(m.maxHp, e.hp); });
+    }
+    Z.TICK.push(() => {
+        if (typeof gameState === 'undefined' || gameState !== 'PLAYING') return; const cw = currentWorld; if (!cw) return;
+        if (!(!MP || !MP.sh || MP.host)) return; // ШІ й виклик королеви — лише у господаря
+        if (!cw.ant && !cw.noAnt && !retro && !(MP && MP.sh)) { retro = 1; setTimeout(() => { try { if (mkAnt()) { toast('🐜 У надрах прокинувся Мурашник…'); } } catch (e) { console.error(e); } }, 4000); }
+        const A = cw.ant; if (!A) return; aT++; if (aT % 10 === 0) for (const m of mobs) if (m.type === 'ant_egg' && m.slot >= 0 && m.hp > 0 && A.eggs[m.slot]) A.eggs[m.slot].hp = m.hp;
+        const px = player.x + 12, py = player.y + 22, inside = px > A.bx0 * 32 && px < A.bx1 * 32 && py > A.by0 * 32 && py < A.by1 * 32;
+        if (!inside) return;
+        if (aT % 45 === 0) { ensureEggs(); }
+        if (aT % 120 === 0 && !rpgBosses.some(b => b.k === 'antqueen')) {
+            let w = 0, s = 0; for (const m of mobs) { if (m.type === 'ant_worker') w++; else if (m.type === 'ant_soldier') s++; }
+            if (w < 6 && A.sp.length) { const p = A.sp[ri(0, A.sp.length - 1)]; if (Math.hypot(p[0] - px, p[1] - py) > 280) spawnAnt('ant_worker', p[0], p[1]); }
+            if (s < 2 && Math.random() < 0.4 && A.sp.length) { const p = A.sp[ri(0, A.sp.length - 1)]; if (Math.hypot(p[0] - px, p[1] - py) > 360) spawnAnt('ant_soldier', p[0], p[1]); }
+        }
+        const C = A.cham; if (!A.qd && px > C.x0 + 60 && px < C.x1 - 60 && py > C.y0 && py < C.y1 && !rpgBosses.length && !boss && !libBoss && aT > 30) { spawnXBoss('antqueen'); }
+    });
+    function toast(t) { try { window.__zforge.toast(t, 4500); } catch (e) { } }
+
+    // ================= 👑 КОРОЛЕВА =================
+    BOSS2.antqueen = {
+        init(b) {
+            const A = ant(); if (!A) { b.x = player.x; b.y = player.y - 100; b.fy = b.y + b.h; b.ax0 = b.x - 400; b.ax1 = b.x + 400; } else { b.ax0 = A.cham.x0; b.ax1 = A.cham.x1; b.fy = A.cham.y1; b.x = (A.cham.x0 + A.cham.x1) / 2 - b.w / 2; b.y = b.fy - b.h; }
+            b.st = 'intro'; b.stT = 130; b.face = 1; b.vuln = 0; b.last = ''; b.eg = 8; b.n = 0; b.tx = 0; b.jy = 0; b.open = 4; b.sealed = 0; b.hurtT = 0; b.noclip = 1;
+            if (A) ensureEggs();
+        },
+        upd(b, px, py) {
+            b.stT--; if (b.vuln > 0) b.vuln--; const cx = b.x + b.w / 2, dir = px > cx ? 1 : -1, p2 = b.phase === 2, fy = b.fy;
+            if (b.t % 20 === 0) b.eg = eggAlive();
+            const A = ant();
+            if (A && b.t % 20 === 0) { b.open = A.mouths.filter(m => { const x = m[0], y = m[1]; return !(isSolid(x, y) && isSolid(x, y - 1) && isSolid(x, y + 1)); }).length; }
+            const walk = sp => { b.x = cl(b.x + cl((px - cx) * 0.03, -sp, sp), b.ax0, b.ax1 - b.w); };
+            const calls = () => {
+                const A2 = ant(); if (!A2) return; let n = 0; let total = mobs.filter(m => m.type === 'ant_worker' || m.type === 'ant_soldier').length; if (total > 12) return;
+                for (const m of A2.mouths) { const x = m[0], y = m[1]; if (isSolid(x, y) && isSolid(x, y - 1) && isSolid(x, y + 1)) continue; const fyp = (A2.yq) * 32; const yy = m[1] < A2.yq - 6 ? (A2.yq - 9) * 32 : fyp; for (let i = 0; i < (p2 ? 3 : 2) && total < 16; i++) { spawnAnt('ant_worker', x * 32 + rnd(-10, 10), yy); total++; } if (total < 16 && Math.random() < (p2 ? 0.7 : 0.4)) { spawnAnt('ant_soldier', x * 32, yy); total++; } n++; }
+                if (!n) { say('Усі ходи закрито — Королева в люті!', '#ffc83a'); b.vuln = 0; b.enr = 120; }
+            };
+            if (b.enr > 0) b.enr--;
+            if (b.st === 'intro') {
+                b.face = dir; b.inv = 1; if (b.stT === 60) { snd('call'); shake = Math.max(shake, 10); } if (b.stT <= 0) { b.inv = 0; b.st = 'idle'; b.stT = 50; banner('👑 КОРОЛЕВА МУРАШНИКА', 'Розбивайте яйця — вони її захищають!'); }
+            } else if (b.st === 'idle') {
+                b.face = dir; walk(p2 ? 1.9 : 1.3);
+                if (b.stT <= 0) {
+                    const W = [['call', b.open > 0 ? 34 : 6], ['acid', 30 + (b.open ? 0 : 20)], ['stomp', 26], ['lay', b.eg < 3 ? 22 : 6]]; if (b.eg === 0) W[3][1] = p2 ? 30 : 14;
+                    let pick = b.last; for (let g = 0; g < 4 && pick === b.last; g++) { let q = Math.random() * W.reduce((s, w) => s + w[1], 0); for (const w of W) { q -= w[1]; if (q <= 0) { pick = w[0]; break; } } }
+                    b.st = pick; b.last = pick; b.n++; b.stT = { call: 100, acid: 74, stomp: 70, lay: 80 }[pick]; if (pick === 'stomp') { b.tx = px; b.jy = 0; }
+                    if (pick === 'call') snd('call');
+                }
+            } else if (b.st === 'call') {
+                b.face = dir; if (b.stT === 50) { calls(); shake = Math.max(shake, 8); try { const X = FX(); if (X) X.wave(cx, b.y + b.h / 2, '#ffc83a', 300, { life: 1 }); } catch (e) { } }
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = 40; }
+            } else if (b.st === 'acid') {
+                b.face = dir; walk(0.8);
+                if (b.stT === 44 || (p2 && b.stT === 28) || b.stT === 12) { const m = { x: cx + b.face * 62, y: b.y + 24 }; snd('spit'); for (let i = 0; i < (p2 ? 3 : 2); i++) { const dx = px - m.x + rnd(-40, 40), t0 = 46, vx = dx / t0, vy = (py - m.y) / t0 - 0.17 * t0 + rnd(-1.5, 1.5); ep({ k: 'acid', x: m.x, y: m.y, vx, vy, dmg: 40, r: 9, life: 130 }); } }
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = 44; }
+            } else if (b.st === 'stomp') {
+                b.face = b.tx > cx ? 1 : -1;
+                if (b.stT > 46) { b.jy = -Math.sin(Math.min(1, (70 - b.stT) / 20) * 1.57) * 10; } // присідає
+                else if (b.stT > 14) { const k = (46 - b.stT) / 32; b.x = cl(b.x + (b.tx - b.w / 2 - b.x) * 0.12, b.ax0, b.ax1 - b.w); b.y = fy - b.h - Math.sin(k * Math.PI) * 120; }
+                else { b.y = fy - b.h; if (b.stT === 13) { shake = Math.max(shake, 14); snd('crack'); const x0 = b.x + b.w / 2; for (const s of [-1, 1]) ep({ k: 'qwave', x: x0 + s * 70, y: fy, vx: s * (p2 ? 7 : 5.6), dmg: 56, r: 24, life: 80 }); createParticles(x0, fy, '#a8785a', 30, 5, 5, 36); if (p2) b.vuln = 0; } }
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = 50; b.vuln = Math.max(b.vuln, 50); b.y = fy - b.h; }
+            } else if (b.st === 'lay') {
+                b.face = dir; if (b.stT === 40) { const eggsNow = mobs.filter(m => m.type === 'ant_egg' && m.hp > 0 && m.slot === -1).length; if (eggsNow < 3) { const bx = cx - b.face * 90; const m = spawnAnt('ant_egg', clamp2(bx, b.ax0 + 20, b.ax1 - 20), fy); m.slot = -1; try { const X = FX(); if (X) X.burst(bx, fy - 20, '#fff0b0', 12, 3, { up: 1 }); } catch (e) { } snd('crack'); say('Королева відклала яйце!', '#ffe6a0'); } }
+                if (b.stT <= 0) { b.st = 'idle'; b.stT = 46; }
+            }
+            if (b.st !== 'stomp') b.y = fy - b.h + (b.st === 'lay' ? 4 : 0);
+        },
+        local(b) { const X = FX(); if (!X || ZS.f % 10) return; if (b.eg > 0) X.emit(b.x + rnd(0, b.w), b.y + rnd(0, b.h), { vx: rnd(-0.2, 0.2), vy: -rnd(0.3, 0.9), life: 0.8, s: 2.4, c: '#ffd36b', a: 0.55, g: -0.005 }); },
+        loot(b, drop) {
+            drop('royal_jelly', 2 + (Math.random() < 0.5 ? 1 : 0)); drop('ant_chitin', 10 + ri(0, 4)); drop('gold_coin', 70 + ri(0, 30)); drop('gold_ingot', 8); drop('cosmic_ingot', 4); drop('life_potion', 5); drop('mana_potion', 3);
+            if (Math.random() < 0.3) drop('queen_sting', 1);
+        }
+    };
+    const clamp2 = cl;
+    bossDie = (function (o) { return function (b) { const r = o.apply(this, arguments); try { if (b && b.k === 'antqueen' && currentWorld && currentWorld.ant) currentWorld.ant.qd = 1; } catch (e) { } return r; }; })(bossDie);
+    bossLights = (function (o) { return function (L) { o.apply(this, arguments); try { for (const b of rpgBosses) if (b.k === 'antqueen') L(b.x + b.w / 2, b.y + b.h / 2, 260); } catch (e) { } }; })(bossLights);
+
+    function drawQueen(b, t) {
+        const cx = b.x + b.w / 2, fy = b.fy, face = b.face || 1, st = b.st, jump = fy - (b.y + b.h), bob = Math.sin(t * 2.4) * 1.5, run = st === 'idle' ? Math.sin(t * 6) : 0;
+        const cast = st === 'call' ? 1 : st === 'acid' && b.stT < 56 ? 1 : 0, crouch = st === 'stomp' && b.stT > 46 ? Math.min(1, (70 - b.stT) / 20) : 0;
+        ctx.save(); ctx.translate(cx, b.y + b.h + 4 + (crouch * 6)); ctx.scale(face, 1);
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, jump + 0, 64 - jump * 0.1, 6, 0, 0, 7); ctx.fill();
+        try { glowC(0, -50, 130, b.eg > 0 ? '#ffc83a' : '#ff6a3a', 0.16 + (b.vuln > 0 ? 0.12 : 0)); } catch (e) { }
+        // ноги
+        ctx.strokeStyle = '#1c0804'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        for (let i = 0; i < 3; i++) for (const sd of [0, 1]) { const a = t * 6 + i * 2.1 + sd * Math.PI, lift = st === 'idle' ? Math.max(0, Math.sin(a)) * 6 : 0, bx = -6 + i * 18, fx = bx + (i - 1) * 16 + (st === 'idle' ? Math.cos(a) * 8 : 0); ctx.beginPath(); ctx.moveTo(bx, -50); ctx.lineTo(fx + (i - 1) * 6, -76 - lift * 0.6 + crouch * 14); ctx.lineTo(fx + (i - 1) * 12, -2 - lift); ctx.stroke(); }
+        ctx.strokeStyle = '#6a2412'; ctx.lineWidth = 3; for (let i = 0; i < 3; i++) for (const sd of [0, 1]) { const a = t * 6 + i * 2.1 + sd * Math.PI, lift = st === 'idle' ? Math.max(0, Math.sin(a)) * 6 : 0, bx = -6 + i * 18, fx = bx + (i - 1) * 16 + (st === 'idle' ? Math.cos(a) * 8 : 0); ctx.beginPath(); ctx.moveTo(bx, -50); ctx.lineTo(fx + (i - 1) * 6, -76 - lift * 0.6 + crouch * 14); ctx.lineTo(fx + (i - 1) * 12, -2 - lift); ctx.stroke(); }
+        // величезне черевце-яйцеклад
+        const pul = 1 + Math.sin(t * 1.8) * 0.03 + (st === 'lay' ? Math.sin(t * 20) * 0.03 : 0); ctx.save(); ctx.translate(-48, -46 + bob + crouch * 6); ctx.scale(pul, pul);
+        const g1 = ctx.createRadialGradient(-14, -22, 4, -4, -6, 62); g1.addColorStop(0, '#f0a070'); g1.addColorStop(0.5, '#b8401e'); g1.addColorStop(1, '#4a140a'); ctx.fillStyle = g1; ctx.strokeStyle = '#1c0804'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(-8, -4, 56, 40, -0.08, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(28,8,4,.45)'; ctx.lineWidth = 2; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(-8 - i * 7, -4, 38 - i * 4, -1.2, 1.2); ctx.stroke(); }
+        ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.ellipse(-22, -24, 24, 9, -0.3, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(255,230,160,.5)'; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-34 + i * 14, 6 + Math.sin(t * 2 + i) * 2, 4 - i * 0.4, 0, 7); ctx.fill(); }
+        ctx.restore();
+        // грудна клітка
+        const g2 = ctx.createRadialGradient(-2, -64, 2, 6, -56, 30); g2.addColorStop(0, '#f0a070'); g2.addColorStop(1, '#6a2412'); ctx.fillStyle = g2; ctx.strokeStyle = '#1c0804'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(10, -56 + bob + crouch * 6, 22, 20, 0, 0, 7); ctx.fill(); ctx.stroke();
+        // крильця-залишки
+        ctx.fillStyle = 'rgba(255,240,200,.35)'; ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.4; for (const k of [-1, 1]) { ctx.save(); ctx.translate(6, -72 + bob); ctx.rotate(-0.9 + k * 0.25 + Math.sin(t * (cast ? 30 : 4) + k) * 0.06); ctx.beginPath(); ctx.ellipse(-20, 0, 34, 8, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); }
+        // голова
+        const hx = 46, hy = -62 + bob + crouch * 8 - (cast ? 4 : 0); const gh = ctx.createRadialGradient(hx - 4, hy - 8, 2, hx, hy, 26); gh.addColorStop(0, '#f6b080'); gh.addColorStop(1, '#8a3018'); ctx.fillStyle = gh; ctx.beginPath(); ctx.ellipse(hx, hy, 24, 21, 0, 0, 7); ctx.fill(); ctx.stroke();
+        const rage = b.eg === 0 || b.phase === 2; ctx.fillStyle = rage ? '#ff4a3a' : '#ffe08a'; try { glowC(hx + 9, hy - 5, 20, rage ? '#ff4a3a' : '#ffe08a', 0.6); } catch (e) { } ctx.beginPath(); ctx.ellipse(hx + 9, hy - 5, 6, 5, 0.2, 0, 7); ctx.fill(); ctx.fillStyle = '#140604'; ctx.beginPath(); ctx.ellipse(hx + 10.5, hy - 5, 2.2, 3.4, 0, 0, 7); ctx.fill();
+        const op = cast ? 1 : 0.2 + Math.max(0, Math.sin(t * 3)) * 0.2; ctx.strokeStyle = '#1c0804'; ctx.lineWidth = 5; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(hx + 18, hy + 8); ctx.quadraticCurveTo(hx + 34, hy + 8 + sd * (6 + op * 14), hx + 36, hy + sd * (3 + op * 15)); ctx.stroke(); }
+        ctx.strokeStyle = '#c8502a'; ctx.lineWidth = 2.4; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(hx + 18, hy + 8); ctx.quadraticCurveTo(hx + 34, hy + 8 + sd * (6 + op * 14), hx + 36, hy + sd * (3 + op * 15)); ctx.stroke(); }
+        ctx.strokeStyle = '#1c0804'; ctx.lineWidth = 2; for (const sd of [0, 1]) { const w = Math.sin(t * 4 + sd * 2) * 4; ctx.beginPath(); ctx.moveTo(hx + 8, hy - 18); ctx.quadraticCurveTo(hx + 22 + w, hy - 38, hx + 36 + w, hy - 34 - sd * 6); ctx.stroke(); }
+        // корона
+        ctx.fillStyle = '#ffc83a'; ctx.strokeStyle = '#6a4a08'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(hx - 14, hy - 18); for (let i = 0; i < 5; i++) { ctx.lineTo(hx - 14 + i * 7 + 3.5, hy - 34 - (i % 2 ? 0 : 6) - Math.sin(t * 3 + i) * 1); ctx.lineTo(hx - 14 + (i + 1) * 7, hy - 18); } ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ff6a5a'; ctx.beginPath(); ctx.arc(hx + 4, hy - 24, 2.4, 0, 7); ctx.fill();
+        ctx.restore();
+        // щит з яєць
+        if (b.eg > 0) {
+            const a = 0.18 + Math.min(0.5, b.eg * 0.06); ctx.save(); ctx.translate(cx, b.y + b.h / 2); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,200,80,' + a + ')'; ctx.fillStyle = 'rgba(255,190,60,' + (a * 0.22) + ')'; ctx.lineWidth = 3; const R = 108;
+            ctx.beginPath(); for (let i = 0; i < 6; i++) { const an = i / 6 * 6.283 + t * 0.3; const x = Math.cos(an) * R, y = Math.sin(an) * R * 0.86; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+    }
+
+    // ---------- вхід у колонію: намальований мурашиний горб на поверхні ----------
+    Z.DRAW.push((t, x0, x1) => {
+        const A = ant(); if (!A) return; const ex = A.ex * 32 + 16;
+        if (ex < x0 - 200 || ex > x1 + 200) return; const gy = A.sh * 32;
+        ctx.save(); ctx.translate(ex, gy);
+        const g = ctx.createLinearGradient(0, -34, 0, 4); g.addColorStop(0, '#8a5a30'); g.addColorStop(1, '#4e3016'); ctx.fillStyle = g; ctx.strokeStyle = '#2a1808'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-70, 4); ctx.quadraticCurveTo(-52, -4, -34, -16); ctx.quadraticCurveTo(-10, -38, 0, -38); ctx.quadraticCurveTo(10, -38, 34, -16); ctx.quadraticCurveTo(52, -4, 70, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.1)'; for (let i = 0; i < 12; i++) { ctx.beginPath(); ctx.arc(-44 + (i * 37 % 88), -4 - (i * 53 % 24), 1.4 + (i % 3) * 0.5, 0, 7); ctx.fill(); }
+        ctx.fillStyle = '#0a0402'; ctx.beginPath(); ctx.ellipse(0, -1, 17, 10, 0, Math.PI, 0); ctx.fill();
+        // колона мурах
+        for (let i = 0; i < 5; i++) { const k = ((t * 0.18 + i / 5) % 1), x = -64 + k * 128, y = 2 - Math.abs(Math.sin(k * 3.1)) * 0 - (Math.abs(x) < 36 ? (36 - Math.abs(x)) * 0.4 : 0); ctx.save(); ctx.translate(x, y); ctx.scale(0.4, 0.4); ctx.fillStyle = '#2a0e06'; ctx.beginPath(); ctx.ellipse(-6, -4, 6, 4, 0, 0, 7); ctx.ellipse(2, -4, 3.6, 3, 0, 0, 7); ctx.ellipse(8, -5, 3.4, 3, 0, 0, 7); ctx.fill(); ctx.restore(); }
+        ctx.restore();
+    });
+
+    window.__zdeep = { ZS, AM, mkAnt, lake, antBad };
+})();
+// ===== v46.9 «Розбирач спорядження» — станція розбирання зброї, броні й аксесуарів на частини (втрачається ~60% матеріалів) =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return; const FX = () => window.__zpfx;
+    const $ = id => document.getElementById(id);
+    const KEEP = 0.4; // частка матеріалів, що повертається (у середньому)
+    const ARM = /_(helmet|chestplate|leggings|boots)$/;
+    const nm = id => (ITEM_METADATA[id] || {}).name || id;
+    const gear = id => !!(id && (WEAPONS[id] || ARM.test(id) || (typeof ACC !== 'undefined' && ACC[id])));
+    const recOf = id => recipes.find(r => r.result === id && r.req && !(FURN_IDS && FURN_IDS.includes(id)));
+    const canDis = s => !!(s && gear(s.id) && recOf(s.id));
+    const icon = id => { try { const c = spriteOf(id); if (c && c.toDataURL) { if (!icon.c[id]) icon.c[id] = c.toDataURL(); return icon.c[id]; } } catch (e) { } return ''; };
+    icon.c = {};
+    function roll(id) { // результат одного розбирання
+        const r = recOf(id), out = {}; let tot = 0;
+        for (const k in r.req) { const q = Math.floor(r.req[k] * KEEP + Math.random()); if (q > 0) { out[k] = q; tot += q; } }
+        if (!tot) { const ks = Object.keys(r.req).sort((a, b) => r.req[b] - r.req[a]); out[ks[0]] = 1; }
+        return out;
+    }
+    const expect = id => { const r = recOf(id), o = []; for (const k in r.req) { const e = r.req[k] * KEEP; o.push([k, Math.max(0, Math.floor(e)), Math.ceil(e)]); } return o; };
+
+    // ---------- предмет-станція ----------
+    function drawStation(c, o) {
+        const t = o.t || 0, run = o.run ? 1 : 0, sp = t * (run ? 9 : 0.6);
+        c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(4, 62, 88, 2);
+        // ніжки
+        for (const x of [8, 78]) { c.fillStyle = '#2a2e36'; c.fillRect(x, 38, 8, 24); c.fillStyle = '#4a505a'; c.fillRect(x, 38, 2.4, 24); c.fillStyle = '#14161a'; c.fillRect(x - 2, 60, 12, 4); }
+        // стільниця
+        const g = c.createLinearGradient(0, 30, 0, 44); g.addColorStop(0, '#9a6a3a'); g.addColorStop(1, '#5c3b1e'); c.fillStyle = g; c.fillRect(2, 30, 92, 14);
+        c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(2, 30, 92, 2); c.fillStyle = 'rgba(0,0,0,.28)'; c.fillRect(2, 42, 92, 2);
+        c.strokeStyle = 'rgba(0,0,0,.22)'; c.lineWidth = 1; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(6 + i * 18, 33); c.lineTo(14 + i * 18, 40); c.stroke(); }
+        c.fillStyle = '#c8941a'; for (const x of [6, 88]) { c.beginPath(); c.arc(x, 37, 1.6, 0, 7); c.fill(); }
+        // стінка з інструментами
+        c.fillStyle = '#2a2018'; c.fillRect(8, 2, 80, 26); c.fillStyle = '#3e2e20'; c.fillRect(8, 2, 80, 3); c.strokeStyle = '#14100a'; c.lineWidth = 1.2; c.strokeRect(8, 2, 80, 26);
+        // молоток, ключ
+        c.strokeStyle = '#6a4a2a'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(16, 24); c.lineTo(24, 8); c.stroke(); c.fillStyle = '#8a929c'; c.fillRect(19, 5, 10, 6);
+        c.strokeStyle = '#8a929c'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(34, 24); c.lineTo(34, 8); c.stroke(); c.beginPath(); c.arc(34, 6, 3.4, 0, 7); c.stroke();
+        // шестерні
+        const gear_ = (x, y, r, a, col) => { c.save(); c.translate(x, y); c.rotate(a); c.fillStyle = col; c.strokeStyle = '#14161a'; c.lineWidth = 1.2; c.beginPath(); for (let i = 0; i < 16; i++) { const an = i / 16 * 6.283, rr = i % 2 ? r * 0.82 : r; c.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); } c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#14161a'; c.beginPath(); c.arc(0, 0, r * 0.3, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.2)'; c.fillRect(-r * 0.6, -r * 0.5, r * 0.5, 2); c.restore(); };
+        gear_(54, 15, 11, sp * 0.4, '#b8862a'); gear_(70, 17, 8, -sp * 0.55 + 0.2, '#8a929c'); gear_(42, 22, 5.6, -sp * 0.8, '#c8d0d8');
+        // циркулярна пилка на столі
+        c.save(); c.translate(24, 26); c.rotate(sp); c.fillStyle = '#c8d0d8'; c.strokeStyle = '#3a3e46'; c.lineWidth = 1; c.beginPath(); for (let i = 0; i < 22; i++) { const an = i / 22 * 6.283, rr = i % 2 ? 8.4 : 10.6; c.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); } c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#5a606a'; c.beginPath(); c.arc(0, 0, 3.4, 0, 7); c.fill(); c.strokeStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.moveTo(0, 0); c.lineTo(7, 0); c.stroke(); c.restore();
+        // лампа та іскри
+        c.fillStyle = '#ffd36b'; c.beginPath(); c.arc(80, 8, 3, 0, 7); c.fill();
+        if (run) for (let i = 0; i < 6; i++) { const ph = (t * 3 + i * 0.37) % 1; c.fillStyle = 'rgba(255,' + (190 + i * 8) + ',90,' + (1 - ph) + ')'; c.fillRect(26 + Math.sin(i * 3.1 + t * 9) * 8 + ph * 12, 26 - ph * 22, 2, 2); }
+        c.fillStyle = '#e0b04a'; c.fillRect(34, 46, 28, 6); c.fillStyle = '#14100a'; c.font = 'bold 5px sans-serif'; c.textAlign = 'center'; c.fillText('РОЗБИРАЧ', 48, 50.6);
+    }
+    v378Furn('dismantler', { n: 'Розбирач спорядження', w: 3, h: 2, st: 'floor', light: 60, col: '#c8941a', type: '🔧 Станція', stat: 'ПКМ — розібрати зайву зброю, броню чи аксесуар на частини · повертає лише ~40% матеріалів', d: 'Важкий верстак із пилою й шестернями. Здатний розібрати спорядження на складові, але за кожну річ частина матеріалів неминуче втрачається. Збирається з частин мурашника, змія та маточного молочка.' },
+        drawStation, { gold_ingot: 24, cosmic_ingot: 12, ant_chitin: 12, serpent_scale: 8, royal_jelly: 2 }, 38);
+
+    // ---------- інтерфейс ----------
+    const css = document.createElement('style'); css.textContent = `
+#zdis{position:fixed;inset:0;z-index:99990;display:none;align-items:center;justify-content:center;background:rgba(8,6,4,0);backdrop-filter:blur(0px);transition:background .3s,backdrop-filter .3s}
+#zdis.show{display:flex;background:rgba(8,6,4,.62);backdrop-filter:blur(3px)}
+#zdis .pn{width:min(780px,95vw);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(#2c2218,#1a130c);border:2px solid #c8941a;border-radius:16px;color:#f3e6c8;box-shadow:0 20px 60px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,220,140,.12);transform:translateY(24px) scale(.94);opacity:0;transition:transform .35s cubic-bezier(.2,1.3,.4,1),opacity .25s;overflow:hidden}
+#zdis.show .pn{transform:none;opacity:1}
+#zdis .hd{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(#3e2e1c,#2c2218);border-bottom:1px solid rgba(200,148,26,.4)}
+#zdis .hd b{font-size:19px;flex:1;letter-spacing:.5px}
+#zdis .hd .gr{display:inline-block;animation:zdisSpin 6s linear infinite;font-size:20px}
+@keyframes zdisSpin{to{transform:rotate(360deg)}}
+#zdis .x{background:#4a3520;border:1px solid #8a6a2a;color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;transition:background .15s,transform .15s}
+#zdis .x:hover{background:#7a3a2a;transform:rotate(90deg)}
+#zdis .bd{display:flex;gap:0;min-height:320px;flex:1;min-height:0}
+#zdis .lf{flex:1.35;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px;align-content:start}
+#zdis .rt{flex:1;padding:14px;border-left:1px solid rgba(200,148,26,.3);display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,.18)}
+#zdis .sl{position:relative;aspect-ratio:1;border-radius:10px;background:linear-gradient(#3a2c1c,#271c11);border:1px solid #5a4528;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,border-color .15s,box-shadow .2s;animation:zdisIn .35s both}
+@keyframes zdisIn{from{opacity:0;transform:translateY(8px) scale(.9)}to{opacity:1;transform:none}}
+#zdis .sl:hover{transform:translateY(-2px) scale(1.06);border-color:#e0b04a;box-shadow:0 0 14px rgba(224,176,74,.4)}
+#zdis .sl.sel{border-color:#ffd36b;box-shadow:0 0 0 2px rgba(255,211,107,.55),0 0 18px rgba(255,211,107,.45)}
+#zdis .sl img{width:70%;height:70%;image-rendering:pixelated;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+#zdis .it{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+#zdis .it img{width:64px;height:64px;image-rendering:pixelated;animation:zdisFloat 2.6s ease-in-out infinite}
+@keyframes zdisFloat{50%{transform:translateY(-4px)}}
+#zdis .rs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+#zdis .rs span{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid rgba(200,148,26,.35);border-radius:8px;padding:3px 7px;font-size:13px}
+#zdis .rs img{width:20px;height:20px;image-rendering:pixelated}
+#zdis .go{margin-top:auto;position:relative;overflow:hidden;background:linear-gradient(#d8a22a,#9a6a10);border:1px solid #ffe08a;color:#2a1a04;font-weight:bold;border-radius:10px;padding:10px;cursor:pointer;font-size:15px;transition:transform .12s,filter .2s}
+#zdis .go:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.12)}#zdis .go:disabled{opacity:.45;cursor:default}
+#zdis .go .pg{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)}
+#zdis .go.run .pg{animation:zdisPg 1.3s linear forwards}
+@keyframes zdisPg{to{width:100%}}
+#zdis .em{grid-column:1/-1;text-align:center;opacity:.7;padding:30px 10px}
+#zdis .nt{font-size:12px;opacity:.75;text-align:center}
+#zdis .fl{position:absolute;pointer-events:none;font-size:15px;animation:zdisFly 1s ease-out forwards}
+@keyframes zdisFly{from{opacity:1;transform:translateY(0) scale(.7)}to{opacity:0;transform:translateY(-60px) scale(1.3)}}
+@media(max-width:560px){#zdis .bd{flex-direction:column}#zdis .rt{border-left:0;border-top:1px solid rgba(200,148,26,.3)}}`;
+    document.head.appendChild(css);
+    const root = document.createElement('div'); root.id = 'zdis'; root.innerHTML = '<div class="pn"><div class="hd"><span class="gr">⚙️</span><b>Розбирач спорядження</b><button class="x" id="zdis-x">✕</button></div><div class="bd"><div class="lf" id="zdis-l"></div><div class="rt" id="zdis-r"></div></div></div>';
+    document.body.appendChild(root);
+    const ST = { open: false, sel: -1, run: 0, st: null };
+    const tone = (a, b, d, v) => { try { v20Tone('triangle', a, b, d, v); } catch (e) { } };
+    function render() {
+        const L = $('zdis-l'), R = $('zdis-r'); L.innerHTML = ''; let n = 0;
+        inventory.forEach((s, i) => {
+            if (!canDis(s)) return; const d = document.createElement('div'); d.className = 'sl' + (i === ST.sel ? ' sel' : ''); d.style.animationDelay = Math.min(n, 18) * 18 + 'ms'; n++;
+            d.title = nm(s.id); d.innerHTML = '<img src="' + icon(s.id) + '">'; d.onclick = () => { if (ST.run) return; ST.sel = i; tone(520, 660, 0.08, 0.04); render(); }; L.appendChild(d);
+        });
+        if (!n) L.innerHTML = '<div class="em">У сумці немає зброї, броні чи аксесуарів, які можна розібрати.<br><small>Розібрати можна лише те, що колись крафтилося.</small></div>';
+        const s = inventory[ST.sel];
+        if (!canDis(s)) { ST.sel = -1; R.innerHTML = '<div class="em">Обери річ ліворуч.<br><small>Повертається лише ≈40% матеріалів — решта зникає.</small></div>'; return; }
+        const E = expect(s.id), meta = ITEM_METADATA[s.id] || {};
+        R.innerHTML = '<div class="it"><img src="' + icon(s.id) + '"><b style="color:' + (meta.color || '#fff') + '">' + nm(s.id) + '</b></div><div class="nt">Ймовірний результат:</div><div class="rs">' + E.map(e => '<span><img src="' + icon(e[0]) + '">' + nm(e[0]) + ' ×' + (e[1] === e[2] ? e[1] : e[1] + '–' + e[2]) + '</span>').join('') + '</div><div class="nt">Річ зникне назавжди.</div><button class="go" id="zdis-go"><span class="pg"></span><span>🔧 Розібрати</span></button>';
+        $('zdis-go').onclick = go;
+    }
+    function go() {
+        if (ST.run) return; const s = inventory[ST.sel]; if (!canDis(s)) return; const idx = ST.sel, id = s.id; ST.run = 1; const b = $('zdis-go'); b.classList.add('run'); b.disabled = true;
+        let k = 0; const iv = setInterval(() => { tone(180 + (k % 4) * 90, 120 + (k % 3) * 60, 0.09, 0.05); try { const X = FX(); if (X && ST.st) X.burst((ST.st.x + 1.5) * 32, ST.st.y * 32 + 20, '#ffd36b', 4, 3, { up: 1 }); } catch (e) { } k++; }, 110);
+        setTimeout(() => {
+            clearInterval(iv); ST.run = 0; if (!ST.open) return; const cur = inventory[idx]; if (!cur || cur.id !== id) { render(); return; }
+            const out = roll(id); inventory[idx] = null; for (const k2 in out) giveItem(k2, out[k2]); updateInventoryUI();
+            const fl = $('zdis-r'); for (const k2 in out) { const f = document.createElement('div'); f.className = 'fl'; f.style.left = 20 + Math.random() * 60 + '%'; f.style.top = '40%'; f.textContent = '+' + out[k2] + ' ' + nm(k2); f.style.color = '#ffe9a8'; fl.appendChild(f); setTimeout(() => f.remove(), 1000); }
+            tone(660, 990, 0.25, 0.07); try { const X = FX(); if (X && ST.st) { X.burst((ST.st.x + 1.5) * 32, ST.st.y * 32 + 10, '#ffe08a', 24, 5, { up: 1.4 }); X.wave((ST.st.x + 1.5) * 32, ST.st.y * 32 + 20, '#ffd36b', 120, { life: 0.5 }); } } catch (e) { }
+            ST.sel = -1; setTimeout(render, 700);
+        }, 1300);
+    }
+    function open(f) { if (gameState !== 'PLAYING') return; try { if (inventoryOpen) toggleInventory(); } catch (e) { } ST.open = true; ST.st = f; ST.sel = -1; render(); root.classList.add('show'); tone(330, 520, 0.2, 0.06); }
+    function close() { if (!ST.open) return; ST.open = false; root.classList.remove('show'); tone(520, 330, 0.12, 0.04); }
+    $('zdis-x').onclick = close; root.addEventListener('mousedown', e => { if (e.target === root) close(); });
+    addEventListener('keydown', e => { if (ST.open && (e.key === 'Escape' || e.key === 'e' || e.key === 'E')) { e.preventDefault(); e.stopPropagation(); close(); } }, true);
+    Z.TICK.push(() => { if (ST.open && ST.st && Math.hypot(player.x + 12 - (ST.st.x + 1.5) * 32, player.y + 22 - (ST.st.y + 1) * 32) > 320) close(); });
+    V378.R.dismantler = f => { open(f); return true; };
+    window.__zdis = { roll, canDis, KEEP };
+})();
+// ===== v46.10 «Океан»: міні-океан (риби, водорості, корали, медузи, уламок корабля), кисень під водою, зілля підводного дихання =====
+(function () {
+    'use strict';
+    const Z = window.__zr, D = window.__zdeep; if (!Z || !D) return;
+    const FX = () => window.__zpfx, T = i => RPG_TIERS[i], S = itemSprites, P = zfPoly, C = zfC, F = zfFr;
+    const cl = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a), ri = (a, b) => Math.floor(rnd(a, b + 1));
+    const WID = v => v === 13 || v === 42;
+    const isW = (x, y) => { const r = worldMap[y]; return !!r && WID(r[x]); };
+    const say = (t, col) => { try { floatingTexts.push({ x: player.x - 40, y: player.y - 34, text: t, color: col || '#fff', life: 90 }); } catch (e) { } };
+    const toast = t => { try { window.__zforge.toast(t, 4500); } catch (e) { } };
+    const mk = (id, name, ti, type, stat, desc) => { ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, stat, desc }; };
+    const ZS = D.ZS;
+    const tone = (a, b, d, v) => { try { v20Tone('sine', a, b, d, v); } catch (e) { } };
+
+    // ================= ПРЕДМЕТИ =================
+    mk('kelp', 'Ламінарія', 1, 'Ресурс', null, 'Слизькі смарагдові стрічки. Збирається в океані — достатньо пропливти крізь зарості (відростає за кілька хвилин).');
+    mk('coral_shard', 'Уламок коралу', 2, 'Ресурс', null, 'Кольоровий уламок живого рифу. Збирається з коралів в океані; відростає за кілька хвилин.');
+    mk('sea_pearl', 'Морська перлина', 3, 'Ресурс', null, 'Рідкісна. З’являється у гігантських мушлях, які відкриваються лише іноді.');
+    POTIONS.breath_potion = { name: 'Зілля Підводного Дихання', tier: 2, col: [90, 220, 235], desc: 'Дві хвилини можна дихати під водою: шкала кисню не спадає й дозволено повільніше плисти без втоми.', fx: 'zdbreath' };
+    mk('breath_potion', POTIONS.breath_potion.name, 2, 'Зілля', 'Використати: ЛКМ', POTIONS.breath_potion.desc);
+    try {
+        S.kelp = generateSprite(cx => { cx.strokeStyle = '#0f4a22'; cx.lineWidth = 4; cx.lineCap = 'round'; for (const [x, c] of [[10, '#2f9a48'], [16, '#46c466'], [22, '#2f9a48']]) { cx.strokeStyle = '#0f4a22'; cx.lineWidth = 5; cx.beginPath(); cx.moveTo(x, 29); cx.bezierCurveTo(x + 6, 22, x - 6, 12, x + 2, 3); cx.stroke(); cx.strokeStyle = c; cx.lineWidth = 3; cx.stroke(); } cx.fillStyle = '#9af0a8'; cx.fillRect(15, 12, 2, 2); cx.fillRect(10, 18, 2, 2); });
+        S.coral_shard = generateSprite(cx => { const g = cx.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(255,120,150,.4)'); g.addColorStop(1, 'rgba(255,120,150,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32); P(cx, [[16, 3], [20, 10], [26, 8], [23, 18], [27, 27], [8, 27], [9, 17], [6, 9], [12, 11]], '#d8486a', '#3a0a18'); P(cx, [[16, 6], [19, 12], [23, 11], [20, 19], [22, 25], [11, 25], [12, 17], [10, 12], [14, 13]], '#ff8aa0', null); F(cx, '#ffe0e8', [[14, 9, 2, 3], [18, 18, 2, 2]]); });
+        S.sea_pearl = generateSprite(cx => { const g = cx.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(210,240,255,.6)'); g.addColorStop(1, 'rgba(140,200,255,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32); C(cx, 16, 17, 9, '#8aa0c8', '#1a2a48', 1.4); C(cx, 16, 17, 7.6, '#f4f8ff', null, 0); C(cx, 13, 14, 3.4, '#ffffff', null, 0); C(cx, 19, 21, 3, 'rgba(180,200,255,.6)', null, 0); });
+        S.breath_potion = generateSprite(cx => {
+            F(cx, '#8a6a44', [[13, 3, 6, 4]]); P(cx, [[13, 7], [19, 7], [19, 11], [25, 22], [25, 27], [22, 29], [10, 29], [7, 27], [7, 22], [13, 11]], 'rgba(220,240,255,.55)', '#2d3a45');
+            const g = cx.createLinearGradient(0, 14, 0, 29); g.addColorStop(0, '#6ff0f0'); g.addColorStop(1, '#1d8aa8'); cx.fillStyle = g; cx.beginPath(); cx.moveTo(9, 20); cx.lineTo(23, 20); cx.lineTo(25, 22); cx.lineTo(25, 27); cx.lineTo(22, 29); cx.lineTo(10, 29); cx.lineTo(7, 27); cx.lineTo(7, 22); cx.closePath(); cx.fill();
+            F(cx, 'rgba(255,255,255,.7)', [[10, 22, 2, 4]]); cx.fillStyle = '#e6fbff'; for (const [x, y, r] of [[15, 24, 2], [20, 22, 1.4], [18, 26, 1.1]]) { cx.beginPath(); cx.arc(x, y, r, 0, 7); cx.fill(); }
+        });
+    } catch (e) { console.error('zocean sprites', e); }
+    recipes.push({ result: 'breath_potion', count: 2, req: { kelp: 4, coral_shard: 2, gel: 1 }, lvl: 10 });
+
+    // ================= ГЕНЕРАЦІЯ ОКЕАНУ =================
+    const sm = x => x * x * (3 - 2 * x);
+    function mkOcean() {
+        const cw = currentWorld; if (!cw || cw.mode === 'sky' || cw.ocn || cw.noOcn || !worldMap || !surfaceHeights.length) return false;
+        const w = cw.width, h = cw.height, sx = Math.floor(player.x / 32), W = 110; let x0 = -1, H0 = 0;
+        for (let t = 0; t < 700; t++) {
+            const c = 60 + Math.floor(Math.random() * (w - W - 120)); if (Math.abs(c + W / 2 - sx) < 70 && w > 500) continue;
+            if (cw.swp && c < cw.swp.x1 + 20 && c + W > cw.swp.x0 - 20) continue;
+            let sum = 0, ok = true; for (let x = c; x < c + W; x++) { if (surfaceHeights[x] == null) { ok = false; break; } sum += surfaceHeights[x]; } if (!ok) continue;
+            const hh = Math.round(sum / W); if (hh + 24 >= h - 8) continue; if (D.antBad(c - 2, hh - 8, c + W + 2, hh + 17)) continue; x0 = c; H0 = hh; break;
+        }
+        if (x0 < 0) { cw.noOcn = 1; return false; }
+        const x1 = x0 + W - 1, set = (x, y, v) => { if (x >= 1 && x < w - 1 && y >= 1 && y < h - 1) worldMap[y][x] = v; };
+        const maxD = 11 + ri(0, 1), floors = [];
+        for (let x = x0; x <= x1; x++) {
+            const e = Math.min(x - x0, x1 - x), old = surfaceHeights[x]; let fl;
+            if (e < 10) { const f = sm(e / 10); fl = Math.min(H0 + 1, Math.round(old * (1 - f) + (H0 + 1) * f)); }
+            else { const n = Math.sin(x * 0.21) * 1.3 + Math.sin(x * 0.07 + 2) * 1.6; fl = H0 + 1 + Math.max(0, Math.round(maxD * sm(cl((e - 10) / 20, 0, 1)) + n * sm(cl((e - 10) / 20, 0, 1)))); }
+            const yTop = Math.min(old, fl, H0) - 18;
+            for (let y = Math.max(1, yTop); y < fl; y++) set(x, y, (y >= H0 && fl > H0) ? 13 : 0);
+            for (let y = fl; y < old; y++) set(x, y, y < fl + 3 ? 11 : 1);
+            for (let y = fl; y < fl + 3; y++) set(x, y, 11);
+            surfaceHeights[x] = fl; floors.push(fl);
+        }
+        const dec = []; let wreckX = x0 + Math.floor(W * 0.5) + ri(-14, 14);
+        // рифові скелі
+        const rocks = []; for (let k = 0; k < 5; k++) { const c = x0 + 22 + Math.floor((k + Math.random() * 0.7) * (W - 44) / 5), fl = floors[c - x0]; if (fl < H0 + 6 || (c > wreckX - 14 && c < wreckX + 16)) continue; const hh = ri(2, 4); for (let r = 0; r < hh; r++) { const half = Math.max(0, Math.floor((hh - r) / 2)); for (let x = c - half - 1; x <= c + half + 1; x++) { set(x, fl - 1 - r, 3); } } rocks.push(c); }
+        for (let x = x0; x <= x1; x++) { let y = H0; while (y < h - 2 && !(worldMap[y][x] && !WID(worldMap[y][x]) && BLOCKS[worldMap[y][x]] && BLOCKS[worldMap[y][x]].solid)) y++; floors[x - x0] = y; }
+        // оздоби
+        for (let x = x0 + 12; x <= x1 - 12; x++) {
+            const fl = floors[x - x0], dp = fl - H0; if (dp < 3 || Math.abs(x - wreckX) < 9) continue;
+            if (isW(x, fl - 1) === false) continue; const r = Math.random();
+            if (dp >= 5 && r < 0.2) dec.push({ t: 'kelp', x, y: fl, h: Math.min(dp - 2, ri(5, 11)), ph: Math.random() * 6.28, cd: 0 });
+            else if (r < 0.38) dec.push({ t: 'grass', x, y: fl, h: ri(1, 2), ph: Math.random() * 6.28 });
+            else if (r < 0.56 && dp >= 3 && dp <= 15) { const k = ri(0, 4); dec.push({ t: 'coral', k, x, y: fl, s: 0.8 + Math.random() * 0.6, ph: Math.random() * 6.28, cd: 0 }); }
+            else if (r < 0.575 && dp >= 6) dec.push({ t: 'clam', x, y: fl, ph: Math.random() * 6.28, cd: 0 });
+            else if (r < 0.60 && dp >= 4) dec.push({ t: 'anem', x, y: fl, ph: Math.random() * 6.28, hue: ri(0, 2) });
+        }
+        const vents = []; for (let k = 0; k < 5; k++) { const x = x0 + 20 + Math.floor(Math.random() * (W - 40)), fl = floors[x - x0]; if (fl - H0 >= 8) vents.push({ x, y: fl }); }
+        // риби (детерміновані за часом)
+        const fish = [], kinds = ['clown', 'tang', 'sardine', 'puffer', 'jelly', 'turtle', 'manta', 'seahorse', 'angel'];
+        for (let i = 0; i < 34; i++) { const k = kinds[i < 8 ? 0 : i < 14 ? 1 : i < 22 ? 2 : i < 25 ? 3 : i < 29 ? 4 : i < 31 ? 5 : i < 32 ? 6 : i < 33 ? 7 : 8]; fish.push({ k, off: Math.random() * 1000, sp: 0.5 + Math.random() * 0.9, fr: Math.random(), dir: Math.random() < 0.5 ? 1 : -1, ph: Math.random() * 6.28, n: k === 'sardine' ? 6 : 1 }); }
+        const chestX = wreckX + 4;
+        cw.ocn = { x0, x1, H0, floors, dec, vents, fish, rocks, wx: wreckX, chest: 0 };
+        return true;
+    }
+    generateWorldData = (function (o) { return function () { const r = o.apply(this, arguments); try { mkOcean(); } catch (e) { console.error('zocean gen', e); } return r; }; })(generateWorldData);
+    let retro = 0;
+    Z.TICK.push(() => {
+        if (typeof gameState === 'undefined' || gameState !== 'PLAYING') return; const cw = currentWorld; if (!cw || cw.ocn || cw.noOcn || retro || (MP && MP.sh)) return;
+        retro = 1; setTimeout(() => { try { if (mkOcean()) toast('🌊 Десь у світі з’явився океан…'); } catch (e) { console.error(e); } }, 5500);
+    });
+    const ocn = () => (currentWorld && currentWorld.ocn) || null;
+
+    // ================= МАЛЮВАННЯ =================
+    const wob = (t, a, b) => Math.sin(t * a + b);
+    function drawKelp(c, d, t, g) {
+        const bx = d.x * 32 + 16, by = d.y * 32, H = d.h * 32 * g; const n = 3;
+        for (let s = 0; s < n; s++) {
+            const ox = (s - 1) * 7, ph = d.ph + s * 1.7, len = H * (0.8 + s * 0.1);
+            c.beginPath(); for (let i = 0; i <= 10; i++) { const k = i / 10, x = bx + ox + Math.sin(t * 1.25 + ph + k * 3.2) * (4 + k * 14), y = by - k * len; i ? c.lineTo(x, y) : c.moveTo(x, y); }
+            c.lineCap = 'round'; c.strokeStyle = '#0b3a1a'; c.lineWidth = 7; c.stroke(); c.strokeStyle = s === 1 ? '#3cc460' : '#2a9a48'; c.lineWidth = 4.2; c.stroke(); c.strokeStyle = 'rgba(190,255,200,.35)'; c.lineWidth = 1.4; c.stroke();
+            for (let i = 2; i < 10; i += 2) { const k = i / 10, x = bx + ox + Math.sin(t * 1.25 + ph + k * 3.2) * (4 + k * 14), y = by - k * len; c.fillStyle = '#2f9a4c'; c.beginPath(); c.ellipse(x + (i % 4 ? 7 : -7), y, 7, 2.6, i % 4 ? -0.5 : 0.5, 0, 7); c.fill(); }
+        }
+    }
+    function drawGrass(c, d, t) {
+        const bx = d.x * 32 + 16, by = d.y * 32; c.lineCap = 'round';
+        for (let s = -2; s <= 2; s++) { const hh = (12 + (s * s % 3) * 5) * d.h, sw = Math.sin(t * 1.8 + d.ph + s) * 5; c.strokeStyle = s % 2 ? '#4fc470' : '#2f9a50'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(bx + s * 4, by); c.quadraticCurveTo(bx + s * 5 + sw * 0.5, by - hh * 0.5, bx + s * 6 + sw, by - hh); c.stroke(); }
+    }
+    const CORAL = [['#ff6a8a', '#a8284a', '#ffc0cc'], ['#b068e8', '#5a2a98', '#e6c8ff'], ['#ffc83a', '#a8741a', '#fff0a0'], ['#4fe0b8', '#1a7a68', '#c8fff0'], ['#ff9a4a', '#a84a1a', '#ffd8b0']];
+    function drawCoral(c, d, t, g) {
+        const bx = d.x * 32 + 16, by = d.y * 32, s = d.s * g, [m, dk, hi] = CORAL[d.k], sw = Math.sin(t * 0.9 + d.ph) * 2; c.save(); c.translate(bx, by); c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round';
+        if (d.k === 0) { const br = (x, y, a, l, dep) => { const x2 = x + Math.sin(a) * l, y2 = y - Math.cos(a) * l; c.strokeStyle = dk; c.lineWidth = 7 - dep * 1.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x2 + sw * dep * 0.3, y2); c.stroke(); c.strokeStyle = m; c.lineWidth = 4.4 - dep * 1.1; c.stroke(); if (dep < 3) { br(x2, y2, a - 0.55, l * 0.72, dep + 1); br(x2, y2, a + 0.5, l * 0.72, dep + 1); } else { c.fillStyle = hi; c.beginPath(); c.arc(x2, y2, 2.2 + Math.sin(t * 3 + x2) * 0.5, 0, 7); c.fill(); } }; br(0, 0, 0, 16, 0); }
+        else if (d.k === 1) { c.fillStyle = dk; c.fillRect(-2, -8, 4, 8); for (let i = 0; i < 9; i++) { const a = -1.25 + i * 0.31 + sw * 0.01, x2 = Math.sin(a) * 26, y2 = -8 - Math.cos(a) * 28; c.strokeStyle = dk; c.lineWidth = 3; c.beginPath(); c.moveTo(0, -8); c.lineTo(x2, y2); c.stroke(); } const gr = c.createRadialGradient(0, -22, 2, 0, -22, 30); gr.addColorStop(0, hi); gr.addColorStop(1, m); c.fillStyle = gr; c.strokeStyle = dk; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, -8); for (let i = 0; i <= 9; i++) { const a = -1.25 + i * 0.31 + sw * 0.01; c.lineTo(Math.sin(a) * 28, -8 - Math.cos(a) * 30 - (i % 2) * 2); } c.closePath(); c.globalAlpha = 0.9; c.fill(); c.globalAlpha = 1; c.stroke(); }
+        else if (d.k === 2) { for (const [x, hh, r] of [[-8, 20, 4.4], [0, 28, 5], [9, 17, 4], [16, 12, 3.2]]) { c.fillStyle = dk; c.fillRect(x - r, -hh, r * 2, hh); c.fillStyle = m; c.fillRect(x - r + 1, -hh, r * 2 - 2, hh); c.fillStyle = hi; c.fillRect(x - r + 1, -hh, 2, hh); c.fillStyle = '#2a1408'; c.beginPath(); c.ellipse(x, -hh, r - 0.5, 2, 0, 0, 7); c.fill(); } }
+        else if (d.k === 3) { const gr = c.createRadialGradient(-5, -16, 2, 0, -10, 24); gr.addColorStop(0, hi); gr.addColorStop(1, m); c.fillStyle = gr; c.strokeStyle = dk; c.lineWidth = 2; c.beginPath(); c.ellipse(0, -9, 22, 15, 0, Math.PI, 0); c.lineTo(22, 0); c.lineTo(-22, 0); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = 'rgba(10,60,50,.55)'; c.lineWidth = 1.4; for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(0, -3, 6 + i * 4, Math.PI * 1.1, Math.PI * 1.9); c.stroke(); } }
+        else { c.fillStyle = dk; c.fillRect(-3, -14, 6, 14); c.fillStyle = m; c.strokeStyle = dk; c.lineWidth = 1.6; c.beginPath(); c.ellipse(0, -18, 20, 8 + Math.sin(t * 1.2 + d.ph), 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = hi; for (let i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 5, -18 + Math.sin(i) * 1.5, 1.5, 0, 7); c.fill(); } }
+        // мерехтіння
+        c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,255,255,' + (0.18 + 0.18 * Math.sin(t * 2.4 + d.ph)) + ')'; c.beginPath(); c.arc(-4, -16, 3, 0, 7); c.fill(); c.restore();
+    }
+    function drawClam(c, d, t, ready) {
+        const bx = d.x * 32 + 16, by = d.y * 32, open = ready ? Math.max(0, Math.sin(t * 0.5 + d.ph)) : 0, a = open * 0.6; c.save(); c.translate(bx, by - 2);
+        c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(0, 2, 20, 4, 0, 0, 7); c.fill();
+        const shell = (sign) => { c.save(); c.translate(-14, -4); c.rotate(sign * a); const gr = c.createLinearGradient(0, -18, 28, 0); gr.addColorStop(0, '#f0e0d0'); gr.addColorStop(1, '#b89078'); c.fillStyle = gr; c.strokeStyle = '#5a3a2a'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(14, sign * -26, 28, 0); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = 'rgba(90,58,42,.5)'; for (let i = 1; i < 5; i++) { c.beginPath(); c.moveTo(14, 0); c.lineTo(i * 6, sign * -9 + 0); c.stroke(); } c.restore(); };
+        shell(1); c.fillStyle = '#e07a9a'; c.beginPath(); c.ellipse(0, -5, 12, 3 + open * 4, 0, 0, 7); c.fill();
+        if (ready && open > 0.35) { c.globalCompositeOperation = 'lighter'; const g2 = c.createRadialGradient(0, -8, 1, 0, -8, 22); g2.addColorStop(0, 'rgba(220,240,255,.9)'); g2.addColorStop(1, 'rgba(160,210,255,0)'); c.fillStyle = g2; c.fillRect(-24, -30, 48, 40); c.globalCompositeOperation = 'source-over'; c.fillStyle = '#fff'; c.beginPath(); c.arc(0, -8, 4, 0, 7); c.fill(); }
+        c.restore();
+    }
+    function drawAnem(c, d, t) {
+        const bx = d.x * 32 + 16, by = d.y * 32, col = [['#ff7ac8', '#ffd0ee'], ['#7ad8ff', '#d0f4ff'], ['#c8ff7a', '#eeffd0']][d.hue]; c.save(); c.translate(bx, by); c.fillStyle = '#4a2a38'; c.beginPath(); c.ellipse(0, -2, 8, 5, 0, Math.PI, 0); c.fill();
+        c.lineCap = 'round'; for (let i = -5; i <= 5; i++) { const sw = Math.sin(t * 2 + d.ph + i * 0.7) * 4, l = 14 + (i % 2) * 5; c.strokeStyle = col[0]; c.lineWidth = 2.4; c.beginPath(); c.moveTo(i * 1.6, -4); c.quadraticCurveTo(i * 2.6 + sw * 0.4, -l * 0.6, i * 3.4 + sw, -l); c.stroke(); c.fillStyle = col[1]; c.beginPath(); c.arc(i * 3.4 + sw, -l, 1.8, 0, 7); c.fill(); }
+        c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, -12, 1, 0, -12, 26); g.addColorStop(0, col[0] + '66'); g.addColorStop(1, col[0] + '00'); c.fillStyle = g; c.fillRect(-26, -38, 52, 40); c.restore();
+    }
+    // ---- істоти ----
+    function fishBody(c, col, col2, L, Hh, tail, stripe) {
+        c.fillStyle = col2; c.beginPath(); c.moveTo(-L * 0.5, 0); c.lineTo(-L * 0.95, -Hh * 0.8 + tail); c.lineTo(-L * 0.95, Hh * 0.8 + tail); c.closePath(); c.fill();
+        const g = c.createLinearGradient(0, -Hh, 0, Hh); g.addColorStop(0, col); g.addColorStop(1, col2); c.fillStyle = g; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.beginPath(); c.ellipse(0, 0, L * 0.55, Hh, 0, 0, 7); c.fill(); c.stroke();
+        if (stripe) { c.fillStyle = stripe; for (const x of [-0.12, 0.2]) c.fillRect(L * x - 1.6, -Hh * 0.9, 3.2, Hh * 1.8); }
+        c.fillStyle = col2; c.beginPath(); c.moveTo(-L * 0.1, -Hh * 0.9); c.lineTo(L * 0.1, -Hh * 1.5); c.lineTo(L * 0.3, -Hh * 0.8); c.fill();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(L * 0.3, -Hh * 0.2, Hh * 0.28, 0, 7); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(L * 0.33, -Hh * 0.2, Hh * 0.14, 0, 7); c.fill();
+    }
+    const CRE = {
+        clown(c, t, p) { const tl = Math.sin(t * 9 + p) * 3; fishBody(c, '#ff8a2a', '#c8501a', 22, 8, tl, '#fff'); },
+        tang(c, t, p) { const tl = Math.sin(t * 7 + p) * 3.4; fishBody(c, '#3a8aff', '#1a3a9a', 30, 11, tl, null); c.fillStyle = '#ffd83a'; c.beginPath(); c.moveTo(-26, 0); c.lineTo(-34, -6 + tl); c.lineTo(-34, 6 + tl); c.fill(); c.fillStyle = '#10204a'; c.beginPath(); c.ellipse(2, -2, 8, 3, 0, 0, 7); c.fill(); },
+        sardine(c, t, p) { const tl = Math.sin(t * 12 + p) * 2.2; fishBody(c, '#cfe4f0', '#7a98ac', 14, 4.4, tl, null); },
+        angel(c, t, p) { const tl = Math.sin(t * 6 + p) * 3; c.save(); c.scale(1, 1); fishBody(c, '#ffe05a', '#d89a1a', 26, 15, tl, '#2a3a9a'); c.restore(); },
+        puffer(c, t, p) { const inf = 0.9 + 0.12 * Math.sin(t * 1.4 + p); c.save(); c.scale(inf, inf); const g = c.createRadialGradient(-3, -4, 1, 0, 0, 16); g.addColorStop(0, '#fff0b0'); g.addColorStop(1, '#c89a3a'); c.fillStyle = g; c.strokeStyle = '#5a3a10'; c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, 14, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#7a5a20'; for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + 0.3; c.beginPath(); c.moveTo(Math.cos(a) * 13, Math.sin(a) * 13); c.lineTo(Math.cos(a) * 18, Math.sin(a) * 18); c.lineTo(Math.cos(a + 0.2) * 13, Math.sin(a + 0.2) * 13); c.fill(); } c.fillStyle = '#fff'; c.beginPath(); c.arc(7, -4, 3.4, 0, 7); c.fill(); c.fillStyle = '#111'; c.beginPath(); c.arc(8, -4, 1.6, 0, 7); c.fill(); c.fillStyle = '#c85a3a'; c.beginPath(); c.ellipse(13, 3, 2, 1.6, 0, 0, 7); c.fill(); c.fillStyle = '#b8863a'; c.beginPath(); c.moveTo(-13, 0); c.lineTo(-22, -5 + Math.sin(t * 8) * 3); c.lineTo(-22, 5 + Math.sin(t * 8) * 3); c.fill(); c.restore(); },
+        jelly(c, t, p) { const pu = 0.85 + 0.15 * Math.sin(t * 2.4 + p); c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, -6, 2, 0, -6, 30); g.addColorStop(0, 'rgba(255,160,255,.5)'); g.addColorStop(1, 'rgba(255,160,255,0)'); c.fillStyle = g; c.fillRect(-30, -36, 60, 60); c.globalCompositeOperation = 'source-over'; c.fillStyle = 'rgba(255,170,240,.7)'; c.strokeStyle = 'rgba(255,230,255,.9)'; c.lineWidth = 1.4; c.beginPath(); c.ellipse(0, -4, 15 * (1.1 - pu * 0.1) , 13 * pu, 0, Math.PI, 0); c.quadraticCurveTo(10, 3, 0, 1); c.quadraticCurveTo(-10, 3, -15, -4); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,190,255,.8)'; c.lineWidth = 1.6; for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * 4, 0); for (let k = 1; k <= 6; k++) c.lineTo(i * 4 + Math.sin(t * 3 + p + k * 0.8 + i) * 4, k * 5); c.stroke(); } c.restore(); },
+        turtle(c, t, p) { const fl = Math.sin(t * 2 + p) * 0.5; c.save(); c.fillStyle = '#5a8a3a'; c.strokeStyle = '#1a3a10'; c.lineWidth = 1.5; for (const s of [1, -1]) { c.save(); c.translate(6, 6 * s * 0.4); c.rotate(s * (0.5 + fl)); c.beginPath(); c.ellipse(-4, 0, 13, 4, 0, 0, 7); c.fill(); c.stroke(); c.restore(); } c.beginPath(); c.ellipse(-16, 4, 5, 2.4, 0.2, 0, 7); c.fill(); const g = c.createRadialGradient(-2, -8, 2, 0, -2, 24); g.addColorStop(0, '#b0c870'); g.addColorStop(1, '#5a6a2a'); c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 22, 14, 0, 0, 7); c.fill(); c.stroke(); c.strokeStyle = 'rgba(40,60,10,.6)'; for (const [x, y] of [[0, 0], [-10, 0], [10, 0], [-5, -7], [5, -7], [-5, 7], [5, 7]]) { c.beginPath(); c.arc(x, y, 5, 0, 7); c.stroke(); } c.fillStyle = '#6a9a3a'; c.beginPath(); c.ellipse(24, -2, 7, 5, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#111'; c.beginPath(); c.arc(27, -4, 1.4, 0, 7); c.fill(); c.restore(); },
+        manta(c, t, p) { const w = Math.sin(t * 1.6 + p); c.save(); const g = c.createLinearGradient(0, -16, 0, 16); g.addColorStop(0, '#2a3a5a'); g.addColorStop(1, '#8aa0c0'); c.fillStyle = g; c.strokeStyle = '#0a1428'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(34, 0); c.quadraticCurveTo(8, -26 * (0.6 + w * 0.5), -22, -6); c.lineTo(-22, 6); c.quadraticCurveTo(8, 26 * (0.6 - w * 0.5), 34, 0); c.fill(); c.stroke(); c.strokeStyle = '#1a2a48'; c.lineWidth = 2; c.beginPath(); c.moveTo(-20, 0); c.quadraticCurveTo(-40, 4 + w * 4, -58, 2 + w * 6); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(22, -3, 2, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.5)'; c.beginPath(); c.ellipse(4, 2, 10, 3, 0, 0, 7); c.fill(); c.restore(); },
+        seahorse(c, t, p) { const sw = Math.sin(t * 2 + p) * 2; c.save(); c.rotate(-1.4); c.strokeStyle = '#ff9a3a'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -12); c.quadraticCurveTo(10 + sw, 0, 2, 10); c.quadraticCurveTo(-8, 16, -4 + sw, 6); c.stroke(); c.strokeStyle = '#ffd08a'; c.lineWidth = 2; c.stroke(); c.fillStyle = '#ff9a3a'; c.beginPath(); c.ellipse(2, -16, 5, 4, -0.4, 0, 7); c.fill(); c.fillRect(6, -17, 7, 2.4); c.fillStyle = '#111'; c.beginPath(); c.arc(3, -17, 1.2, 0, 7); c.fill(); c.restore(); }
+    };
+    const SZ = { clown: 1, tang: 1, sardine: 1, angel: 1, puffer: 1, jelly: 1, turtle: 1.1, manta: 1.2, seahorse: 1 };
+    const floorAt = (O, tx) => O.floors[cl(tx - O.x0, 0, O.floors.length - 1)];
+    function fishPos(O, f, t, i) {
+        const span = (O.x1 - O.x0 - 24) * 32, sp = (f.k === 'turtle' ? 22 : f.k === 'manta' ? 38 : f.k === 'jelly' || f.k === 'seahorse' ? 8 : f.k === 'puffer' ? 16 : 44) * f.sp, u = ((t * sp + f.off * 40) % (span * 2)) / span, ph = u < 1 ? u : 2 - u, dir = u < 1 ? 1 : -1;
+        const x = (O.x0 + 12) * 32 + ph * span, fl = floorAt(O, Math.floor(x / 32)), dp = (fl - O.H0) * 32, band = Math.max(0, dp - 130);
+        let y = O.H0 * 32 + 70 + f.fr * band + Math.sin(t * (f.k === 'jelly' ? 0.8 : 1.3) + f.ph) * (f.k === 'jelly' ? 26 : 12);
+        if (f.k === 'seahorse' || f.k === 'puffer') y = O.H0 * 32 + 90 + f.fr * Math.max(0, dp - 100) * 0.6; if (f.k === 'turtle') y = O.H0 * 32 + 60 + f.fr * 90;
+        return { x, y, dir: f.k === 'jelly' ? 1 : dir, ok: dp > 160 };
+    }
+    function drawWreck(c, O, t) {
+        const bx = O.wx * 32, by = (floorAt(O, O.wx) ) * 32; c.save(); c.translate(bx, by + 6); c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(0, 0, 110, 10, 0, 0, 7); c.fill();
+        c.rotate(-0.12); const hull = c.createLinearGradient(0, -70, 0, 0); hull.addColorStop(0, '#6a4a2e'); hull.addColorStop(1, '#3a2616'); c.fillStyle = hull; c.strokeStyle = '#1a0e06'; c.lineWidth = 2.4;
+        c.beginPath(); c.moveTo(-100, -34); c.quadraticCurveTo(-96, -4, -60, 2); c.lineTo(60, 2); c.quadraticCurveTo(100, -8, 112, -52); c.lineTo(92, -46); c.lineTo(80, -64); c.lineTo(66, -50); c.lineTo(40, -60); c.lineTo(18, -48); c.lineTo(-6, -62); c.lineTo(-30, -46); c.lineTo(-52, -58); c.lineTo(-76, -44); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(20,10,4,.6)'; c.lineWidth = 1.6; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(-90 + i * 10, -34 + i * 8); c.quadraticCurveTo(0, -30 + i * 8, 100 - i * 6, -48 + i * 9); c.stroke(); }
+        c.strokeStyle = '#2a1a0c'; c.lineWidth = 5; for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * 28, 1); c.lineTo(i * 26 + 6, -46 - Math.abs(i) * 3); c.stroke(); }
+        // щогла й рване вітрило
+        c.strokeStyle = '#5a3a1e'; c.lineWidth = 7; c.beginPath(); c.moveTo(-10, -50); c.lineTo(-26, -128); c.stroke(); c.lineWidth = 4; c.beginPath(); c.moveTo(-44, -108); c.lineTo(12, -100); c.stroke();
+        c.fillStyle = 'rgba(210,190,150,.78)'; c.beginPath(); c.moveTo(-42, -106); c.lineTo(10, -98); c.lineTo(4 + Math.sin(t * 1.4) * 4, -70); c.lineTo(-8, -56 + Math.sin(t * 1.9) * 3); c.lineTo(-30, -64); c.lineTo(-38, -80); c.closePath(); c.fill(); c.strokeStyle = 'rgba(80,60,30,.6)'; c.lineWidth = 1; c.stroke();
+        // водорость і ракушки
+        c.fillStyle = '#2f8a4a'; for (const [x, y] of [[-70, -36], [50, -52], [92, -48]]) { c.beginPath(); c.ellipse(x, y - 4, 10, 4, 0.3 + Math.sin(t * 1.5 + x) * 0.2, 0, 7); c.fill(); }
+        c.restore();
+        // скриня
+        const cx2 = (O.wx + 5) * 32, cy2 = by; c.save(); c.translate(cx2, cy2); const glow = O.chest ? 0 : 0.5 + 0.3 * Math.sin(t * 2.4); if (!O.chest) { c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, -14, 1, 0, -14, 46); g.addColorStop(0, 'rgba(255,220,120,' + glow + ')'); g.addColorStop(1, 'rgba(255,220,120,0)'); c.fillStyle = g; c.fillRect(-46, -60, 92, 92); c.globalCompositeOperation = 'source-over'; }
+        c.fillStyle = '#6a4220'; c.strokeStyle = '#1a0e06'; c.lineWidth = 1.8; c.fillRect(-16, -18, 32, 18); c.strokeRect(-16, -18, 32, 18); c.fillStyle = '#8a5a2a'; c.beginPath(); c.moveTo(-16, -18); c.quadraticCurveTo(0, O.chest ? -22 : -34, 16, -18); c.fill(); c.stroke(); c.fillStyle = '#e0b04a'; c.fillRect(-3, -20, 6, 8); c.fillRect(-16, -12, 32, 2.4); if (O.chest) { c.fillStyle = '#3a2210'; c.fillRect(-14, -17, 28, 3); }
+        c.restore();
+    }
+    // ---- уся сцена ----
+    Z.DRAW.push((t, x0, x1) => {
+        const O = ocn(); if (!O) return; const vx0 = x0, vx1 = x1; if (vx1 < O.x0 * 32 - 100 || vx0 > O.x1 * 32 + 100) return;
+        const now = Date.now(), c = ctx, cy0 = camera.y - 80, cy1 = camera.y + canvas.height / (typeof WZ === 'number' ? WZ : 1) + 80;
+        c.save();
+        // сонячні промені (лише в межах океану, без затемнення)
+        c.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 9; i++) { const bx = (O.x0 + 14 + i * 15) * 32 + Math.sin(t * 0.2 + i) * 40; if (bx < vx0 - 200 || bx > vx1 + 200) continue; const L = 380 + (i % 3) * 120, sk = 90, a = 0.06 + 0.035 * Math.sin(t * 0.7 + i * 1.7); const g = c.createLinearGradient(0, O.H0 * 32, 0, O.H0 * 32 + L); g.addColorStop(0, 'rgba(200,240,255,' + a * 2 + ')'); g.addColorStop(1, 'rgba(200,240,255,0)'); c.fillStyle = g; c.beginPath(); c.moveTo(bx - 18, O.H0 * 32); c.lineTo(bx + 18, O.H0 * 32); c.lineTo(bx + 18 + sk, O.H0 * 32 + L); c.lineTo(bx - 18 + sk + 40, O.H0 * 32 + L); c.fill(); }
+        c.globalCompositeOperation = 'source-over';
+        // уламок корабля
+        if (O.wx * 32 > vx0 - 200 && O.wx * 32 < vx1 + 200) drawWreck(c, O, t);
+        // декор
+        for (const d of O.dec) {
+            const px = d.x * 32; if (px < vx0 - 40 || px > vx1 + 40) continue; const py = d.y * 32; if (py < cy0 - 400 || py > cy1 + 100) continue;
+            const ready = !d.cd || now > d.cd, g = d.cd && !ready ? 0.4 + 0.6 * (1 - Math.min(1, (d.cd - now) / 240000)) : 1;
+            if (d.t === 'kelp') drawKelp(c, d, t, g); else if (d.t === 'grass') drawGrass(c, d, t); else if (d.t === 'coral') drawCoral(c, d, t, d.cd && !ready ? 0.55 + 0.45 * g : 1); else if (d.t === 'clam') drawClam(c, d, t, ready); else if (d.t === 'anem') drawAnem(c, d, t);
+        }
+        // бульбашки з жерл
+        for (const v of O.vents) { const px = v.x * 32 + 16; if (px < vx0 - 40 || px > vx1 + 40) continue; c.fillStyle = '#3a3a44'; c.beginPath(); c.moveTo(px - 12, v.y * 32); c.lineTo(px - 5, v.y * 32 - 9); c.lineTo(px + 5, v.y * 32 - 9); c.lineTo(px + 12, v.y * 32); c.fill(); for (let i = 0; i < 7; i++) { const ph = ((t * 0.35 + i / 7) % 1), y = v.y * 32 - 10 - ph * Math.min(300, (v.y - O.H0) * 32 - 20); c.strokeStyle = 'rgba(220,245,255,' + (0.7 * (1 - ph * 0.6)) + ')'; c.fillStyle = 'rgba(200,235,255,.18)'; c.lineWidth = 1.3; c.beginPath(); c.arc(px + Math.sin(t * 2 + i * 2) * (4 + ph * 8), y, 2 + (i % 3) * 1.1 + ph * 1.5, 0, 7); c.fill(); c.stroke(); } }
+        // істоти
+        O.fish.forEach((f, i) => {
+            const p = fishPos(O, f, t, i); if (!p.ok) return; const n = f.n; for (let k = 0; k < n; k++) {
+                const ox = k * -26 * p.dir * 1 + Math.sin(i + k) * 6, oy = Math.sin(t * 1.7 + k * 1.3 + f.ph) * 10 + (k % 2) * 8, x = p.x + ox, y = p.y + oy; if (x < vx0 - 80 || x > vx1 + 80) continue;
+                c.save(); c.translate(x, y); const tilt = f.k === 'jelly' ? 0 : Math.sin(t * 1.3 + f.ph) * 0.08; c.scale(p.dir * SZ[f.k], SZ[f.k]); c.rotate(tilt); CRE[f.k](c, t, f.ph + k); c.restore();
+            }
+        });
+        // планктон
+        c.fillStyle = 'rgba(220,245,255,.45)'; for (let i = 0; i < 60; i++) { const bx = (vx0 + ((i * 193 + t * 6 * (1 + i % 3)) % (vx1 - vx0 + 100))), by = O.H0 * 32 + 40 + ((i * 97) % 520) + Math.sin(t * 0.6 + i) * 8; if (bx < O.x0 * 32 || bx > O.x1 * 32) continue; c.fillRect(bx, by, 2, 2); }
+        c.restore();
+    });
+
+    // ================= ЗБІР, СКРИНЯ, ПОВІТРЯ =================
+    const harv = {};
+    Z.TICK.push(() => {
+        const O = ocn(); if (!O || gameState !== 'PLAYING') return; const px = player.x + 12, py = player.y + 22, tx = Math.floor(px / 32);
+        if (tx < O.x0 - 2 || tx > O.x1 + 2) return; const now = Date.now();
+        for (const d of O.dec) {
+            if (d.t !== 'kelp' && d.t !== 'coral' && d.t !== 'clam') continue; if (d.cd && now < d.cd) continue; const bx = d.x * 32 + 16, by = d.y * 32;
+            const reach = d.t === 'kelp' ? [22, d.h * 32 * 0.9] : d.t === 'coral' ? [26, 44] : [30, 40];
+            if (Math.abs(px - bx) < reach[0] && py < by + 6 && py > by - reach[1]) {
+                if (d.t === 'clam') { if (Math.sin(performance.now() / 1000 * 0.5 + d.ph) < 0.45) continue; d.cd = now + 420000; if (Math.random() < 0.55) { giveItem('sea_pearl', 1); say('+ Морська перлина', '#dff0ff'); } else { giveItem('coral_shard', 1); say('Мушля порожня… +уламок', '#ffb0c0'); } }
+                else if (d.t === 'kelp') { d.cd = now + 240000; const n = 1 + (Math.random() < 0.35 ? 1 : 0); giveItem('kelp', n); say('+' + n + ' Ламінарія', '#9af0a8'); }
+                else { d.cd = now + 300000; giveItem('coral_shard', 1); say('+ Уламок коралу', '#ff9ab0'); }
+                try { const X = FX(); if (X) X.burst(bx, by - 24, d.t === 'kelp' ? '#46c466' : d.t === 'clam' ? '#e6f4ff' : '#ff7a9a', 12, 3, { up: 1 }); } catch (e) { } tone(520, 780, 0.15, 0.06);
+            }
+        }
+        if (!O.chest) { const cx = (O.wx + 5) * 32, cy = floorAt(O, O.wx + 5) * 32; if (Math.abs(px - cx) < 40 && Math.abs(py - cy + 12) < 50) { O.chest = 1; for (const [id, n] of [['gold_coin', 60 + ri(0, 40)], ['gold_ingot', 6], ['iron_ingot', 10], ['breath_potion', 2], ['life_potion', 3], ['sea_pearl', 1]]) giveItem(id, n); say('🏴‍☠️ Скарб із затонулого корабля!', '#ffe08a'); try { const X = FX(); if (X) { X.burst(cx, cy - 16, '#ffe08a', 40, 6, { up: 1.4 }); X.wave(cx, cy - 16, '#ffe08a', 160, { life: 0.8 }); } } catch (e) { } tone(520, 1040, 0.4, 0.08); } }
+    });
+
+    // --- кисень (усі водойми) ---
+    ZS.breathT = ZS.breathT || 0;
+    const noDmg = () => { try { return (typeof CZ !== 'undefined' && CZ.cheat && CZ.nodmg) || (typeof godMode !== 'undefined' && godMode); } catch (e) { return false; } };
+    let hud = null, hf = 0;
+    function mkHud() {
+        const st = document.createElement('style'); st.textContent = `#zo2{position:fixed;left:50%;bottom:122px;transform:translateX(-50%) translateY(12px);z-index:60;width:230px;padding:6px 10px 7px;border-radius:12px;background:linear-gradient(#10263a,#0b1a28);border:2px solid #5ad0e8;color:#dff8ff;font:600 12px 'Segoe UI',sans-serif;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s,border-color .3s,box-shadow .3s;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+#zo2.on{opacity:1;transform:translateX(-50%)}#zo2.low{border-color:#ff6a5a;animation:zo2P .5s ease-in-out infinite alternate}
+@keyframes zo2P{to{box-shadow:0 0 18px rgba(255,90,70,.7)}}
+#zo2 .r{display:flex;justify-content:space-between;margin-bottom:4px}#zo2 .b{height:9px;border-radius:6px;background:rgba(0,0,0,.45);overflow:hidden;position:relative}
+#zo2 .f{height:100%;width:100%;border-radius:6px;background:linear-gradient(90deg,#2ab0d8,#8af0ff);transition:width .12s linear;position:relative}
+#zo2 .f:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(110deg,transparent 0 10px,rgba(255,255,255,.3) 10px 14px);animation:zo2S 1.1s linear infinite}
+@keyframes zo2S{to{background-position:28px 0}}#zo2.low .f{background:linear-gradient(90deg,#e0402a,#ff9a6a)}#zo2.gill .f{background:linear-gradient(90deg,#3ae0a0,#b8ffe0)}`;
+        document.head.appendChild(st); hud = document.createElement('div'); hud.id = 'zo2'; hud.innerHTML = '<div class="r"><span>💨 Кисень</span><span id="zo2t"></span></div><div class="b"><div class="f" id="zo2f"></div></div>'; document.body.appendChild(hud);
+    }
+    Z.TICK.push(() => {
+        let fight = false; try { fight = rpgBosses.some(b => b.k === 'serpent' && b.hp > 0); } catch (e) { }
+        if (!fight && ZS.got.size) ZS.got.clear();
+        if (typeof gameState === 'undefined' || gameState !== 'PLAYING') return;
+        if (ZS.breathT > 0) ZS.breathT--;
+        let under = false; try { under = isW(Math.floor((player.x + 12) / 32), Math.floor((player.y + 4) / 32)); } catch (e) { }
+        if (under && ZS.breathT <= 0 && !noDmg()) {
+            ZS.air = Math.max(0, ZS.air - (100 / 960) * (fight ? 1.35 : 1));
+            if (ZS.air <= 0 && ZS.f % 40 === 0) { player.health -= Math.max(3, Math.round(player.maxHealth * 0.03)); createParticles(player.x + 12, player.y, '#cfeeff', 6, 2, 3, 24); say('-повітря', '#9fe6ff'); tone(240, 160, 0.2, 0.05); if (player.health <= 0) killPlayer('Ви втопились'); }
+            if (ZS.air < 28 && ZS.f % 55 === 0) tone(520, 380, 0.15, 0.04);
+        } else ZS.air = Math.min(100, ZS.air + (under ? 0.4 : 4));
+        if (!hud) mkHud();
+        const show = ZS.air < 99.5 || ZS.breathT > 0 && under; hud.classList.toggle('on', !!show); hud.classList.toggle('low', ZS.air < 28 && ZS.breathT <= 0); hud.classList.toggle('gill', ZS.breathT > 0);
+        if (show && (++hf % 3 === 0)) { document.getElementById('zo2f').style.width = (ZS.breathT > 0 ? 100 : ZS.air) + '%'; document.getElementById('zo2t').textContent = ZS.breathT > 0 ? '🫧 зілля ' + Math.ceil(ZS.breathT / 60) + ' с' : Math.ceil(ZS.air / 100 * 16) + ' с'; }
+        if (under && ZS.f % 14 === 0) { try { const X = FX(); if (X) X.emit(player.x + 14 + rnd(-5, 5), player.y + 6, { vx: rnd(-0.2, 0.2), vy: -rnd(0.6, 1.2), life: 0.9, s: 2.4, c: '#dff8ff', a: 0.7, g: -0.01 }); } catch (e) { } }
+    });
+    // HUD бульбашок над головою лишається під час бою зі змієм
+    Z.DRAW.push((t) => {
+        let fight = false; try { fight = rpgBosses.some(b => b.k === 'serpent' && b.hp > 0); } catch (e) { } if (!fight || ZS.air >= 99.5) return;
+        const x = player.x + 12, y = player.y - 18, n = 10, v = ZS.air / 100 * n, low = ZS.air < 28;
+        ctx.save(); for (let i = 0; i < n; i++) { const f = cl(v - i, 0, 1), px = x + (i - (n - 1) / 2) * 7, py = y + Math.sin(t * 3 + i) * 1.2; ctx.globalAlpha = 0.25 + 0.75 * f; ctx.fillStyle = low ? (Math.floor(t * 8) % 2 ? '#ff6a5a' : '#ffc0b8') : '#bff4ff'; ctx.strokeStyle = 'rgba(6,32,44,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px, py, 2.4 + f * 1.2, 0, 7); ctx.fill(); ctx.stroke(); } ctx.restore();
+    });
+    // зілля
+    usePotion = (function (o) {
+        return function (it) {
+            const P0 = it && POTIONS[it.id]; if (P0 && P0.fx === 'zdbreath') {
+                if ((player.potCD || 0) > 0) return; player.potCD = 45; ZS.breathT = 120 * 60; ZS.air = 100; it.count--; if (it.count <= 0) inventory[selectedHotbarSlot] = null; try { updateInventoryUI(); classSound('potion'); } catch (e) { }
+                try { const X = FX(); if (X) { X.burst(player.x + 12, player.y + 20, '#8af0ff', 24, 4, { up: 1 }); X.wave(player.x + 12, player.y + 22, '#8af0ff', 90, { life: 0.7 }); } } catch (e) { } say('🫧 Підводне дихання', '#8af0ff'); return;
+            }
+            return o.apply(this, arguments);
+        };
+    })(usePotion);
+    window.__zocean = { mkOcean, ocn, ZS };
+})();
+// ===== v46.10 «Човен»: плавучий транспорт на 4 місця (мультиплеєр: водій керує, решта пасажири) =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const FX = () => window.__zpfx, T = i => RPG_TIERS[i], S = itemSprites, P = zfPoly, F = zfFr;
+    const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+    const WID = v => v === 13 || v === 42;
+    const isW = (x, y) => { const r = worldMap[y]; return !!r && WID(r[x]); };
+    const solid = (x, y) => { const r = worldMap[y]; if (!r) return false; const B = BLOCKS[r[x]]; return !!(B && B.solid && !B.liquid); };
+    const say = (t, col) => { try { floatingTexts.push({ x: player.x - 40, y: player.y - 34, text: t, color: col || '#fff', life: 80 }); } catch (e) { } };
+    const tone = (a, b, d, v) => { try { v20Tone('triangle', a, b, d, v); } catch (e) { } };
+    const myName = () => { try { return (MP && MP.name) || 'Ти'; } catch (e) { return 'Ти'; } };
+    const SEATS = [-46, -16, 16, 46], HW = 66;
+
+    // ---------- предмет ----------
+    const BT = { name: 'Дерев’яний човен', tier: 1, boss: '', desc: 'Човен на 4 місця. ЛКМ біля води — спустити. ПКМ по човну — сісти, Пробіл — вийти; Shift+ПКМ порожнього човна — забрати. Хто сів першим — той за стерном (A / D). Решта — пасажири.' };
+    SUMMON.wood_boat = BT; ITEM_METADATA.wood_boat = { name: BT.name, rarity: T(1).r, color: T(1).c, type: '⛵ Транспорт', stat: 'Використати: ЛКМ біля води', desc: BT.desc };
+    try {
+        S.wood_boat = generateSprite(cx => {
+            const g = cx.createRadialGradient(16, 20, 1, 16, 20, 15); g.addColorStop(0, 'rgba(120,200,255,.3)'); g.addColorStop(1, 'rgba(120,200,255,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32);
+            P(cx, [[2, 15], [30, 15], [26, 25], [7, 25]], '#7a4a22', '#2a1408'); P(cx, [[3, 16], [29, 16], [28, 18], [4, 18]], '#b8844a', null); P(cx, [[7, 20], [25, 20], [24, 23], [8, 23]], '#5a3416', null);
+            cx.strokeStyle = '#2a1408'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(16, 15); cx.lineTo(16, 3); cx.stroke(); P(cx, [[17, 4], [27, 13], [17, 13]], '#f4ecd8', '#6a5a3a'); F(cx, '#e8503a', [[3, 14, 26, 1]]);
+            cx.strokeStyle = 'rgba(255,255,255,.7)'; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(3, 27); cx.quadraticCurveTo(10, 24, 16, 27); cx.quadraticCurveTo(22, 30, 29, 27); cx.stroke();
+        });
+    } catch (e) { console.error('zboat sprite', e); }
+    recipes.push({ result: 'wood_boat', count: 1, req: { wood: 30, iron_ingot: 4, kelp: 6 }, lvl: 8 });
+
+    // ---------- стан ----------
+    const B = { list: [], me: null, jump: 0, last: 0, t: 0, near: null };
+    const cwb = () => { const cw = currentWorld; if (!cw) return []; if (!Array.isArray(cw.boats)) cw.boats = []; return cw.boats; };
+    const find = id => B.list.find(b => b.id === id);
+    function adopt(r) { let b = find(r.id); if (!b) { b = { id: r.id, x: r.x, tx: r.x, vx: 0, d: r.d || 1, sr: -1, sy: 0, seats: [null, null, null, null], ph: Math.random() * 6, bob: 0, wake: [], born: Date.now() }; B.list.push(b); } return b; }
+    function syncSave() { const a = cwb(); a.length = 0; for (const b of B.list) a.push({ id: b.id, x: Math.round(b.x), d: b.d }); }
+    function surfRow(x, y0) { const tx = Math.floor(x / 32); let y = Math.floor(y0 / 32); if (isW(tx, y)) { while (isW(tx, y - 1)) y--; return y; } for (let i = 0; i < 40; i++, y++) { if (isW(tx, y)) { while (isW(tx, y - 1)) y--; return y; } if (solid(tx, y)) return -1; } return -1; }
+    // ---------- мережа ----------
+    const send = m => { try { Z.send(m); } catch (e) { } };
+    Z.MSG.x_boat = m => {
+        try {
+            if (m.op === 'put') { const b = adopt({ id: m.bid, x: m.x, d: m.d }); b.sr = -1; }
+            else if (m.op === 'del') { const i = B.list.findIndex(b => b.id === m.bid); if (i >= 0) { if (B.me && B.me.b === B.list[i]) leave(true); B.list.splice(i, 1); } }
+            else if (m.op === 'all') { if (!MP.host) { const ids = new Set(m.list.map(r => r.id)); for (const r of m.list) { const b = adopt(r); if (!(B.me && B.me.b === b) && !b.drv) { b.tx = r.x; b.d = r.d; } } for (let i = B.list.length - 1; i >= 0; i--) if (!ids.has(B.list[i].id) && Date.now() - B.list[i].born > 6000 && !(B.me && B.me.b === B.list[i])) B.list.splice(i, 1); } }
+            else if (m.op === 'pos') { const b = find(m.bid); if (b && !(B.me && B.me.b === b)) { b.tx = m.x; b.vx = m.vx || 0; b.d = m.d || b.d; b.drvT = Date.now(); } }
+            else if (m.op === 'seat') { const b = find(m.bid); if (b && m.seat >= 0 && m.seat < 4 && !(B.me && B.me.b === b && B.me.seat === m.seat)) b.seats[m.seat] = { n: m.name, t: Date.now() }; }
+            else if (m.op === 'leave') { const b = find(m.bid); if (b && m.seat >= 0 && m.seat < 4 && !(B.me && B.me.b === b && B.me.seat === m.seat)) b.seats[m.seat] = null; }
+        } catch (e) { console.error('x_boat', e); }
+    };
+    // ---------- посадка / вихід ----------
+    function board(b) {
+        let s = b.seats.findIndex((q, i) => !q || (Date.now() - q.t > 4500 && !(B.me && B.me.b === b && B.me.seat === i))); if (s < 0) { say('Місць немає', '#ffb08a'); return; }
+        B.me = { b, seat: s }; b.seats[s] = { n: myName(), t: Date.now() }; B.jump = 22; send({ t: 'x_boat', op: 'seat', bid: b.id, seat: s, name: myName() }); say(s === firstSeat(b) ? '⛵ Ти за стерном: A / D' : '⛵ Ти пасажир', '#bfe6ff'); tone(330, 520, 0.2, 0.06);
+        try { const X = FX(); if (X) X.wave(b.x, b.sy, '#cfeeff', 100, { life: 0.6 }); } catch (e) { }
+    }
+    const firstSeat = b => { for (let i = 0; i < 4; i++) { const q = b.seats[i]; if (q && (Date.now() - q.t < 4500 || (B.me && B.me.b === b && B.me.seat === i))) return i; } return -1; };
+    function leave(quiet) {
+        const m = B.me; if (!m) return; const b = m.b; b.seats[m.seat] = null; send({ t: 'x_boat', op: 'leave', bid: b.id, seat: m.seat }); B.me = null;
+        if (!quiet) { player.x = b.x + SEATS[m.seat] + (m.seat < 2 ? -30 : 30) - 12; player.y = b.sy - 66; player.vy = -4; player.vx = (m.seat < 2 ? -2 : 2); tone(520, 330, 0.15, 0.05); }
+    }
+    // ---------- спуск / забір ----------
+    useSummon = (function (o) {
+        return function (it) {
+            if (!it || it.id !== 'wood_boat') return o.apply(this, arguments);
+            const mx = mouse.worldX, my = mouse.worldY, px = player.x + 12; const x = Math.abs(mx - px) < 320 ? mx : px + (mx > px ? 320 : -320);
+            const sr = surfRow(x, my > player.y - 120 ? my : player.y); let ok = sr >= 0; if (ok) { const l = Math.floor((x - HW) / 32), r = Math.floor((x + HW) / 32); for (let c = l; c <= r; c++) if (!isW(c, sr) || solid(c, sr - 1) || solid(c, sr - 2)) ok = false; }
+            if (!ok || B.list.some(q => Math.abs(q.x - x) < 120 && Math.abs(q.sr - sr) < 2)) { say(ok ? 'Тут уже стоїть човен' : 'Потрібна вода: від 4 блоків завширшки', '#ffb08a'); return true; }
+            if (B.last > 0) return true; B.last = 20;
+            it.count--; if (it.count <= 0) inventory[selectedHotbarSlot] = null; updateInventoryUI();
+            const b = adopt({ id: (MP && MP.id || 0) + '_' + (Date.now() % 1e8), x, d: player.facing || 1 }); b.sr = sr; b.sy = sr * 32; send({ t: 'x_boat', op: 'put', bid: b.id, x: Math.round(x), d: b.d }); syncSave(); tone(300, 160, 0.3, 0.08);
+            try { const X = FX(); if (X) { X.burst(x, sr * 32, '#cfeeff', 30, 5, { up: 1.4 }); X.wave(x, sr * 32, '#cfeeff', 150, { life: 0.8 }); } } catch (e) { }
+            return true;
+        };
+    })(useSummon);
+    window.addEventListener('mousedown', e => {
+        if (e.button !== 2 || gameState !== 'PLAYING' || !B.list.length) return; try { if (inventoryOpen) return; } catch (er) { }
+        const mx = mouse.worldX, my = mouse.worldY; let hit = null;
+        for (const b of B.list) if (Math.abs(mx - b.x) < HW + 10 && my > b.sy - 90 && my < b.sy + 34) hit = b; if (!hit) return;
+        if (Math.hypot(player.x + 12 - hit.x, player.y + 22 - hit.sy) > 260 && !(B.me && B.me.b === hit)) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (B.me) { if (B.me.b === hit && e.shiftKey && hit.seats.every((q, i) => i === B.me.seat || !q)) { leave(true); take(hit); } else if (B.me.b === hit) leave(); return; }
+        if (e.shiftKey) { if (hit.seats.every(q => !q || Date.now() - q.t > 4500)) take(hit); else say('У човні хтось є', '#ffb08a'); return; }
+        board(hit);
+    }, true);
+    function take(b) { const i = B.list.indexOf(b); if (i < 0) return; B.list.splice(i, 1); send({ t: 'x_boat', op: 'del', bid: b.id }); giveItem('wood_boat', 1); syncSave(); tone(260, 480, 0.2, 0.06); say('Човен забрано', '#bfe6ff'); }
+
+    // ---------- фізика й логіка ----------
+    Z.TICK.push(() => {
+        if (typeof gameState === 'undefined') return; B.t++; if (B.last > 0) B.last--;
+        if (!B.list.length && !(currentWorld && currentWorld.boats && currentWorld.boats.length)) return;
+        if (currentWorld && currentWorld.boats && currentWorld.boats.length && !B.loaded) { B.loaded = 1; for (const r of currentWorld.boats) adopt(r); }
+        if (gameState !== 'PLAYING') { if (B.me) leave(true); return; }
+        const now = Date.now(), K = keys || {};
+        for (const b of B.list) {
+            if (B.t % 8 === 0 || b.sr < 0) { const sr = surfRow(b.x, (b.sy || player.y) - 40); if (sr >= 0) { b.sr = sr; b.sy = sr * 32; } else if (b.sr < 0) b.sy = player.y; }
+            b.ph += 0.05; b.bob = Math.sin(b.ph * 2.1) * 2.2;
+            for (let i = 0; i < 4; i++) { const q = b.seats[i]; if (q && now - q.t > 4500 && !(B.me && B.me.b === b && B.me.seat === i)) b.seats[i] = null; }
+            const driver = B.me && B.me.b === b && B.me.seat === firstSeat(b);
+            if (driver) {
+                const n = b.seats.filter(Boolean).length, acc = 0.14 * (1 - 0.08 * (n - 1)), max = 4.3 * (1 - 0.06 * (n - 1)); let dir = 0; if (K['KeyA'] || K['ArrowLeft']) dir = -1; if (K['KeyD'] || K['ArrowRight']) dir = 1;
+                if (dir) { b.vx += dir * acc; b.d = dir; } else b.vx *= 0.97; b.vx = cl(b.vx, -max, max) * 0.994;
+                const nx = b.x + b.vx, l = Math.floor((nx - HW + (b.vx < 0 ? 0 : 20)) / 32), r = Math.floor((nx + HW - (b.vx > 0 ? 0 : 20)) / 32); let ok = b.sr >= 0; const edge = b.vx > 0 ? r : l; if (ok && (!isW(edge, b.sr) || solid(edge, b.sr - 1) || solid(edge, b.sr - 2))) ok = false;
+                if (ok) b.x = nx; else { if (Math.abs(b.vx) > 1.4) { tone(120, 80, 0.15, 0.06); try { const X = FX(); if (X) X.burst(b.x + b.d * HW, b.sy, '#cfeeff', 8, 3, { up: 1 }); } catch (e) { } } b.vx *= -0.25; }
+                if (B.t % 7 === 0) send({ t: 'x_boat', op: 'pos', bid: b.id, x: Math.round(b.x), vx: +b.vx.toFixed(2), d: b.d }); b.tx = b.x;
+            } else { b.x += (b.tx - b.x) * 0.2; if (Math.abs(b.x - b.tx) < 0.5) b.x = b.tx; b.vx *= 0.96; }
+            if (Math.abs(b.vx) > 0.7 && B.t % 3 === 0) { b.wake.push({ x: b.x - Math.sign(b.vx) * 60, y: b.sy, a: 1 }); if (b.wake.length > 14) b.wake.shift(); }
+            for (const w of b.wake) w.a -= 0.03; b.wake = b.wake.filter(w => w.a > 0);
+        }
+        const m = B.me;
+        if (m) {
+            const b = m.b; if (!B.list.includes(b) || player.health <= 0) { B.me = null; return; }
+            player.x = b.x + SEATS[m.seat] - 12; player.y = b.sy - 44 + b.bob; player.vx = 0; player.vy = 0; player.onGround = true; player.facing = b.d;
+            b.seats[m.seat] = { n: myName(), t: now }; if (B.t % 40 === 0) send({ t: 'x_boat', op: 'seat', bid: b.id, seat: m.seat, name: myName() });
+            if (B.jump > 0) B.jump--; else if (K['Space'] || K['KeyW'] || K['ArrowUp'] || K['ShiftLeft'] && false) leave();
+        }
+        if (B.t % 180 === 0 && B.list.length) { syncSave(); if (MP && MP.sh && MP.host) send({ t: 'x_boat', op: 'all', list: B.list.map(b => ({ id: b.id, x: Math.round(b.x), d: b.d })) }); }
+        // підказка
+        B.near = null; if (!B.me) for (const b of B.list) if (Math.abs(player.x + 12 - b.x) < 150 && Math.abs(player.y + 22 - b.sy) < 160) B.near = b;
+    });
+
+    // ---------- малювання ----------
+    function drawBoat(c, b, t) {
+        const sp = Math.abs(b.vx), tilt = cl(b.vx * 0.012, -0.05, 0.05) + Math.sin(b.ph * 1.3) * 0.015; c.save();
+        // слід
+        for (const w of b.wake) { c.strokeStyle = 'rgba(235,250,255,' + (w.a * 0.7) + ')'; c.lineWidth = 2; c.beginPath(); c.ellipse(w.x, w.y + 2, 26 * (1.4 - w.a), 3.4, 0, 0, 7); c.stroke(); }
+        c.translate(b.x, b.sy + 8 + b.bob); c.scale(b.d, 1); c.rotate(tilt * b.d);
+        // тінь/вода під днищем
+        c.fillStyle = 'rgba(20,70,110,.28)'; c.beginPath(); c.ellipse(0, 6, 72, 6, 0, 0, 7); c.fill();
+        // весла
+        const oar = Math.sin(t * (4 + sp * 2)) * (sp > 0.4 ? 0.5 : 0.1); c.strokeStyle = '#5a3a1a'; c.lineWidth = 4; c.lineCap = 'round'; for (const s of [-1, 1]) { c.save(); c.translate(s * 20, -16); c.rotate(0.9 + oar * s * 0.4); c.beginPath(); c.moveTo(0, 0); c.lineTo(46, 0); c.stroke(); c.fillStyle = '#8a5a2a'; c.fillRect(40, -4, 14, 8); c.restore(); }
+        // корпус
+        const hg = c.createLinearGradient(0, -22, 0, 18); hg.addColorStop(0, '#a8744a'); hg.addColorStop(0.5, '#7a4a26'); hg.addColorStop(1, '#4a2c14'); c.fillStyle = hg; c.strokeStyle = '#1e0f06'; c.lineWidth = 2.6;
+        c.beginPath(); c.moveTo(-74, -22); c.quadraticCurveTo(-66, 14, -34, 18); c.lineTo(40, 18); c.quadraticCurveTo(70, 14, 82, -30); c.quadraticCurveTo(70, -22, 60, -22); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(30,15,6,.55)'; c.lineWidth = 1.6; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-68 + i * 4, -12 + i * 9); c.quadraticCurveTo(0, -10 + i * 9, 74 - i * 5, -24 + i * 11); c.stroke(); }
+        c.fillStyle = '#d8a468'; c.fillRect(-72, -26, 142, 5); c.strokeStyle = '#1e0f06'; c.lineWidth = 1.6; c.strokeRect(-72, -26, 142, 5);
+        c.fillStyle = '#e8503a'; c.fillRect(-70, -17, 140, 3);
+        // лавки
+        c.fillStyle = '#6a4220'; for (const x of [-30, 30]) { c.fillRect(x - 16, -20, 32, 4); }
+        // ліхтар на носі
+        c.strokeStyle = '#2a1a0a'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(78, -30); c.lineTo(78, -50); c.lineTo(66, -50); c.stroke(); c.fillStyle = '#ffd36b'; c.beginPath(); c.arc(66, -46, 4, 0, 7); c.fill(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(66, -46, 1, 66, -46, 28); g.addColorStop(0, 'rgba(255,210,110,.5)'); g.addColorStop(1, 'rgba(255,210,110,0)'); c.fillStyle = g; c.fillRect(38, -74, 56, 56); c.globalCompositeOperation = 'source-over';
+        // прапорець
+        c.strokeStyle = '#2a1a0a'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-70, -26); c.lineTo(-70, -64); c.stroke(); c.fillStyle = '#e8503a'; c.beginPath(); c.moveTo(-70, -64); c.quadraticCurveTo(-56, -62 + Math.sin(t * 5) * 3, -44, -58 + Math.sin(t * 5 + 1) * 4); c.quadraticCurveTo(-56, -52 + Math.sin(t * 5 + 2) * 3, -70, -50); c.fill();
+        c.restore();
+        // піна по краях
+        c.strokeStyle = 'rgba(240,252,255,.8)'; c.lineWidth = 2; c.beginPath(); c.moveTo(b.x - 78, b.sy + 6 + b.bob); for (let i = 0; i <= 8; i++) c.lineTo(b.x - 78 + i * 20, b.sy + 6 + b.bob + Math.sin(t * 3 + i * 1.5) * 1.6); c.stroke();
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        for (const b of B.list) {
+            if (b.x < x0 - 120 || b.x > x1 + 120) continue; drawBoat(ctx, b, t);
+        }
+        const near = B.near, me = B.me;
+        if (near && !me) { const free = near.seats.filter(q => !q).length; ctx.save(); ctx.font = 'bold 14px Segoe UI'; ctx.textAlign = 'center'; const a = 0.75 + 0.25 * Math.sin(t * 4), txt = 'ПКМ — сісти · місць: ' + free + '/4', w = ctx.measureText(txt).width + 20; ctx.globalAlpha = a; ctx.fillStyle = 'rgba(10,24,36,.8)'; ctx.strokeStyle = '#5ad0e8'; ctx.lineWidth = 1.6; ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(near.x - w / 2, near.sy - 120, w, 24, 8) : ctx.rect(near.x - w / 2, near.sy - 120, w, 24)); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#dff8ff'; ctx.fillText(txt, near.x, near.sy - 103); ctx.restore(); }
+        if (me) { const b = me.b, drv = me.seat === firstSeat(b); ctx.save(); ctx.font = 'bold 13px Segoe UI'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(10,24,36,.7)'; const txt = (drv ? 'A / D — плисти' : 'Ти пасажир') + ' · Пробіл — вийти'; const w = ctx.measureText(txt).width + 18; ctx.fillRect(b.x - w / 2, b.sy + 26, w, 22); ctx.fillStyle = '#dff8ff'; ctx.fillText(txt, b.x, b.sy + 42); ctx.restore(); }
+    });
+    window.__zboat = { B };
+})();
 // ===== v46.2 «Дерево ремесел» (103): три нові гілки професій — Коваль, Інженер, Пасічник (вбудовані в P → Професії) =====
 (function () {
     'use strict';
@@ -44082,12 +45266,26 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.8', 'Фікс багів', 'new'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.10', 'Океан', 'new'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.10': [
+                ['#3ec8b4', '🌊 Міні-океан', 'У світі з’явився мальовничий океан: ламінарія, коралові сади, мушлі, актинії, косяки риб, медузи, черепахи, скати, морські коники та уламки затонулого корабля зі скринею.'],
+                ['#8ad8ff', '🫧 Кисень і зілля', 'Під водою з’являється шкала повітря; коли вона порожня, герой отримує шкоду. Зілля підводного дихання варять із ламінарії, коралових уламків і гелю.'],
+                ['#c8844a', '⛵ Човен', 'Дерев’яний човен на 4 місця: хто сів першим — керує (A / D), решта пасажири. ПКМ — сісти, Пробіл — вийти, Shift+ПКМ — забрати. Працює в мультиплеєрі.'],
+                ['#e8903a', '🐍 Морський змій', 'Тепер прикликається лише в океані — підпливіть до нього.'],
+                ['#a0c8ff', '🛠 Виправлення', 'Предмети в панелі знову видно на картках.'],
+            ],
+            '46.9': [
+                ['#3ec8b4', '🐍 Морський змій', 'Новий бос глибоких вод. Виринає й пірнає, б’є хвилями та струменями, а під водою закінчується повітря — ловіть бульбашки, які він лишає. Призив: Перлина Глибин. Дає луску, Серце Припливу й нову зброю.'],
+                ['#e8903a', '🐜 Мурашник і Королева', 'Глибоко під землею з’явилися колонії гігантських мурах: тунелі, яйця й зала Королеви. Її захищають яйця — розбивайте їх, а ходи, з яких лізуть рої, можна перекрити блоками. Дає Маточне молочко та Жало Королеви.'],
+                ['#c8941a', '🔧 Розбирач спорядження', 'Станція, що розбирає зайву зброю, броню й аксесуари на частини, але повертає лише ~40% матеріалів. Збирається важко: потрібні частини змія, мурашника та Маточне молочко.'],
+                ['#9ac8ff', '✨ Інтерфейс', 'Браузерні смуги прокрутки замінено тонким ігровим повзунком, що плавно з’являється й зникає.'],
+                ['#9ac8ff', '🛡 Боси', 'Виправлено проходження босів крізь блоки.']
+            ],
             '46.8': [
                 ['#9ac8ff', '🌐 Мультиплеєр', 'Менше просідань FPS у мультиплеєрі, особливо у великих світах.']
             ],
