@@ -9639,10 +9639,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
                 const stn = stationOf(rec.result), stOk = !stn || nearStation(stn); if (!stOk) canCraft = false;
                 for (const [itemId, qty] of Object.entries(rec.req)) {
                     const have = v17Count(itemId), ok = have >= qty; if (!ok) canCraft = false;
-                    reqHtml.push(`<span class="${ok ? 'ok' : 'no'}"><img src="${itemSprites[itemId] || ''}">${ITEM_METADATA[itemId] ? ITEM_METADATA[itemId].name : itemId}<i>${Math.min(have, 9999)}/${qty}</i></span>`);
+                    reqHtml.push(`<span class="${ok ? 'ok' : 'no'}"><img src="${window.__zsrc(itemId)}">${ITEM_METADATA[itemId] ? ITEM_METADATA[itemId].name : itemId}<i>${Math.min(have, 9999)}/${qty}</i></span>`);
                 }
                 const meta = ITEM_METADATA[rec.result], nameStr = meta ? meta.name : rec.result, row = document.createElement('div'); row.className = 'craft-item-row';
-                row.innerHTML = `<div class="craft-info"><img src="${itemSprites[rec.result]}"><div><strong style="color:${meta ? meta.color : '#fff'};">${nameStr}${rec.count > 1 ? ' ×' + rec.count : ''}</strong>${stnTag(rec.result)}<div class="cr-req">${reqHtml.join('')}</div></div></div><button class="craft-btn" ${canCraft ? '' : 'disabled'} onclick="craftItem('${rec.result}', ${rec.count})">${locked ? '🔒 Рів. ' + rec.lvl : (!stOk ? '⛔ ' + STN[stn].name : 'Створити')}</button>`;
+                row.innerHTML = `<div class="craft-info"><img src="${window.__zsrc(rec.result)}"><div><strong style="color:${meta ? meta.color : '#fff'};">${nameStr}${rec.count > 1 ? ' ×' + rec.count : ''}</strong>${stnTag(rec.result)}<div class="cr-req">${reqHtml.join('')}</div></div></div><button class="craft-btn" ${canCraft ? '' : 'disabled'} onclick="craftItem('${rec.result}', ${rec.count})">${locked ? '🔒 Рів. ' + rec.lvl : (!stOk ? '⛔ ' + STN[stn].name : 'Створити')}</button>`;
                 const iconImg = row.querySelector('.craft-info img'); iconImg.onmousemove = e => showTooltip(e, rec.result); iconImg.onmouseleave = () => hideTooltip();
                 cList.appendChild(row);
             });
@@ -44252,6 +44252,39 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     });
     window.__zboat = { B };
 })();
+// ===== v46.10 «Швидкість»: крафт і пошук без підвисань =====
+(function () {
+    'use strict';
+    // 1) спрайти як короткі blob-URL: браузер декодує кожен один раз, а не парсить довгі data:-рядки в кожному рядку списку
+    const cache = new Map(); const ok = typeof URL !== 'undefined' && URL.createObjectURL && typeof fetch === 'function';
+    window.__zsrc = function (id) {
+        const d = itemSprites[id]; if (!d) return '';
+        if (typeof d !== 'string' || d.charCodeAt(0) !== 100 || d.length < 200) return d;
+        let c = cache.get(id); if (c && c.d === d) return c.u || d;
+        c = { d, u: null }; cache.set(id, c);
+        try { const i = d.indexOf(','), mime = d.slice(5, d.indexOf(';')), bin = atob(d.slice(i + 1)), a = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k); c.u = URL.createObjectURL(new Blob([a], { type: mime })); } catch (e) { c.u = null; }
+        return c.u || d;
+    };
+    // 0) рядки поза екраном не рахуються (layout/paint) — головне джерело підвисань у довгих списках
+    const st = document.createElement('style'); st.textContent = '#crafting-recipes-list .craft-item-row{content-visibility:auto;contain-intrinsic-size:auto 64px}#crafting-recipes-list{overflow-anchor:none}'; document.head.appendChild(st);
+    // 2) кілька викликів за кадр = один перемальовок; пошук — з невеликою затримкою набору
+    let pend = 0, raf = 0, sig = '';
+    const fn = renderCraftingRecipes;
+    function run() { raf = 0; pend = 0; fn.call(window); }
+    renderCraftingRecipes = function () {
+        if (!document.getElementById('crafting-recipes-list')) return fn.apply(this, arguments);
+        pend = 1; if (!raf) raf = requestAnimationFrame(run);
+    };
+    // миттєво, коли треба (відкриття вкладки): window.__zcraftNow()
+    window.__zcraftNow = function () { if (raf) cancelAnimationFrame(raf); run(); };
+    const inp = () => document.getElementById('craft-q');
+    document.addEventListener('input', e => {
+        const t = e.target; if (!t || t.id !== 'craft-q') return;
+        // старі обробники вже викликали renderCraftingRecipes (→ rAF); додатково відкладаємо, поки людина друкує
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        clearTimeout(window.__zcqT); window.__zcqT = setTimeout(() => { if (!raf) raf = requestAnimationFrame(run); }, 110);
+    }, true);
+})();
 // ===== v46.2 «Дерево ремесел» (103): три нові гілки професій — Коваль, Інженер, Пасічник (вбудовані в P → Професії) =====
 (function () {
     'use strict';
@@ -45278,6 +45311,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
                 ['#c8844a', '⛵ Човен', 'Дерев’яний човен на 4 місця: хто сів першим — керує (A / D), решта пасажири. ПКМ — сісти, Пробіл — вийти, Shift+ПКМ — забрати. Працює в мультиплеєрі.'],
                 ['#e8903a', '🐍 Морський змій', 'Тепер прикликається лише в океані — підпливіть до нього.'],
                 ['#a0c8ff', '🛠 Виправлення', 'Предмети в панелі знову видно на картках.'],
+                ['#7fe0a0', '⚡ Швидкий крафт', 'Список рецептів і пошук у крафті більше не підвисають: рядки поза екраном не малюються, швидке введення тексту не перемальовує список на кожну літеру.'],
             ],
             '46.9': [
                 ['#3ec8b4', '🐍 Морський змій', 'Новий бос глибоких вод. Виринає й пірнає, б’є хвилями та струменями, а під водою закінчується повітря — ловіть бульбашки, які він лишає. Призив: Перлина Глибин. Дає луску, Серце Припливу й нову зброю.'],
