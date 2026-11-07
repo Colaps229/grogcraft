@@ -11330,7 +11330,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.19', GAME_VER_NAME = 'Видимий герой';
+        const GAME_VER = '46.22', GAME_VER_NAME = 'Епічний арсенал';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -31150,7 +31150,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ================= ⛏ v41.5: ГЛИБИНИ — світ копається значно глибше =================
         // Під старим дном світу (≈120 рядків) додається ще 130 рядків: печери, багаті жили руд, лавові зали,
         // глибокі шахти, камери зі скарбами й пастками та непробивна Безодня. Працює і для нових, і для старих світів.
-        const ZR = { EX: 130, seen: {}, tick: 0, NAMES: [['⛏ Глибокі печери', 'Руди тут густіші, а камери ховають скарби.'], ['🔥 Серце землі', 'Базальт, лавові озера й магмова руда.'], ['🕳 Безодня', 'Нижче — лише лава й корінна порода.']] };
+        const ZR = { EX: 158, seen: {}, tick: 0, NAMES: [['⛏ Глибокі печери', 'Руди тут густіші, а камери ховають скарби.'], ['🔥 Серце землі', 'Базальт, лавові озера й магмова руда.'], ['🕳 Безодня', 'Нижче — лише лава й корінна порода.']] };
         {
             BLOCKS[105] = { name: 'Корінна порода', solid: true, item: 'bedrock', hardness: 9000, color: '#16141c' }; MAP_COL[105] = '#16141c'; BLOCK_NEED[105] = 9;
             itemSprites.bedrock = generateSprite(cx => { cx.fillStyle = '#16141c'; cx.fillRect(0, 0, 32, 32); for (const [x, y, w, h, c] of [[1, 2, 13, 9, '#26222e'], [16, 1, 14, 10, '#201c28'], [3, 13, 11, 9, '#201c28'], [17, 13, 12, 9, '#2c2836'], [0, 24, 14, 8, '#26222e'], [16, 24, 15, 8, '#1e1a26']]) { zfFr(cx, c, [[x, y, w, h]]); zfFr(cx, 'rgba(255,255,255,.06)', [[x, y, w, 1]]); } zfFr(cx, '#3a2a5a', [[6, 6, 2, 1], [22, 18, 3, 1], [10, 27, 2, 1]]); });
@@ -31188,6 +31188,58 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             const ex = ed === -1 ? x0 - 2 : x0 + w + 1; let n = 0; for (let k = 0; k < 30; k++) { const x = ex + ed * k; if (zlGetB(x, fl) === 0 && zlGetB(x, fl - 1) === 0 && k > 0) break; S(x, fl, 0); S(x, fl - 1, 0); n++; if (k === 0) { S(x, fl - 2, 55); } }
             S(wallX, fl, 0); S(wallX, fl - 1, 0);
             g.tier = t; return g;
+        }
+
+        // v46.20: 💎 Кришталевий грот і 🌿 Сяючий сад (великі красиві зали); retro=true — для старих світів (без зміни глибини)
+        function zrGrottos(cw, rnd, E) {
+            const { w, h0, EX, H, S, G, free, solidFrac, prot, retro } = E;
+            const gl = []; cw.zd.gl = gl;
+            for (const kind of ['crystal', 'garden']) {
+                const want = Math.max(2, Math.round(w / 85)); let made = 0;
+                for (let tr = 0; tr < 90 && made < want; tr++) {
+                    const rx = (kind === 'crystal' ? 8 : 10) + rnd() * 5, ry = 5 + rnd() * 2.5;
+                    const cx = Math.floor(rx + 18 + rnd() * (w - 2 * rx - 36)), cy = Math.floor(h0 + 12 + ry + rnd() * (EX - 40 - 2 * ry));
+                    if (cy + ry > H - 22) continue;
+                    const bx0 = Math.floor(cx - rx - 4), bx1 = Math.ceil(cx + rx + 4), by0 = Math.floor(cy - ry - 7), by1 = Math.ceil(cy + ry + 3);
+                    if (!free(bx0, by0, bx1, by1, 3) || solidFrac(bx0, by0, bx1 - bx0, by1 - by0) < (retro ? 0.72 : 0.5)) continue;
+                    if (retro) { let hit = false; for (const kk in chestsData) { const q = kk.split(','); if (+q[0] >= bx0 && +q[0] <= bx1 && +q[1] >= by0 && +q[1] <= by1) { hit = true; break; } } if (hit) continue; }
+                    if (gl.some(q => Math.abs(q.cx - cx) < 46 && Math.abs(q.cy - cy) < 22)) continue;
+                    const cells = [], ph = rnd() * 6, fd = ry * 0.62;
+                    for (let dy = -Math.ceil(ry) - 2; dy <= Math.ceil(fd) + 2; dy++) for (let dx = -Math.ceil(rx) - 2; dx <= Math.ceil(rx) + 2; dx++) {
+                        const u = dx / rx, v = dy < 0 ? dy / ry : dy / fd, lim = 1 + 0.16 * Math.sin(dx * 0.8 + ph) * Math.cos(dy * 1.2 - ph);
+                        const X = cx + dx, Y = cy + dy;
+                        if (u * u + v * v <= lim && X > 2 && X < w - 2 && Y > h0 + 2 && Y < H - 18) { S(X, Y, 0); cells.push([X, Y, dx, dy]); }
+                    }
+                    const inC = new Set(cells.map(c => c[0] + ',' + c[1])), air = (x, y) => inC.has(x + ',' + y), rock = b => b === 3 || b === 82 || b === 83 || b === 29 || (b >= 6 && b <= 8);
+                    const tz = Math.max(0, zrZone(cy)); const used = new Set();
+                    // каміння навколо: кристали / мох у стінах
+                    for (const [X, Y] of cells) for (const [ax, ay] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { const nx = X + ax, ny = Y + ay; if (air(nx, ny)) continue; const b = G(nx, ny); if (!rock(b)) continue; const r = rnd(); if (kind === 'crystal') { if (r < 0.34) S(nx, ny, 29); } else if (r < 0.4) S(nx, ny, 64); }
+                    // підлога й стеля
+                    const floor = cells.filter(c => !air(c[0], c[1] + 1) && rock(G(c[0], c[1] + 1))), ceil = cells.filter(c => !air(c[0], c[1] - 1) && rock(G(c[0], c[1] - 1)));
+                    // скриня зі скарбом
+                    const mid = floor.filter(c => Math.abs(c[2]) < rx * 0.4).sort((a, b) => rnd() - 0.5)[0];
+                    if (mid && (kind === 'crystal' || rnd() < 0.6)) { try { zlChest(mid[0], mid[1], zrLoot(tz, true)); used.add(mid[0] + ',' + mid[1]); } catch (e) { console.error('zrGrotChest', e); } }
+                    if (kind === 'crystal') {
+                        for (const c of ceil) { if (used.has(c[0] + ',' + c[1])) continue; const r = rnd(); if (r < 0.42) { S(c[0], c[1], 67); if (rnd() < 0.3 && air(c[0], c[1] + 1)) S(c[0], c[1] + 1, 67); } }
+                        for (const c of floor) { if (used.has(c[0] + ',' + c[1])) continue; if (rnd() < 0.3) S(c[0], c[1], 67); }
+                        // кришталеві колони від підлоги до стелі
+                        for (let k = 0; k < 2; k++) { const f = floor[(rnd() * floor.length) | 0]; if (!f || used.has(f[0] + ',' + f[1])) continue; let y = f[1], n = 0; while (air(f[0], y) && n < 4) { S(f[0], y, 29); y--; n++; } }
+                    } else {
+                        // мох на підлозі, світлогриби, ліани зі стелі
+                        const pxr = rx * 0.5, poolTop = cy + Math.floor(fd * 0.35);
+                        for (const c of floor) { if (Math.abs(c[2]) <= pxr + 2 && c[1] >= poolTop - 1) continue; S(c[0], c[1] + 1, rnd() < 0.85 ? 64 : G(c[0], c[1] + 1)); if (!used.has(c[0] + ',' + c[1]) && rnd() < 0.26) S(c[0], c[1], 61); }
+                        for (const c of ceil) { const r = rnd(); if (r < 0.34) { const L = 1 + ((rnd() * 4) | 0); for (let i = 0; i < L && air(c[0], c[1] + i); i++) S(c[0], c[1] + i, 14); } else if (r < 0.39) S(c[0], c[1], 67); }
+                        // озерце з водоспадом і ліліями
+                        const wc = cells.filter(c => Math.abs(c[2]) <= pxr && c[1] >= poolTop);
+                        for (const c of wc) S(c[0], c[1], 13);
+                        for (const c of cells) if (Math.abs(c[2]) > pxr && Math.abs(c[2]) <= pxr + 1.5 && c[1] >= poolTop) S(c[0], c[1], 64); // берег
+                        const colX = cx + Math.round((rnd() - 0.5) * pxr), cc = cells.filter(c => c[0] === colX).sort((a, b) => a[1] - b[1]);
+                        if (cc.length) { const topY = cc[0][1]; for (let y = topY - 3; y < topY; y++) S(colX, y, 66); for (let y = topY; y < poolTop; y++) if (air(colX, y)) S(colX, y, 66); }
+                        for (const c of wc) { const below = air(c[0], c[1] + 1); if (!below && rnd() < 0.3) S(c[0], c[1], 65); }
+                    }
+                    gl.push({ k: kind, cx, cy, rx: Math.round(rx), ry: Math.round(ry) }); prot.push({ x0: bx0, y0: by0, x1: bx1, y1: by1 }); made++;
+                }
+            }
         }
 
         function zrExtend() {
@@ -31228,6 +31280,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 if (!free(x0 - 32, y0, x0 + bw + 32, y0 + bh, 4) || solidFrac(x0 - 3, y0 - 3, bw + 6, bh + 6) < 0.6) continue;
                 const t = Math.max(0, zrZone(y0 + 2)); try { const g = zrChamber(x0, y0, type, t, rnd, 0); cw.zd.groups.push(g); prot.push({ x0: g.x0 - 3, y0: g.y0 - 3, x1: g.x1 + 3, y1: g.y1 + 3 }); ok++; } catch (e) { console.error('zrChamber', e); }
             }
+            zrGrottos(cw, rnd, { w, h0, EX, H, S, G, free, solidFrac, prot });
             // ---- печери-зали ----
             const caves = [], nC = Math.round(w / 40);
             for (let i = 0; i < nC; i++) {
@@ -31263,8 +31316,19 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         }
         function zrRebuildSurf() { /* поверхня не змінюється */ }
 
+
+        // v46.20: старі світи — додаємо грот і сад у наявну зону глибин (глибина не змінюється: нижче лежать Безодня й небесна зона)
+        function zrRetroGrottos() {
+            const cw = currentWorld, Zd = cw && cw.zd; if (!Zd || !Zd.EX || Zd.gl !== undefined || !worldMap || !worldMap.length) return;
+            const w = cw.width, h0 = Zd.y0, EX = Zd.EX, H = h0 + EX, rnd = vzRng(vzHash((cw.name || 'w') + 'zg') + 7);
+            const S = (x, y, id) => { if (x > 0 && x < w - 1 && y >= 0 && y < H) worldMap[y][x] = id; }, G = (x, y) => (x >= 0 && x < w && y >= 0 && y < H) ? worldMap[y][x] : 1;
+            const Z = cw.zl || (cw.zl = { v: 1, rects: [], mk: [], s: {} }); const prot = []; for (const g of (Zd.groups || [])) prot.push({ x0: g.x0 - 3, y0: g.y0 - 3, x1: g.x1 + 3, y1: g.y1 + 3 });
+            const solidFrac = (x0, y0, bw, bh) => { let s = 0, n = 0; for (let k = 0; k < 90; k++) { const b = G(x0 + Math.floor(rnd() * bw), y0 + Math.floor(rnd() * bh)); n++; if (b === 3 || b === 82 || b === 83 || (b >= 6 && b <= 8) || b === 29) s++; } return s / n; };
+            const free = (x0, y0, x1, y1, m) => { for (const r of (Z.rects || [])) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; for (const r of prot) if (!(x1 + m < r.x0 || x0 - m > r.x1 || y1 + m < r.y0 || y0 - m > r.y1)) return false; return true; };
+            zrGrottos(cw, rnd, { w, h0, EX, H, S, G, free, solidFrac, prot, retro: 1 });
+        }
         generateWorldData = (function (o) { return function () { o.apply(this, arguments); try { zrExtend(); } catch (e) { console.error('zrExtend', e); } }; })(generateWorldData);
-        loadWorld = (function (o) { return function (i) { o(i); try { if (currentWorld && currentWorld.zd === undefined && worldMap && worldMap.length && !v17Client()) zrExtend(); } catch (e) { console.error('zrRetro', e); } }; })(loadWorld);
+        loadWorld = (function (o) { return function (i) { o(i); try { if (currentWorld && currentWorld.zd === undefined && worldMap && worldMap.length && !v17Client()) zrExtend(); else if (currentWorld && currentWorld.zd && currentWorld.zd.gl === undefined && !v17Client()) zrRetroGrottos(); } catch (e) { console.error('zrRetro', e); } }; })(loadWorld);
 
         // ---------- мешканці глибин (лише хост) ----------
         function zrSpawnTick() {
@@ -31288,7 +31352,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 } catch (e) { rpgErr(e); }
             };
         })(updateGame);
-        window.__zr = { ZR, zrZone, zrExtend };
+        window.__zr = { ZR, zrZone, zrExtend }; window.__zrRetro = zrRetroGrottos;
         // ================= 📅 v41.6: ЩОДЕННІ ЗАВДАННЯ (3 на день, серія днів, нагороди) =================
         const ZD = { open: false, f: 0, ui: null, btn: null, msg: '', dirty: 0, sig: '' };
         const zdFresh = () => ({ day: -1, t: [], streak: 0, last: -99, done: 0 });
@@ -38318,7 +38382,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     try { itemSprites.recipe_page = generateSprite(cx => { cx.fillStyle = '#3a2a14'; cx.fillRect(7, 4, 18, 24); cx.fillStyle = '#f2e2b0'; cx.fillRect(8, 5, 16, 22); cx.fillStyle = '#b4964a'; [[11, 9, 10], [11, 13, 8], [11, 17, 10], [11, 21, 6]].forEach(l => cx.fillRect(l[0], l[1], l[2], 2)); cx.fillStyle = '#c0392b'; cx.beginPath(); cx.arc(21, 22, 3, 0, 7); cx.fill(); }); } catch (e) { }
     let RD = null, RDw = '';
     const grpOf = r => { const id = r.result; if (/_(helmet|chestplate|leggings|boots)$/.test(id)) return id.replace(/_(helmet|chestplate|leggings|boots)$/, '') + '*'; return id; };
-    const isRare = r => { try { if (!r || (r.lvl || 0) < 6) return false; const id = r.result; return /_(helmet|chestplate|leggings|boots)$/.test(id) || !!(ACC && ACC[id]) || v24Cat(id) === 'tool'; } catch (e) { return false; } };
+    const isRare = r => { try { if (!r || (r.lvl || 0) < 6) return false; const id = r.result; return /_(helmet|chestplate|leggings|boots)$/.test(id) || !!(ACC && ACC[id]) || v24Cat(id) === 'tool' || !!(window.__zepic && window.__zepic.MYW.has(id)); } catch (e) { return false; } };
     function rdLoad() { const w = wname(); if (RD && RDw === w) return; RDw = w; try { RD = JSON.parse(localStorage.getItem('zf_rg_' + w) || 'null'); } catch (e) { RD = null; } RD = RD || {}; }
     const rdSave = () => { try { localStorage.setItem('zf_rg_' + RDw, JSON.stringify(RD)); } catch (e) { } };
     const rdKnown = r => !on('recdisc') || !isRare(r) || !!(RD && RD[grpOf(r)]);
@@ -38952,7 +39016,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     document.body.appendChild(ov);
     const pc = ov.querySelector('canvas'), pcx = pc.getContext('2d'); pcx.imageSmoothingEnabled = false;
     const fx = ov.querySelector('.zwfx'); for (let i = 0; i < 16; i++) { const e = document.createElement('i'); e.style.left = (Math.random() * 100) + '%'; e.style.animationDuration = (6 + Math.random() * 8) + 's'; e.style.animationDelay = (-Math.random() * 10) + 's'; e.style.opacity = 0; fx.appendChild(e); }
-    const SELL = { bog_herb: 3, wisp_dust: 2 }, TONIC = 12, BOOK = 40, PAGE = 45;
+    const SELL = { bog_herb: 3, wisp_dust: 2 }, TONIC = 12, BOOK = 40, PAGE = 80;
     const RC = { bog_herb: '#6bf0a8', wisp_dust: '#9ff4ff', bog_tonic: '#c86bff', recipe_page: '#ffd27a' };
     let tab = 'buy', typeTimer = 0, said = '', talk = 0;
     const GREET = ['Заходь, не соромся. Тільки не наступи на жабу.', 'О, гість! Що принесеш — те й оціню.'];
@@ -38972,7 +39036,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             h += card(i++, 'bog_tonic', nm('bog_tonic'), '+90 HP та +40 мани. Зварено сьогодні.', TONIC + ' 💰', `data-b="tonic" ${coins >= TONIC ? '' : 'disabled'}`, RC.bog_tonic);
             const left = BK.filter(x => !own.includes(x.id) && cnt(x.id) < 1);
             h += card(i++, (left[0] || BK[0] || {}).id || 'recipe_page', '📖 Лор-книга', left.length ? 'Випадкова з тих, яких у тебе ще немає. Дає знання.' : 'Ти вже зібрав усі книги.', BOOK + ' 💰', `data-b="book" ${coins >= BOOK && left.length && on('school') ? '' : 'disabled'}`, '#8fb7ff');
-            h += card(i++, 'recipe_page', nm('recipe_page'), 'Сама вивчиться: відкриє рідкісну броню, аксесуар чи інструмент.', PAGE + ' 💰', `data-b="page" ${coins >= PAGE && on('recdisc') && window.__zforge.lockedCount() ? '' : 'disabled'}`, RC.recipe_page);
+            h += card(i++, 'recipe_page', nm('recipe_page'), 'Сама вивчиться: відкриє рідкісну броню, аксесуар, інструмент чи епічну зброю.', PAGE + ' 💰', `data-b="page" ${coins >= PAGE && on('recdisc') && window.__zforge.lockedCount() ? '' : 'disabled'}`, RC.recipe_page);
         } else {
             for (const k of Object.keys(SELL)) { const n = cnt(k); h += card(i++, k, nm(k), `В тебе: <b>${n}</b> · ціна ${SELL[k]} 💰 за штуку`, 'Продати 1 · +' + SELL[k], `data-s="${k}" ${n ? '' : 'disabled'}`, RC[k], `<button class="al" data-sa="${k}" ${n ? '' : 'disabled'} title="Продати все">Всі ×${n}</button>`); }
         }
@@ -42594,6 +42658,451 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     // Печатка Циклу видається в zaltar (через giveItem) — тут лише безпека, якщо предмета немає
     window.__zgear = { ZG, WG, AR, ACX, thinSlots, bombStep, wspr, aspr, mk, ring };
 })();
+// ===== v46.22 «Епічний арсенал»: по 5 епічних зброй на кожен клас (20 шт.), дуже важко добути; анімації, ефекти, текстури =====
+(function () {
+    'use strict';
+    const Z = window.__zr, G = window.__zgear; if (!Z || !G) return; const FX = () => window.__zpfx;
+    const T = i => RPG_TIERS[i];
+    const S = itemSprites, P = zfPoly, C = zfC, F = zfFr;
+    const E = { f: 0, hits: {}, pcd: {}, busy: 0, dots: [], clouds: [], stars: [], bolts: [], marks: [], rings: [], sched: [], aur: 0, ecl: null, healN: 0, shots: 0, last: {} };
+    const held = () => { try { return inventory[selectedHotbarSlot]; } catch (e) { return null; } };
+    const hid = () => { const h = held(); return h && h.id; };
+    const night = () => Math.sin(gameTime) < 0.15;
+    const icd = (k, n) => { if (E.f - (E.pcd[k] === undefined ? -1e9 : E.pcd[k]) < n) return false; E.pcd[k] = E.f; return true; };
+    const pxy = () => [player.x + 12, player.y + 22];
+    const rich = () => { const x = FX(); return x ? x.rich() : true; };
+    const say = (t, col) => { try { floatingTexts.push({ x: player.x - 20, y: player.y - 30, text: t, color: col || '#fff', life: 56 }); } catch (e) { } };
+    const FXb = (x, y, c, n, sp, o) => { const f = FX(); if (f) f.burst(x, y, c, n, sp, o); };
+    const FXw = (x, y, c, r, o) => { const f = FX(); if (f) f.wave(x, y, c, r, o); };
+    const live = () => { try { return rpgTargets().filter(q => q.k !== 'animal' && q.o && q.o.hp > 0); } catch (e) { return []; } };
+    const mult = id => { try { return RPG.st.mult[WEAPONS[id].t] || 1; } catch (e) { return 1; } };
+    const heal = v => { if (player.health < player.maxHealth && v > 0) { player.health = Math.min(player.maxHealth, player.health + v); try { floatingTexts.push({ x: player.x + 4, y: player.y - 14, text: '+' + v, color: '#7dffa0', life: 30 }); } catch (e) { } } };
+    const freeze = (q, f) => { try { if (q && q.k === 'mob' && typeof v19FreezeMob === 'function') v19FreezeMob(q.o, f, 0); } catch (e) { } };
+
+    // ---------- палітри ----------
+    Object.assign(RPG_PAL, {
+        moon: { H: '#ffffff', L: '#dce8ff', M: '#9db4e6', D: '#4a5c9a', O: '#10183a' },
+        rose: { H: '#ffe0e6', L: '#ff7a96', M: '#c4234a', D: '#6e0f2a', O: '#26040e' },
+        aurora: { H: '#f0fff8', L: '#7dffd0', M: '#2fbfa8', D: '#3b5ad0', O: '#0a1440' },
+        sunfire: { H: '#fffbe0', L: '#ffd34a', M: '#ff7a1a', D: '#b32a08', O: '#3a0c02' },
+        abyss: { H: '#c8fff4', L: '#38c8c0', M: '#127a86', D: '#0a3446', O: '#020e18' },
+        thorn: { H: '#e8ffcc', L: '#9be05a', M: '#4a8a2a', D: '#2a4a18', O: '#0c1a06' },
+        prism: { H: '#ffffff', L: '#d8f4ff', M: '#a8b8ff', D: '#e07ad8', O: '#2a1a4a' },
+        voidm: { H: '#f0e0ff', L: '#b46cff', M: '#6a2ab8', D: '#2e1054', O: '#0c0418' },
+        honey: { H: '#fff8d0', L: '#ffd84a', M: '#d8982a', D: '#7a4a0c', O: '#2a1804' },
+        phoenix: { H: '#fff6d0', L: '#ffb23a', M: '#e8442a', D: '#8a1a14', O: '#2a0606' },
+        glacier: { H: '#ffffff', L: '#c4f0ff', M: '#6ab8f0', D: '#2a5aa8', O: '#081a40' },
+        eclipse: { H: '#fff0b0', L: '#e8b830', M: '#4a3a78', D: '#1c1238', O: '#06030e' },
+        spore: { H: '#ffe6fb', L: '#ff8be0', M: '#b83a98', D: '#5a1450', O: '#1c0418' },
+        cosmos: { H: '#ffffff', L: '#a8b8ff', M: '#5a48c8', D: '#241a68', O: '#080624' },
+        wyrm: { H: '#f4ffd0', L: '#d8e84a', M: '#5aa83a', D: '#2a5a28', O: '#0a1c08' },
+        ivory: { H: '#ffffff', L: '#f4ecd8', M: '#c4b898', D: '#7a6e58', O: '#2a2418' },
+        lantern: { H: '#fffbe0', L: '#ffe28a', M: '#f0a43a', D: '#8a4a14', O: '#2c1404' },
+        coral: { H: '#fff0f0', L: '#ff9aa8', M: '#e0566e', D: '#2a8a98', O: '#1a0818' },
+        phantom: { H: '#ffffff', L: '#e0f4ff', M: '#9ad0f0', D: '#5a7ab8', O: '#14203c' },
+        amber: { H: '#fff2c0', L: '#ffc23a', M: '#c8780a', D: '#6a3a04', O: '#241002' }
+    });
+
+    // ---------- спрайти ----------
+    const glint = (cx, x, y, r, c) => { cx.fillStyle = c; cx.fillRect(x - r, y, r * 2 + 1, 1); cx.fillRect(x, y - r, 1, r * 2 + 1); };
+    const sp = (kind, pal, gem) => G.wspr(kind, pal, gem);
+    const over = (base, fn) => generateSprite(cx => { cx.drawImage(spriteCanvasByUrl[base], 0, 0); fn(cx); });
+    const gunSpr = (p, gem) => generateSprite(cx => {
+        cx.save(); cx.translate(16, 16); cx.rotate(-0.7);
+        P(cx, [[-15, -1], [-5, -3], [-5, 4], [-13, 8], [-16, 5]], '#6a4426', p.O); F(cx, '#a8743c', [[-13, -0.5, 7, 1.2]]);
+        P(cx, [[-5, -3.4], [15, -2.4], [16, 0], [15, 2.4], [-5, 3.4]], p.M, p.O); P(cx, [[-5, -3], [15, -2], [15, -0.6], [-5, -0.6]], p.L, null); F(cx, p.H, [[-3, -2.5, 14, 0.8]]);
+        P(cx, [[2, 3], [5, 3], [4, 7], [2, 6]], p.D, p.O); F(cx, p.D, [[8, -3.8, 2, 7.6]]); F(cx, p.O, [[8, -3.8, 2, 0.8], [8, 3, 2, 0.8]]); C(cx, -3, 0, 2.2, gem || p.L, p.O, 1); F(cx, p.H, [[-3.6, -0.8, 1.2, 1.2]]); cx.restore();
+    });
+    const launchSpr = (p, gem) => generateSprite(cx => {
+        cx.save(); cx.translate(16, 16); cx.rotate(-0.6);
+        P(cx, [[-14, -4], [8, -5.6], [15, -7.4], [15, 7.4], [8, 5.6], [-14, 4]], p.M, p.O); P(cx, [[-14, -3.4], [8, -4.8], [15, -6.6], [15, -2], [-14, -1.6]], p.L, null); F(cx, p.H, [[-10, -3.4, 16, 0.9]]);
+        F(cx, p.D, [[-4, -5.6, 2.6, 11.2], [4, -5.6, 2.6, 11.2]]); F(cx, p.O, [[-4, -5.6, 2.6, 0.8], [4, -5.6, 2.6, 0.8]]); P(cx, [[-12, 4], [-6, 4], [-8, 11], [-13, 10]], '#6a4426', p.O); C(cx, 12, 0, 3.4, p.O, null); C(cx, 12, 0, 2.2, gem || p.L, null); cx.restore();
+    });
+    const boomSpr = (p, gem) => generateSprite(cx => {
+        cx.save(); cx.translate(16, 17); cx.rotate(-0.4);
+        cx.beginPath(); cx.arc(-1, 6, 15, -Math.PI * 0.96, -Math.PI * 0.04); cx.arc(-1, 3, 10, -Math.PI * 0.04, -Math.PI * 0.96, true); cx.closePath(); cx.fillStyle = p.M; cx.fill(); cx.strokeStyle = p.O; cx.lineWidth = 1.4; cx.stroke();
+        cx.beginPath(); cx.arc(-1, 6, 13.2, -Math.PI * 0.9, -Math.PI * 0.1); cx.strokeStyle = p.L; cx.lineWidth = 2; cx.stroke();
+        cx.beginPath(); cx.arc(-1, 6, 14.4, -Math.PI * 0.8, -Math.PI * 0.5); cx.strokeStyle = p.H; cx.lineWidth = 1; cx.stroke();
+        C(cx, -1, -8.5, 2.4, gem || p.H, p.O, 1); cx.restore();
+    });
+    const tomeSpr = (p, gem, mark) => generateSprite(cx => {
+        P(cx, [[6, 4], [25, 5], [26, 27], [7, 28]], p.D, p.O); P(cx, [[8, 5.5], [24, 6.4], [24.6, 25.6], [9, 26.6]], p.M, null); P(cx, [[8, 5.5], [24, 6.4], [24, 11], [8, 10]], p.L, null);
+        F(cx, '#f4ecd8', [[25, 8, 1.6, 17]]); F(cx, p.O, [[25.6, 8, 0.6, 17]]); F(cx, p.D, [[6, 4, 2.4, 24]]); F(cx, p.L, [[6.6, 5, 0.8, 22]]);
+        C(cx, 16.5, 16, 5.2, p.O, null); C(cx, 16.5, 16, 4, gem || p.L, null); C(cx, 15.4, 14.8, 1.3, p.H, null); if (mark) mark(cx);
+        F(cx, p.H, [[11, 8, 10, 0.8], [11, 23, 10, 0.8]]); F(cx, '#d8b84a', [[23, 14, 3.4, 4]]); F(cx, p.O, [[24.4, 15.4, 1, 1.2]]);
+    });
+    const whipSpr = (p, gem) => generateSprite(cx => {
+        cx.lineCap = 'round'; cx.lineJoin = 'round';
+        const path = () => { cx.beginPath(); cx.moveTo(9, 24); cx.bezierCurveTo(14, 10, 24, 28, 22, 14); cx.bezierCurveTo(21, 8, 27, 7, 28, 4); };
+        path(); cx.strokeStyle = p.O; cx.lineWidth = 4.2; cx.stroke(); path(); cx.strokeStyle = p.M; cx.lineWidth = 2.6; cx.stroke(); path(); cx.strokeStyle = p.L; cx.lineWidth = 1; cx.stroke();
+        cx.save(); cx.translate(7, 26); cx.rotate(-0.8); F(cx, p.O, [[-6, -2.4, 12, 4.8]]); F(cx, '#6a4426', [[-5.4, -1.6, 11, 3.2]]); F(cx, '#a8743c', [[-5, -1.6, 10, 1]]); F(cx, p.L, [[-1, -2.4, 1.6, 4.8], [2.4, -2.4, 1.6, 4.8]]); cx.restore();
+        C(cx, 28, 4, 2.2, gem || p.H, p.O, 1);
+    });
+    // ---------- реєстр зброї ----------
+    // [id, назва, тип, вид, палітра, шкода, cd, рівень, опції, опис, спрайт, аура[режим, колір1, колір2]]
+    const SW = (id, k, pal, gem, fn) => () => over(sp(k, pal, gem), fn);
+    const WE = [
+        // --- ВОЇН ---
+        ['moon_cleaver', 'Місячний Розтинач', 'melee', 'sword', 'moon', 170, 20, 3, {}, 'Вночі б’є на 15% сильніше. Кожен 5-й удар випускає срібний півмісяць, що прорізає всіх на шляху.',
+            SW('moon_cleaver', 'sword', 'moon', '#ffffff', cx => { cx.strokeStyle = '#ffffff'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(19, 13, 3.2, 0.6, 5.4); cx.stroke(); glint(cx, 24, 7, 2, '#ffffff'); glint(cx, 13, 19, 1, '#dce8ff'); }), ['mote', '#dce8ff', '#ffffff']],
+        ['rose_glaive', 'Спис Багряної Троянди', 'melee', 'spear', 'rose', 156, 22, 3, { reach: 168 }, 'Уколи лишають кровотечу на 3 с. Пелюстки троянди злітають з вістря й падають повільним дощем.',
+            SW('rose_glaive', 'spear', 'rose', '#ffe0e6', cx => { C(cx, 20, 14, 1.6, '#ff7a96', '#6e0f2a', 0.8); C(cx, 22, 11, 1.2, '#ffa0b4', null); glint(cx, 26, 8, 1, '#ffe0e6'); F(cx, '#2a8a3a', [[10, 21, 2, 1], [8, 23, 2, 1]]); }), ['fall', '#ff5a7a', '#c4234a']],
+        ['aurora_sickle', 'Серп Північного Сяйва', 'melee', 'dagger', 'aurora', 90, 8, 3, {}, 'Швидкий серп: кожен удар заряджає сяйво (до 6). На шостому вибухає хвилею стрічок навколо цілі.',
+            SW('aurora_sickle', 'dagger', 'aurora', '#7dffd0', cx => { cx.strokeStyle = '#7dffd0'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(17, 17); cx.quadraticCurveTo(22, 13, 26, 8); cx.stroke(); cx.strokeStyle = '#8aa8ff'; cx.beginPath(); cx.moveTo(15, 19); cx.quadraticCurveTo(20, 16, 24, 11); cx.stroke(); glint(cx, 26, 6, 2, '#ffffff'); }), ['ribbon', '#7dffd0', '#8aa8ff']],
+        ['sunfire_boomerang', 'Бумеранг Сонячної Жар-Птиці', 'melee', 'boomerang', 'sunfire', 124, 26, 3, { range: 340, fire: 1 }, 'Летить, лишаючи вогняний хвіст. Влучання вибухає полум’ям навколо цілі.', () => boomSpr(RPG_PAL.sunfire, '#fffbe0'), ['flame', '#ffd34a', '#ff7a1a']],
+        ['abyss_maul', 'Молот Бездонної Глибини', 'melee', 'sword', 'abyss', 184, 34, 3, {}, 'Кожен удар приголомшує ворога. Кожен 3-й б’є об землю й шле хвилю, що відкидає всіх навколо.', () => sp('hammer', 'abyss', '#38c8c0'), ['bubble', '#38c8c0', '#c8fff4']],
+        // --- СТРІЛЕЦЬ ---
+        ['thorn_bow', 'Лук Терновий Вінок', 'ranged', 'bow', 'thorn', 74, 17, 3, { ammo: 'arrow', multi: 2 }, 'Стріляє двома стрілами. Кожен 4-й постріл — віяло терну: ще чотири стріли безкоштовно. Шипи викликають кровотечу.',
+            SW('thorn_bow', 'bow', 'thorn', '#e8ffcc', cx => { P(cx, [[18, 3], [20, 6], [17, 6]], '#9be05a', '#0c1a06'); P(cx, [[20, 28], [22, 25], [17, 25]], '#9be05a', '#0c1a06'); P(cx, [[24, 9], [26, 11], [23, 12]], '#4a8a2a', '#0c1a06'); glint(cx, 9, 16, 1, '#e8ffcc'); }), ['fall', '#9be05a', '#4a8a2a']],
+        ['prism_crossbow', 'Арбалет Райдужної Призми', 'ranged', 'crossbow', 'prism', 128, 30, 3, { ammo: 'bolt', pierce: 3 }, 'Болт розпадається на два райдужні промені при влучанні. Світиться всіма кольорами.',
+            SW('prism_crossbow', 'crossbow', 'prism', '#ffffff', cx => { P(cx, [[8, 13], [11, 10], [14, 13], [11, 16]], '#ffffff', '#2a1a4a'); P(cx, [[11, 10], [14, 13], [11, 13]], '#ffb0f0', null); P(cx, [[8, 13], [11, 13], [11, 16]], '#8affd0', null); glint(cx, 24, 8, 2, '#ffffff'); }), ['rainbow', '#ffffff', '#ffffff']],
+        ['void_musket', 'Мушкет Порожнечі', 'ranged', 'gun', 'voidm', 150, 38, 3, { ammo: 'bullet' }, 'Кожна куля лишає мітку. На третій мітці ціль колапсує, затягуючи сусідів у чорну воронку.', () => gunSpr(RPG_PAL.voidm, '#b46cff'), ['implode', '#b46cff', '#f0e0ff']],
+        ['honey_launcher', 'Гармата Бджолиного Рою', 'ranged', 'launcher', 'honey', 118, 46, 3, { ammo: 'grenade', aoe: 95 }, 'Граната вибухає медовою хмарою і випускає чотирьох самонавідних бджіл.', () => launchSpr(RPG_PAL.honey, '#fff8d0'), ['hex', '#ffd84a', '#fff8d0']],
+        ['phoenix_bow', 'Лук Жар-Птиці', 'ranged', 'bow', 'phoenix', 84, 18, 3, { ammo: 'arrow' }, 'Стріли запалюють ворога на 4 с. Спалений ворог вибухає феєрверком із вогняного пір’я.',
+            SW('phoenix_bow', 'bow', 'phoenix', '#fff6d0', cx => { P(cx, [[7, 9], [3, 5], [6, 11]], '#ffb23a', '#2a0606'); P(cx, [[7, 23], [3, 27], [6, 21]], '#ffb23a', '#2a0606'); P(cx, [[5, 7], [1, 3], [4, 9]], '#e8442a', null); glint(cx, 24, 16, 1, '#fff6d0'); }), ['flame', '#ffb23a', '#e8442a']],
+        // --- МАГ ---
+        ['glacier_staff', 'Посох Серця Льодовика', 'magic', 'staff', 'glacier', 118, 28, 3, { mana: 16, orb: 'stardust', aoe: 115 }, 'Крижані кулі заморожують ціль. Кожне 3-тє влучання — крижана нова з дощем бурульок.',
+            SW('glacier_staff', 'staff', 'glacier', '#ffffff', cx => { P(cx, [[24, 0], [26, 4], [24, 8], [22, 4]], '#ffffff', '#2a5aa8'); P(cx, [[19, 5], [21, 8], [19, 11]], '#c4f0ff', '#2a5aa8'); P(cx, [[28, 6], [30, 9], [28, 12]], '#c4f0ff', '#2a5aa8'); }), ['snow', '#c4f0ff', '#ffffff']],
+        ['eclipse_tome', 'Гримуар Затемнення', 'magic', 'tome', 'eclipse', 112, 22, 3, { mana: 14, radius: 150, nova: 'rune' }, 'Кожна нова лишає золоту корону затемнення. За кожного враженого ворога ти лікуєшся (до 4 за заклинання).', () => tomeSpr(RPG_PAL.eclipse, '#e8b830', cx => { C(cx, 16.5, 16, 7, null, '#e8b830', 0.8); }), ['orbit', '#e8b830', '#fff0b0']],
+        ['spore_wand', 'Жезл Спорового Цвіту', 'magic', 'wand', 'spore', 62, 9, 3, { mana: 5, orb: 'nebula', homing: 1 }, 'Самонавідні спори. Влучання лишає отруйну хмару, що гуляє на місці 2,5 с.',
+            SW('spore_wand', 'wand', 'spore', '#ff8be0', cx => { C(cx, 22, 11, 1.4, '#ffe6fb', null); C(cx, 27, 6, 1, '#ff8be0', null); C(cx, 28, 13, 1, '#ffe6fb', null); C(cx, 19, 3, 0.9, '#ff8be0', null); }), ['spore', '#ff8be0', '#ffe6fb']],
+        ['cosmos_staff', 'Посох Космічного Дощу', 'magic', 'staff', 'cosmos', 128, 30, 3, { mana: 19, orb: 'nebula', aoe: 105 }, 'Кожне закляття прикликає три падаючі зорі навколо курсору.',
+            SW('cosmos_staff', 'staff', 'cosmos', '#a8b8ff', cx => { glint(cx, 24, 2, 2, '#ffffff'); glint(cx, 28, 9, 1, '#a8b8ff'); glint(cx, 19, 8, 1, '#ffffff'); F(cx, '#ffffff', [[26, 5, 1, 1], [21, 1, 1, 1]]); }), ['stars', '#a8b8ff', '#ffffff']],
+        ['wyrm_staff', 'Посох Зміїної Блискавки', 'magic', 'staff', 'wyrm', 120, 28, 3, { mana: 17, orb: 'stardust', aoe: 70 }, 'Влучання перестрибує золото-зеленою блискавкою до трьох ворогів поруч.',
+            SW('wyrm_staff', 'staff', 'wyrm', '#d8e84a', cx => { cx.strokeStyle = '#f4ffd0'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(21, 3); cx.lineTo(24, 7); cx.lineTo(22, 8); cx.lineTo(26, 13); cx.stroke(); glint(cx, 27, 4, 1, '#d8e84a'); }), ['arc', '#d8e84a', '#f4ffd0']],
+        // --- ПРИКЛИКАЧ ---
+        ['ivory_whip', 'Кістяний Батіг Жнеця', 'summon', 'whip', 'ivory', 66, 22, 3, { range: 215 }, 'Позначає ціль. Кожен 4-й удар випускає самонавідний череп-привида.', () => whipSpr(RPG_PAL.ivory, '#ffffff'), ['mote', '#f4ecd8', '#ffffff']],
+        ['lantern_staff', 'Посох Ліхтарника', 'summon', 'minion_staff', 'lantern', 56, 24, 3, { mana: 14, minion: 'star', head: 'star' }, 'Помічник світиться теплим світлом. Його влучання перескакують променем на двох ворогів.',
+            SW('lantern_staff', 'staff', 'lantern', '#ffe28a', cx => { P(cx, [[21, 4], [27, 4], [28, 12], [20, 12]], '#ffe28a', '#2c1404'); F(cx, '#2c1404', [[23.4, 4, 1, 8]]); F(cx, '#fffbe0', [[22, 7, 2, 3]]); F(cx, '#8a4a14', [[21, 3, 6, 1.4], [20, 12, 8, 1.4]]); }), ['warm', '#ffe28a', '#fffbe0']],
+        ['coral_sentry', 'Коралова Башта', 'summon', 'sentry_staff', 'coral', 52, 45, 3, { mana: 18, sentry: 'star', head: 'star_tower' }, 'Вартовий пульсує хвилею корала: шкодить і сповільнює ворогів поруч, а тебе трохи лікує.',
+            SW('coral_sentry', 'staff', 'coral', '#ff9aa8', cx => { cx.strokeStyle = '#e0566e'; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(23, 10); cx.lineTo(23, 3); cx.moveTo(23, 7); cx.lineTo(27, 3); cx.moveTo(23, 8); cx.lineTo(19, 4); cx.stroke(); C(cx, 23, 3, 1.1, '#ffd0d8', null); C(cx, 27, 3, 1, '#ffd0d8', null); C(cx, 19, 4, 1, '#ffd0d8', null); }), ['bubble', '#ff9aa8', '#2a8a98']],
+        ['phantom_wisp', 'Жезл Примарного Хору', 'summon', 'wisp_staff', 'phantom', 36, 34, 3, { mana: 14, minion: 'wisp', head: 'wisp' }, 'Кличе двох привидів із примарним шлейфом. Їхні влучання часом здіймають виття, що відкидає ворогів.',
+            SW('phantom_wisp', 'staff', 'phantom', '#e0f4ff', cx => { cx.fillStyle = 'rgba(224,244,255,.9)'; cx.beginPath(); cx.arc(23.5, 6, 3.4, Math.PI, 0); cx.lineTo(27, 12); cx.lineTo(25.2, 10.6); cx.lineTo(23.5, 12); cx.lineTo(21.8, 10.6); cx.lineTo(20, 12); cx.closePath(); cx.fill(); F(cx, '#14203c', [[22, 5, 1.4, 1.6], [25, 5, 1.4, 1.6]]); }), ['ghost', '#e0f4ff', '#9ad0f0']],
+        ['amber_scarab', 'Жезл Бурштинового Рою', 'summon', 'scarab_staff', 'amber', 30, 34, 3, { mana: 14, minion: 'scarab', head: 'scarab' }, 'Кличе трьох скарабеїв. Їхні укуси часом ув’язнюють ворога в бурштин.',
+            SW('amber_scarab', 'staff', 'amber', '#ffc23a', cx => { P(cx, [[23.5, 3], [27, 7], [23.5, 12], [20, 7]], '#ffc23a', '#241002'); F(cx, '#241002', [[23, 5.4, 1.6, 4]]); F(cx, '#fff2c0', [[21.6, 6, 1, 1]]); }), ['amber', '#ffc23a', '#fff2c0']]
+    ];
+    const MYW = new Set(WE.map(w => w[0])), AUR = {}, NAME = {};
+    for (const [id, nm, t, k, pal, dmg, cd, tier, opt, desc, spr, aur] of WE) {
+        WEAPONS[id] = Object.assign({ name: nm, t, k, pal, dmg, cd, tier, desc, aim: 1 }, opt); if (k === 'sword' || k === 'dagger') WEAPONS[id].aim = 0;
+        WEAPONS[id].nochest = 1; HELD_TOOLS[id] = 1; SWORD_GLOW[id] = 1; try { SWCOL[id] = RPG_PAL[pal].L; } catch (e) { }
+        AUR[id] = aur; NAME[id] = nm;
+        G.mk(id, nm, tier, TYPE_ICON[t] + ' ' + TYPE_NAME[t] + ' · ' + KIND_NAME[k], 'Шкода: ' + dmg + (opt.mana ? ' · Мана: ' + opt.mana : '') + (opt.ammo ? ' · Потрібні боєприпаси' : ''), desc);
+        try { S[id] = spr(); } catch (e) { console.error('zepic sprite', id, e); }
+    }
+    // ---------- ресурс ----------
+    S.primal_shard = generateSprite(cx => {
+        const g = cx.createRadialGradient(16, 16, 2, 16, 16, 15); g.addColorStop(0, 'rgba(200,170,255,.7)'); g.addColorStop(1, 'rgba(200,170,255,0)'); cx.fillStyle = g; cx.fillRect(0, 0, 32, 32);
+        P(cx, [[16, 2], [24, 10], [21, 28], [11, 28], [8, 10]], '#7a5ae0', '#1c1048'); P(cx, [[16, 2], [24, 10], [16, 14]], '#e8dcff', null); P(cx, [[16, 14], [24, 10], [21, 28], [16, 28]], '#4a34a8', null); P(cx, [[8, 10], [16, 2], [16, 14]], '#b49cff', null);
+        P(cx, [[11, 28], [16, 14], [16, 28]], '#6a4ad0', null); F(cx, '#ffffff', [[14, 6, 1, 4], [12, 12, 1, 1]]); F(cx, '#7dffd0', [[19, 16, 1, 6]]); F(cx, '#ffb0f0', [[13, 20, 1, 4]]);
+    });
+    G.mk('primal_shard', 'Першоуламок', 3, 'Ресурс', null, 'Уламок часу, коли світ ще був юний. Рідко випадає з могутніх босів, скарбниць та глибинних створінь. З нього кують епічну зброю.');
+    // ---------- рецепти ----------
+    [
+        ['moon_cleaver', { primal_shard: 7, crystal_ingot: 8, mirror_shard: 6, gold_ingot: 10 }, 26], ['rose_glaive', { primal_shard: 7, swamp_heart: 4, cosmic_ingot: 6, gold_ingot: 10 }, 26],
+        ['aurora_sickle', { primal_shard: 6, frost_pearl: 6, crystal_ingot: 6, star_thread: 2 }, 26], ['sunfire_boomerang', { primal_shard: 7, sun_shard: 8, cosmic_ingot: 6, gold_ingot: 8 }, 26],
+        ['abyss_maul', { primal_shard: 8, frost_core: 4, obsidian: 20, cosmic_ingot: 8 }, 28],
+        ['thorn_bow', { primal_shard: 6, vines: 24, swamp_heart: 4, cosmic_ingot: 5 }, 26], ['prism_crossbow', { primal_shard: 7, crystal_ingot: 10, mirror_shard: 8, gold_ingot: 8 }, 27],
+        ['void_musket', { primal_shard: 8, cosmic_ingot: 8, time_essence: 6, star_thread: 2 }, 28], ['honey_launcher', { primal_shard: 7, sun_shard: 5, gold_ingot: 12, gel: 20 }, 26],
+        ['phoenix_bow', { primal_shard: 7, sun_shard: 8, magma_core: 2, cosmic_ingot: 6 }, 27],
+        ['glacier_staff', { primal_shard: 7, frost_pearl: 8, frost_core: 4, crystal_ingot: 6 }, 27], ['eclipse_tome', { primal_shard: 8, ancient_page: 14, time_essence: 6, cosmic_ingot: 6 }, 28],
+        ['spore_wand', { primal_shard: 6, swamp_heart: 5, gel: 24, crystal_ingot: 5 }, 25], ['cosmos_staff', { primal_shard: 8, star_thread: 4, cosmic_ingot: 8, crystal_ingot: 8 }, 29],
+        ['wyrm_staff', { primal_shard: 7, storm_core: 2, sun_shard: 6, cosmic_ingot: 6 }, 28],
+        ['ivory_whip', { primal_shard: 6, ancient_page: 10, frost_pearl: 4, gold_ingot: 10 }, 25], ['lantern_staff', { primal_shard: 7, sun_shard: 6, crystal_ingot: 6, gold_ingot: 10 }, 26],
+        ['coral_sentry', { primal_shard: 7, swamp_heart: 4, crystal_ingot: 8, gel: 20 }, 26], ['phantom_wisp', { primal_shard: 7, frost_pearl: 6, time_essence: 5, mirror_shard: 6 }, 27],
+        ['amber_scarab', { primal_shard: 7, scarab_shell: 14, sun_shard: 5, gold_ingot: 10 }, 26]
+    ].forEach(([r, req, lvl]) => { const q = {}; for (const k in req) q[k] = k === 'primal_shard' ? req[k] + 2 : Math.ceil(req[k] * 1.4); recipes.push({ result: r, count: 1, req: q, lvl: lvl + 1 }); });
+
+    // ---------- допоміжні ефекти ----------
+    function aoe(x, y, R, k, id, skip, o) {
+        const W = WEAPONS[id], d = Math.max(1, Math.round(W.dmg * k * mult(id))); let n = 0; E.busy++;
+        try { for (const q of live()) { if (q.o === skip) continue; if (Math.hypot(q.x - x, q.y - y) <= R + (q.r || 0)) { rpgHit(q, d, Object.assign({ kb: 2, dir: q.x > x ? 1 : -1, col: RPG_PAL[W.pal].L, pcol: RPG_PAL[W.pal].M }, o || {})); n++; } } } finally { E.busy--; }
+        return n;
+    }
+    function dot(q, id, k, ticks, gap, col) {
+        for (const d of E.dots) if (d.o === q.o && d.id === id) { d.left = ticks; return; }
+        if (E.dots.length > 40) E.dots.shift(); E.dots.push({ o: q.o, id, k, left: ticks, gap, t: 0, col });
+    }
+    function bolt(x1, y1, x2, y2, col) { E.bolts.push({ x1, y1, x2, y2, col, t: 0, life: 11, seed: Math.random() * 99 }); if (E.bolts.length > 24) E.bolts.shift(); }
+    function ring(x, y, col, R, life, kind) { E.rings.push({ x, y, col, R, life: life || 24, t: 0, kind: kind || 0 }); if (E.rings.length > 20) E.rings.shift(); }
+    const clone = (p, rot, k, col) => { const c = Math.cos(rot), s = Math.sin(rot); const q = Object.assign({}, p, { hit: new Set(), vx: p.vx * c - p.vy * s, vy: p.vx * s + p.vy * c, dmg: Math.max(1, Math.round(p.dmg * k)), col: col || p.col, _ep: 1 }); return spawnProj(q); };
+
+    // ---------- пасивки при влучанні ----------
+    function procHit(id, t, dmg) {
+        const [px, py] = pxy(), W = WEAPONS[id], c = E.hits[id] = (E.hits[id] || 0) + 1, X = t.x, Y = t.y, o = t.o, C0 = RPG_PAL[W.pal];
+        FXb(X, Y, C0.L, 4, 2.4);
+        switch (id) {
+            case 'moon_cleaver': if (c % 5 === 0 && icd('mc', 30)) {
+                try { const r = rollDmg(W.dmg * 0.8, 'melee', 0); spawnProj({ k: 'wave', x: px + player.facing * 20, y: py - 4, vx: player.facing * 10, vy: 0, dmg: r.d, crit: r.crit, col: '#dce8ff', pierce: 99, r: 22, life: 40, melee: 1 }); } catch (e) { }
+                FXb(px + player.facing * 30, py, '#ffffff', 16, 3.4); FXw(X, Y, '#dce8ff', 80, { life: 0.7 }); ring(X, Y, '#dce8ff', 54, 22, 1);
+            } break;
+            case 'rose_glaive': dot(t, id, 0.14, 4, 24, '#c4234a'); FXb(X, Y, '#ff5a7a', 7, 2.6, { up: 0.6 }); if (icd('rg', 20)) FXw(X, Y, '#ff7a96', 46, { life: 0.5 }); break;
+            case 'aurora_sickle': {
+                if (E.f - (E.last.as || -999) > 150) E.aur = 0; E.last.as = E.f; E.aur++;
+                FXb(X, Y, E.aur % 2 ? '#7dffd0' : '#8aa8ff', 3 + E.aur, 2.6, { up: 1 });
+                if (E.aur >= 6) { E.aur = 0; aoe(X, Y, 115, 1.1, id, null, { col: '#7dffd0' }); FXw(X, Y, '#7dffd0', 120, { life: 0.9 }); FXw(X, Y, '#8aa8ff', 90, { life: 0.8 }); FXw(X, Y, '#ff9af0', 60, { life: 0.7 }); ring(X, Y, '#7dffd0', 110, 28, 2); FXb(X, Y, '#ffffff', 18, 4, { up: 2 }); say('Сяйво!', '#7dffd0'); }
+            } break;
+            case 'sunfire_boomerang': if (icd('sb', 22)) { aoe(X, Y, 70, 0.4, id, o, { col: '#ffb23a' }); FXb(X, Y, '#ff7a1a', 12, 3.6, { up: 1.4 }); FXb(X, Y, '#fffbe0', 5, 2.4); FXw(X, Y, '#ffd34a', 72, { life: 0.6 }); } break;
+            case 'abyss_maul': {
+                freeze(t, 12); FXb(X, Y + 8, '#38c8c0', 8, 3.2, { up: 1.6 });
+                if (c % 3 === 0) { aoe(X, Y, 105, 0.6, id, o, { kb: 7 }); FXw(X, Y + 14, '#38c8c0', 125, { life: 0.9 }); FXw(X, Y + 14, '#c8fff4', 80, { life: 0.6 }); ring(X, Y + 14, '#38c8c0', 105, 26, 3); FXb(X, Y + 12, '#c8fff4', 16, 4, { up: 2.4 }); try { shake = Math.max(shake, 5); } catch (e) { } say('Безодня!', '#38c8c0'); }
+            } break;
+            case 'thorn_bow': dot(t, id, 0.1, 3, 24, '#9be05a'); FXb(X, Y, '#9be05a', 6, 2.6); break;
+            case 'prism_crossbow': if (icd('pc', 14)) {
+                const cols = ['#ff7aa8', '#7dffd0', '#8aa8ff'];
+                for (let i = -1; i <= 1; i += 2) { try { const a = (i * 0.6) + (Math.random() - 0.5) * 0.3, r = rollDmg(W.dmg * 0.4, 'ranged', 0); spawnProj({ k: 'bolt', x: X, y: Y, vx: Math.cos(a) * 14 * (player.facing || 1), vy: Math.sin(a) * 14, g: 0, dmg: r.d, crit: r.crit, pierce: 1, col: cols[(i + 1) / 2 + (E.f % 2)], r: 5, life: 40, _ep: 1 }); } catch (e) { } }
+                FXb(X, Y, '#ffffff', 8, 3); FXb(X, Y, '#ff7aa8', 4, 3); FXb(X, Y, '#7dffd0', 4, 3); FXw(X, Y, '#d8f4ff', 52, { life: 0.5 });
+            } break;
+            case 'void_musket': {
+                o._vm = (o._vm || 0) + 1; E.marks.push({ o, t: E.f }); if (E.marks.length > 30) E.marks.shift();
+                if (o._vm >= 3) {
+                    o._vm = 0; E.busy++; try { for (const q of live()) { const d = Math.hypot(q.x - X, q.y - Y); if (d < 130 && q.o !== o && q.k === 'mob') { q.o.vx = (X > q.x ? 1 : -1) * 6; } } } finally { E.busy--; }
+                    aoe(X, Y, 100, 0.95, id, null, { col: '#b46cff', kb: 0 }); FXw(X, Y, '#b46cff', 130, { life: 0.9 }); FXw(X, Y, '#f0e0ff', 70, { life: 0.6 }); ring(X, Y, '#b46cff', 100, 30, 4); FXb(X, Y, '#6a2ab8', 22, 5); FXb(X, Y, '#f0e0ff', 10, 3); say('Колапс!', '#b46cff');
+                }
+            } break;
+            case 'honey_launcher': if (icd('hl', 24)) {
+                for (let i = 0; i < 4; i++) { try { const a = i / 4 * 6.283 + Math.random(), r = rollDmg(W.dmg * 0.3, 'ranged', 0); spawnProj({ k: 'missile', x: X, y: Y - 8, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6 - 2, dmg: r.d, crit: r.crit, pierce: 0, r: 5, life: 80, col: '#ffd84a', homing: 1, aoe: 24, _ep: 1 }); } catch (e) { } }
+                FXb(X, Y, '#ffd84a', 14, 3.4, { up: 1 }); FXb(X, Y, '#fff8d0', 6, 2.4); FXw(X, Y, '#ffd84a', 80, { life: 0.7 }); ring(X, Y, '#ffd84a', 60, 22, 5);
+            } break;
+            case 'phoenix_bow': dot(t, id, 0.1, 5, 48, '#ff7a2a'); E.burn = E.burn || new Set(); E.burn.add(o); FXb(X, Y, '#ffb23a', 6, 3, { up: 1.4 }); break;
+            case 'glacier_staff': {
+                freeze(t, 20); FXb(X, Y, '#c4f0ff', 6, 2.6);
+                if (c % 3 === 0) {
+                    aoe(X, Y, 100, 0.5, id, o, { col: '#c4f0ff' }); E.busy++; try { for (const q of live()) if (Math.hypot(q.x - X, q.y - Y) < 100) freeze(q, 30); } finally { E.busy--; }
+                    FXw(X, Y, '#c4f0ff', 120, { life: 0.9 }); FXw(X, Y, '#ffffff', 70, { life: 0.6 }); ring(X, Y, '#c4f0ff', 100, 28, 6); FXb(X, Y, '#ffffff', 16, 4, { up: 2 });
+                    for (let i = 0; i < 5; i++) E.sched.push({ at: E.f + 4 + i * 4, fn: () => { const bx = X + (Math.random() - 0.5) * 110; E.stars.push({ x: bx, y: Y - 260, ty: Y + 6, vy: 11, col: '#c4f0ff', ice: 1, id, R: 34, k: 0.2 }); } });
+                    say('Льодовик!', '#c4f0ff');
+                }
+            } break;
+            case 'eclipse_tome': if (E.healN < 4) { E.healN++; heal(Math.max(1, Math.round(player.maxHealth * 0.012))); FXb(X, Y, '#e8b830', 5, 2.6); bolt(X, Y, px, py, '#e8b830'); } break;
+            case 'spore_wand': if (icd('sw', 30) && E.clouds.length < 6) { E.clouds.push({ x: X, y: Y, t: 0, life: 150, id, R: 50 }); FXb(X, Y, '#ff8be0', 10, 2, { up: 0.8 }); FXw(X, Y, '#ff8be0', 60, { life: 0.6 }); } break;
+            case 'cosmos_staff': FXb(X, Y, '#a8b8ff', 4, 2.4); break;
+            case 'wyrm_staff': if (icd('wy', 12)) {
+                let cur = { x: X, y: Y, o }, seen = new Set([o]);
+                for (let j = 0; j < 3; j++) { let best = null, bd = 160; for (const q of live()) { if (seen.has(q.o)) continue; const d = Math.hypot(q.x - cur.x, q.y - cur.y); if (d < bd) { bd = d; best = q; } } if (!best) break; seen.add(best.o); E.busy++; try { rpgHit(best, Math.max(1, Math.round(dmg * 0.45)), { col: '#d8e84a', pcol: '#5aa83a', kb: 1, dir: best.x > cur.x ? 1 : -1 }); } finally { E.busy--; } bolt(cur.x, cur.y, best.x, best.y, j % 2 ? '#f4ffd0' : '#d8e84a'); FXb(best.x, best.y, '#d8e84a', 5, 2.6); cur = best; }
+            } break;
+            case 'ivory_whip': if (c % 4 === 0 && icd('iw', 30)) {
+                try { const r = rollDmg(W.dmg * 0.9, 'summon', 0); spawnProj({ k: 'missile', x: X, y: Y - 14, vx: 0, vy: -5, dmg: r.d, crit: r.crit, pierce: 0, r: 7, life: 100, col: '#f4ecd8', homing: 1, aoe: 34, _ep: 1, skull: 1 }); } catch (e) { }
+                FXb(X, Y - 10, '#f4ecd8', 10, 2.8, { up: 1.2 }); FXw(X, Y, '#f4ecd8', 54, { life: 0.5 });
+            } break;
+        }
+    }
+    function minionProc(id, t, dmg) {
+        const W = WEAPONS[id], X = t.x, Y = t.y; let mn = null, bd = 90;
+        for (const m of rpgMinions) if (m._ep === id) { const d = Math.hypot(m.x - X, m.y - Y); if (d < bd) { bd = d; mn = m; } }
+        if (!mn) return;
+        if (id === 'lantern_staff' && icd('ln', 18)) {
+            let cur = { x: X, y: Y, o: t.o }, seen = new Set([t.o]);
+            for (let j = 0; j < 2; j++) { let best = null, b2 = 170; for (const q of live()) { if (seen.has(q.o)) continue; const d = Math.hypot(q.x - cur.x, q.y - cur.y); if (d < b2) { b2 = d; best = q; } } if (!best) break; seen.add(best.o); E.busy++; try { rpgHit(best, Math.max(1, Math.round(dmg * 0.4)), { col: '#ffe28a', pcol: '#f0a43a', kb: 1, minion: 1, dir: best.x > cur.x ? 1 : -1 }); } finally { E.busy--; } bolt(cur.x, cur.y, best.x, best.y, '#ffe28a'); FXb(best.x, best.y, '#fffbe0', 4, 2.4); cur = best; }
+            FXb(X, Y, '#ffe28a', 6, 2.6);
+        } else if (id === 'phantom_wisp' && Math.random() < 0.18 && icd('pw', 40)) {
+            aoe(X, Y, 85, 0.6, id, null, { kb: 6, col: '#e0f4ff' }); FXw(X, Y, '#e0f4ff', 100, { life: 0.8 }); FXw(X, Y, '#9ad0f0', 60, { life: 0.6 }); ring(X, Y, '#e0f4ff', 85, 26, 7); FXb(X, Y, '#ffffff', 12, 3, { up: 1.4 }); say('Виття!', '#e0f4ff');
+        } else if (id === 'amber_scarab' && Math.random() < 0.1 && icd('am', 60)) {
+            freeze(t, 50); FXb(X, Y, '#ffc23a', 16, 3, { up: 1 }); FXb(X, Y, '#fff2c0', 6, 2); FXw(X, Y, '#ffc23a', 60, { life: 0.7 }); E.amber = E.amber || []; E.amber.push({ o: t.o, t: 0, life: 50 }); if (E.amber.length > 8) E.amber.shift(); say('Бурштин!', '#ffc23a');
+        }
+    }
+    rpgHit = (function (o) {
+        return function (t, dmg, opt) {
+            let it = null; try { it = held(); } catch (e) { }
+            const mine = it && MYW.has(it.id) && !E.busy && t && t.o && !(opt && opt.dot);
+            if (mine) {
+                const id = it.id;
+                if (id === 'moon_cleaver' && night()) dmg = Math.round(dmg * 1.15);
+                else if (id === 'ivory_whip' && opt && opt.tag) { /* позначка вже підсилює міньйонів */ }
+                else if (id === 'void_musket' && t.o._vm === 2) dmg = Math.round(dmg * 1.1);
+            }
+            const r = o.call(this, t, dmg, opt);
+            try { if (mine && r) { if (opt && opt.minion) minionProc(it.id, t, dmg); else procHit(it.id, t, dmg); } } catch (e) { console.error('zepic proc', e); }
+            return r;
+        };
+    })(rpgHit);
+    weaponUse = (function (o) {
+        return function () {
+            const it = held(), n0 = rpgProjs.length, nm0 = rpgMinions.length, ns0 = rpgSentries.length, pre = player.atkCD, m0 = RPG.mana, r = o.apply(this, arguments);
+            try {
+                if (it && MYW.has(it.id)) {
+                    const id = it.id, W = WEAPONS[id], [px, py] = pxy();
+                    const cast = pre <= 0 && player.atkCD > 0 && (!W.mana || RPG.mana < m0) && (!W.ammo || rpgProjs.length > n0);
+                    if (cast) {
+                        E.healN = 0;
+                        if (id === 'eclipse_tome') { E.ecl = { x: px, y: py + 4, t: 0 }; FXw(px, py, '#e8b830', 150, { life: 0.9 }); FXb(px, py, '#fff0b0', 14, 3.6); }
+                        if (id === 'cosmos_staff') {
+                            const mx = mouse.worldX, my = mouse.worldY;
+                            for (let i = 0; i < 3; i++) E.sched.push({ at: E.f + 6 + i * 8, fn: () => { E.stars.push({ x: mx + (Math.random() - 0.5) * 150, y: my - 420, ty: my + (Math.random() - 0.5) * 30, vy: 15, col: i % 2 ? '#a8b8ff' : '#ffffff', id, R: 56, k: 0.4 }); } });
+                            FXb(px + player.facing * 20, py - 8, '#a8b8ff', 8, 2.6);
+                        }
+                        if (id === 'thorn_bow') { E.shots++; if (E.shots % 4 === 0 && rpgProjs[n0]) { const b = rpgProjs[n0]; for (const rot of [-0.5, -0.25, 0.25, 0.5]) clone(b, rot, 0.6, '#9be05a'); FXb(px + player.facing * 22, py - 4, '#9be05a', 12, 3.4); FXw(px + player.facing * 20, py - 4, '#9be05a', 50, { life: 0.5 }); say('Терни!', '#9be05a'); } }
+                        if (id === 'abyss_maul') FXb(px + player.facing * 24, py + 6, '#38c8c0', 6, 2.4);
+                    }
+                    for (let i = n0; i < rpgProjs.length; i++) {
+                        const p = rpgProjs[i];
+                        if (id === 'glacier_staff' && p.k === 'fire') p.col = '#9fe6ff';
+                        else if (id === 'cosmos_staff' && p.k === 'fire') p.col = '#b8a8ff';
+                        else if (id === 'wyrm_staff' && p.k === 'fire') p.col = '#d8e84a';
+                        else if (id === 'phoenix_bow' && p.k === 'arrow') { p.col = '#ffb23a'; p._ph = 1; }
+                        else if (id === 'thorn_bow' && p.k === 'arrow') p.col = '#9be05a';
+                        else if (id === 'void_musket' && p.k === 'bullet') { p.col = '#b46cff'; p._vo = 1; }
+                        else if (id === 'prism_crossbow' && p.k === 'bolt') { p.col = '#ffffff'; p._pr = 1; }
+                        else if (id === 'spore_wand') p.col = '#ff8be0';
+                        else if (id === 'honey_launcher') p._hn = 1;
+                        else if (id === 'sunfire_boomerang') p._sf = 1;
+                    }
+                    for (let i = nm0; i < rpgMinions.length; i++) rpgMinions[i]._ep = id;
+                    for (let i = ns0; i < rpgSentries.length; i++) { rpgSentries[i]._ep = id; rpgSentries[i]._pt = 40; }
+                }
+            } catch (e) { console.error('zepic wu', e); }
+            return r;
+        };
+    })(weaponUse);
+
+    // ---------- щокадрово ----------
+    function bolts() { }
+    function tick() {
+        if (gameState !== 'PLAYING') return; E.f++;
+        const [px, py] = pxy(), f = E.f, X = FX(), rc = rich(), id = hid();
+        for (let i = E.sched.length - 1; i >= 0; i--) if (E.sched[i].at <= f) { const s = E.sched.splice(i, 1)[0]; try { s.fn(); } catch (e) { } }
+        for (let i = E.bolts.length - 1; i >= 0; i--) if (++E.bolts[i].t > E.bolts[i].life) E.bolts.splice(i, 1);
+        for (let i = E.rings.length - 1; i >= 0; i--) if (++E.rings[i].t > E.rings[i].life) E.rings.splice(i, 1);
+        if (E.ecl && ++E.ecl.t > 50) E.ecl = null;
+        for (let i = E.marks.length - 1; i >= 0; i--) { const m = E.marks[i]; if (!m.o._vm || m.o.hp <= 0 || f - m.t > 480) { if (m.o) m.o._vm = 0; E.marks.splice(i, 1); } }
+        // кровотечі / горіння
+        if (E.dots.length) {
+            let T = null;
+            for (let i = E.dots.length - 1; i >= 0; i--) {
+                const d = E.dots[i]; if (d.o.hp <= 0) { if (d.id === 'phoenix_bow' && E.burn && E.burn.has(d.o) && icd('pb' + i, 6)) { phoenixPop(d.o); } E.dots.splice(i, 1); continue; }
+                if (++d.t % d.gap !== 0) continue; if (!T) T = live(); const q = T.find(u => u.o === d.o); if (!q) { E.dots.splice(i, 1); continue; }
+                const W = WEAPONS[d.id]; E.busy++; try { rpgHit(q, Math.max(1, Math.round(W.dmg * d.k * mult(d.id))), { dot: 1, kb: 0, col: d.col, pcol: d.col }); } finally { E.busy--; }
+                if (X) FXb(q.x, q.y, d.col, 3, 2, { up: d.id === 'phoenix_bow' ? 1.2 : 0.4 });
+                if (--d.left <= 0) E.dots.splice(i, 1);
+            }
+        }
+        // отруйні хмари
+        for (let i = E.clouds.length - 1; i >= 0; i--) {
+            const c = E.clouds[i]; c.t++;
+            if (c.t % 30 === 0) { E.busy++; try { for (const q of live()) if (Math.hypot(q.x - c.x, q.y - c.y) < c.R + (q.r || 0)) rpgHit(q, Math.max(1, Math.round(WEAPONS[c.id].dmg * 0.18 * mult(c.id))), { dot: 1, kb: 0, col: '#ff8be0', pcol: '#b83a98' }); } finally { E.busy--; } }
+            if (X && rc && f % 4 === 0) X.emit(c.x + (Math.random() - 0.5) * c.R * 1.4, c.y + (Math.random() - 0.3) * 20, { vx: (Math.random() - 0.5) * 0.3, vy: -0.4, life: 1.1, s: 3.4, s2: 0, c: Math.random() < 0.5 ? '#ff8be0' : '#ffe6fb', a: 0.8 });
+            if (c.t > c.life) E.clouds.splice(i, 1);
+        }
+        // падаючі зорі / бурульки
+        for (let i = E.stars.length - 1; i >= 0; i--) {
+            const s = E.stars[i]; s.y += s.vy; if (X && rc && f % 2 === 0) X.emit(s.x, s.y - 8, { vx: 0, vy: -s.vy * 0.05, life: 0.5, s: 3, s2: 0, c: s.col, a: 0.9 });
+            if (s.y >= s.ty) { E.stars.splice(i, 1); aoe(s.x, s.ty, s.R, s.k, s.id, null, { col: s.col }); FXb(s.x, s.ty, s.col, 12, 3.6, { up: 1.2 }); FXb(s.x, s.ty, '#ffffff', 5, 2.4); FXw(s.x, s.ty, s.col, s.R * 1.7, { life: 0.6 }); }
+        }
+        // особливості снарядів
+        if (X && rc) for (const p of rpgProjs) {
+            if (p._ph && f % 2 === 0) X.emit(p.x, p.y, { vx: -p.vx * 0.05, vy: -0.3, life: 0.6, s: 3.4, s2: 0, c: Math.random() < 0.5 ? '#ffb23a' : '#e8442a', a: 0.9 });
+            else if (p._sf && f % 2 === 0) X.emit(p.x, p.y, { vx: (Math.random() - 0.5) * 0.6, vy: -0.4, life: 0.7, s: 4, s2: 0, c: Math.random() < 0.5 ? '#ffd34a' : '#ff7a1a', a: 0.9 });
+            else if (p._vo && f % 2 === 0) X.emit(p.x, p.y, { vx: 0, vy: 0, life: 0.5, s: 3, s2: 0, c: '#b46cff', a: 0.8 });
+            else if (p._pr && f % 2 === 0) X.emit(p.x, p.y, { vx: 0, vy: 0, life: 0.5, s: 3, s2: 0, c: ['#ff7aa8', '#7dffd0', '#8aa8ff', '#ffe28a'][f % 4], a: 0.9 });
+            else if (p._hn && f % 3 === 0) X.emit(p.x, p.y, { vx: 0, vy: 0.2, life: 0.6, s: 3, s2: 0, c: '#ffd84a', a: 0.8 });
+            else if (p.skull && f % 2 === 0) X.emit(p.x, p.y, { vx: 0, vy: 0.2, life: 0.5, s: 3, s2: 0, c: '#f4ecd8', a: 0.8 });
+            else if (p.k === 'boom' && p.id === 'sunfire_boomerang' && f % 2 === 0) X.emit(p.x, p.y, { vx: (Math.random() - 0.5) * 0.6, vy: -0.5, life: 0.8, s: 5, s2: 0, c: Math.random() < 0.5 ? '#ffd34a' : '#ff7a1a', a: 0.9 });
+        }
+        // міньйони та вартові
+        for (const m of rpgMinions) if (m._ep) {
+            m._h = m._h || []; m._h.push(m.x, m.y); if (m._h.length > 16) m._h.splice(0, 2);
+            if (X && rc && f % 5 === 0) { const a = AUR[m._ep]; X.emit(m.x + (Math.random() - 0.5) * 10, m.y + (Math.random() - 0.5) * 10, { vx: 0, vy: -0.3, life: 0.8, s: 2.8, s2: 0, c: a ? a[1] : '#fff', a: 0.8 }); }
+        }
+        for (const s of rpgSentries) if (s._ep === 'coral_sentry') {
+            if (--s._pt > 0) continue; s._pt = 110; const W = WEAPONS['coral_sentry'], x = s.x, y = s.y - 24;
+            E.busy++; try { for (const q of live()) if (Math.hypot(q.x - x, q.y - y) < 150 + (q.r || 0)) { rpgHit(q, Math.max(1, Math.round(s.base * 0.5 * mult('coral_sentry'))), { kb: 1, dir: q.x > x ? 1 : -1, col: '#ff9aa8', pcol: '#e0566e', minion: 1 }); if (q.k === 'mob') q.o.vx *= 0.3; } } finally { E.busy--; }
+            if (Math.hypot(px - x, py - y) < 200 && icd('cs', 100)) heal(Math.max(1, Math.round(player.maxHealth * 0.02)));
+            FXw(x, y, '#ff9aa8', 150, { life: 0.9 }); FXw(x, y, '#2a8a98', 100, { life: 0.7 }); ring(x, y, '#ff9aa8', 150, 30, 8); FXb(x, y, '#ffd0d8', 10, 3, { up: 1 });
+        }
+        // аура в руці
+        if (id && MYW.has(id) && X && rc && f % 4 === 0) {
+            const a = AUR[id], hx = px + player.facing * 14, hy = py - 8, rnd = () => (Math.random() - 0.5), m = a[0];
+            const cc = Math.random() < 0.5 ? a[1] : a[2];
+            if (m === 'fall') X.emit(hx + rnd() * 24, hy - 14 + rnd() * 8, { vx: rnd() * 0.4, vy: 0.5, life: 1.3, s: 3.4, s2: 1, c: cc, a: 0.9, shape: 1, sw: 0.6 });
+            else if (m === 'flame') X.emit(hx + rnd() * 10, hy - 4, { vx: rnd() * 0.4, vy: -0.8, life: 0.8, s: 4, s2: 0, c: cc, a: 0.9 });
+            else if (m === 'bubble' || m === 'hex') X.emit(hx + rnd() * 18, hy + 4, { vx: rnd() * 0.2, vy: -0.6, life: 1.2, s: 3, s2: 1, c: cc, a: 0.8 });
+            else if (m === 'snow') X.emit(hx + rnd() * 26, hy - 16 + rnd() * 6, { vx: rnd() * 0.3, vy: 0.4, life: 1.4, s: 2.6, s2: 0, c: cc, a: 0.9 });
+            else if (m === 'spore') X.emit(hx + rnd() * 18, hy + rnd() * 10, { vx: rnd() * 0.3, vy: -0.4, life: 1.5, s: 3, s2: 0, c: cc, a: 0.8 });
+            else if (m === 'arc' && f % 8 === 0) bolt(hx, hy, hx + rnd() * 40, hy + rnd() * 40, cc);
+            else if (m !== 'arc') X.emit(hx + rnd() * 16, hy + rnd() * 16, { vx: rnd() * 0.3, vy: -0.4, life: 1, s: 2.6, s2: 0, c: cc, a: 0.9, shape: 1, sw: 0.3 });
+        }
+    }
+    function phoenixPop(o) {
+        const q = { x: (o.x || 0) + (o.width || 20) / 2, y: (o.y || 0) + (o.height || 20) / 2 }; if (E.burn) E.burn.delete(o);
+        aoe(q.x, q.y, 70, 0.5, 'phoenix_bow', o, { col: '#ffb23a' }); FXb(q.x, q.y, '#ffb23a', 18, 4.4, { up: 1.8 }); FXb(q.x, q.y, '#e8442a', 10, 3.4); FXb(q.x, q.y, '#fff6d0', 6, 2.4); FXw(q.x, q.y, '#ffb23a', 90, { life: 0.8 }); ring(q.x, q.y, '#ffb23a', 70, 24, 9);
+    }
+    updateGame = (function (o) { return function () { const r = o.apply(this, arguments); try { tick(); } catch (e) { console.error('zepic tick', e); } return r; }; })(updateGame);
+
+    // ---------- малювання ----------
+    Z.DRAW.push((t, x0, x1) => {
+        const X = FX(); if (!X) return; const [px, py] = pxy(), rc = rich(), id = hid(), cn = Math.min(1, 0);
+        // блискавки
+        for (const b of E.bolts) { const k = b.t / b.life; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = X.rgba(b.col, 1 - k); ctx.lineWidth = 2.4 * (1 - k) + 0.6; ctx.beginPath(); ctx.moveTo(b.x1, b.y1); const n = 6; for (let i = 1; i < n; i++) { const u = i / n; ctx.lineTo(b.x1 + (b.x2 - b.x1) * u + Math.sin(b.seed + i * 7.3 + t * 30) * 9, b.y1 + (b.y2 - b.y1) * u + Math.cos(b.seed + i * 5.1 + t * 30) * 9); } ctx.lineTo(b.x2, b.y2); ctx.stroke(); ctx.restore(); }
+        // кільця ударів
+        for (const r of E.rings) {
+            const k = r.t / r.life, e = 1 - Math.pow(1 - k, 2), R = r.R * e, a = 1 - k; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = X.rgba(r.col, a * 0.9); ctx.lineWidth = 3 * (1 - k) + 1; ctx.beginPath(); ctx.arc(r.x, r.y, R, 0, 7); ctx.stroke();
+            if (r.kind === 1) { ctx.strokeStyle = X.rgba('#ffffff', a); ctx.beginPath(); ctx.arc(r.x, r.y, R * 0.7, -2.2, -0.6); ctx.stroke(); }
+            else if (r.kind === 2) { const cols = ['#7dffd0', '#8aa8ff', '#ff9af0']; for (let i = 0; i < 3; i++) { ctx.strokeStyle = X.rgba(cols[i], a * 0.8); ctx.beginPath(); ctx.arc(r.x, r.y, R * (0.55 + i * 0.2), t * 2 + i, t * 2 + i + 2.4); ctx.stroke(); } }
+            else if (r.kind === 4) { ctx.strokeStyle = X.rgba('#f0e0ff', a); ctx.beginPath(); ctx.arc(r.x, r.y, r.R * (1 - e) * 0.9, 0, 7); ctx.stroke(); }
+            else if (r.kind === 5 || r.kind === 9) { for (let i = 0; i < 6; i++) { const an = i * 1.047 + t; X.spark(r.x + Math.cos(an) * R, r.y + Math.sin(an) * R, 4 * (1 - k) + 1, r.col, a, an); } }
+            else if (r.kind === 3) { ctx.strokeStyle = X.rgba('#c8fff4', a * 0.8); ctx.beginPath(); ctx.ellipse(r.x, r.y, R, R * 0.28, 0, 0, 7); ctx.stroke(); }
+            else if (r.kind === 6) { for (let i = 0; i < 8; i++) { const an = i * 0.785; X.spark(r.x + Math.cos(an) * R, r.y + Math.sin(an) * R, 5 * (1 - k) + 1, '#ffffff', a, an); } }
+            else if (r.kind === 7 || r.kind === 8) { ctx.strokeStyle = X.rgba(r.col, a * 0.6); ctx.beginPath(); ctx.arc(r.x, r.y, R * 0.6, 0, 7); ctx.stroke(); }
+            ctx.restore();
+        }
+        // марки Порожнечі
+        for (const m of E.marks) { const o = m.o, n = o._vm || 0; if (!n || o.hp <= 0) continue; const x = (o.x || 0) + (o.width || 20) / 2, y = (o.y || 0) - 10; for (let i = 0; i < 3; i++) { const an = t * 3 + i * 2.09; const on = i < n; X.spark(x + Math.cos(an) * 11, y + Math.sin(an) * 4, on ? 4.4 : 2, on ? '#b46cff' : '#6a2ab8', on ? 0.95 : 0.4, an); } if (n >= 2) X.glow(x, y, 16, '#b46cff', 0.45); }
+        // затемнення
+        if (E.ecl) { const e = E.ecl, k = e.t / 50, R = 40 + k * 120, a = 1 - k; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = X.rgba('#e8b830', a); ctx.lineWidth = 5 * (1 - k) + 1; ctx.beginPath(); ctx.arc(e.x, e.y, R, 0, 7); ctx.stroke(); ctx.strokeStyle = X.rgba('#fff0b0', a * 0.8); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(e.x, e.y, R * 0.86, 0, 7); ctx.stroke(); for (let i = 0; i < 12; i++) { const an = i / 12 * 6.283 + t; X.spark(e.x + Math.cos(an) * R, e.y + Math.sin(an) * R, 5 * (1 - k) + 1, '#fff0b0', a * 0.9, an); } ctx.restore(); ctx.save(); ctx.fillStyle = 'rgba(8,4,20,' + (0.75 * a).toFixed(3) + ')'; ctx.beginPath(); ctx.arc(e.x, e.y, 16 * (1 - k * 0.5), 0, 7); ctx.fill(); ctx.restore(); }
+        // падаючі зорі
+        for (const s of E.stars) { X.glow(s.x, s.y, 20, s.col, 0.8); X.spark(s.x, s.y, s.ice ? 7 : 9, '#ffffff', 1, s.ice ? 0.78 : t * 6); ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createLinearGradient(s.x, s.y, s.x, s.y - 70); g.addColorStop(0, X.rgba(s.col, 0.8)); g.addColorStop(1, X.rgba(s.col, 0)); ctx.strokeStyle = g; ctx.lineWidth = s.ice ? 3 : 4; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x, s.y - 70); ctx.stroke(); ctx.restore(); }
+        // отруйні хмари
+        for (const c of E.clouds) { const a = Math.min(1, (c.life - c.t) / 30), pul = 1 + Math.sin(t * 3 + c.x) * 0.06; X.glow(c.x, c.y, c.R * 1.25 * pul, '#ff8be0', 0.4 * a); X.glow(c.x - 12, c.y + 4, c.R * 0.7, '#b83a98', 0.3 * a); X.glow(c.x + 14, c.y - 3, c.R * 0.6, '#ffe6fb', 0.22 * a); }
+        // бурштин
+        if (E.amber) for (let i = E.amber.length - 1; i >= 0; i--) { const a = E.amber[i]; if (++a.t > a.life || a.o.hp <= 0) { E.amber.splice(i, 1); continue; } const x = (a.o.x || 0) + (a.o.width || 20) / 2, y = (a.o.y || 0) + (a.o.height || 20) / 2, w = (a.o.width || 20) * 0.8, h = (a.o.height || 20) * 0.7, al = Math.min(1, (a.life - a.t) / 12); ctx.save(); ctx.globalAlpha = 0.5 * al; ctx.fillStyle = '#ffc23a'; ctx.strokeStyle = '#fff2c0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, w, h, 0, 0, 7); ctx.fill(); ctx.globalAlpha = al; ctx.stroke(); ctx.restore(); X.spark(x - w * 0.4, y - h * 0.4, 4, '#ffffff', 0.9 * al, 0); }
+        // привиди: примарний шлейф; ліхтарні й бурштинові ореоли
+        for (const m of rpgMinions) {
+            if (!m._ep) continue; const a = AUR[m._ep];
+            if (m._ep === 'phantom_wisp' && m._h) { for (let i = 0; i < m._h.length; i += 2) { const k = i / m._h.length; X.glow(m._h[i], m._h[i + 1], 6 + 8 * k, '#e0f4ff', 0.12 + 0.3 * k); } }
+            X.glow(m.x, m.y, 20 + Math.sin(t * 5 + (m.ph || 0)) * 3, a[1], m._ep === 'lantern_staff' ? 0.55 : 0.3);
+            if (m._ep === 'lantern_staff') for (let i = 0; i < 3; i++) { const an = t * 2.2 + i * 2.09; X.spark(m.x + Math.cos(an) * 14, m.y + Math.sin(an) * 9, 2.4, '#fffbe0', 0.85, an); }
+        }
+        for (const s of rpgSentries) if (s._ep === 'coral_sentry') { const pul = 0.5 + 0.5 * Math.sin(t * 3); X.glow(s.x, s.y - 14, 34 + pul * 4, '#ff9aa8', 0.35); for (let i = 0; i < 3; i++) { const an = t * 1.4 + i * 2.09; X.spark(s.x + Math.cos(an) * 18, s.y - 22 + Math.sin(an) * 7, 3, i ? '#ffd0d8' : '#2a8a98', 0.85, an); } }
+        // ореол зброї в руці
+        if (id && MYW.has(id)) {
+            const a = AUR[id], hx = px + player.facing * 14, hy = py - 8, pal = RPG_PAL[WEAPONS[id].pal];
+            X.glow(hx, hy, 26 + Math.sin(t * 3) * 2.5, pal.L, 0.28);
+            if (a[0] === 'orbit') for (let i = 0; i < 3; i++) { const an = t * 2.4 + i * 2.09; X.spark(hx + Math.cos(an) * 16, hy + Math.sin(an) * 10, 3, i ? '#fff0b0' : '#e8b830', 0.9, an); }
+            else if (a[0] === 'rainbow') for (let i = 0; i < 4; i++) { const an = t * 2 + i * 1.57; X.spark(hx + Math.cos(an) * 15, hy + Math.sin(an) * 11, 3, ['#ff7aa8', '#7dffd0', '#8aa8ff', '#ffe28a'][i], 0.9, an); }
+            else if (a[0] === 'stars') for (let i = 0; i < 4; i++) { const an = t * 1.5 + i * 1.57; X.spark(hx + Math.cos(an) * 17, hy + Math.sin(an) * 12, 2 + (i % 2) * 2, '#ffffff', 0.8 + 0.2 * Math.sin(t * 6 + i), an); }
+            else if (a[0] === 'ribbon') for (let i = 0; i < 3; i++) { const an = t * 2.6 + i * 2.09; X.glow(hx + Math.cos(an) * 14, hy + Math.sin(an * 1.3) * 12, 7, ['#7dffd0', '#8aa8ff', '#ff9af0'][i], 0.5); }
+            else if (a[0] === 'implode') for (let i = 0; i < 3; i++) { const k = (t * 1.2 + i / 3) % 1, an = t + i * 2.09; X.spark(hx + Math.cos(an) * 26 * (1 - k), hy + Math.sin(an) * 26 * (1 - k), 3 * (1 - k) + 1, '#b46cff', 0.9 * (1 - k), an); }
+            else if (a[0] === 'flame') X.flame(hx, hy + 6, 0.5, t, 3);
+            else if (a[0] === 'warm' || a[0] === 'amber') X.glow(hx, hy, 34 + Math.sin(t * 7) * 3, a[1], 0.3);
+        }
+    });
+
+    // ---------- крафт: ефект ----------
+    craftItem = (function (o) {
+        return function (itemId, count) {
+            const r = o.apply(this, arguments);
+            try { if (MYW.has(itemId) && r !== false) { const [px, py] = pxy(), c = RPG_PAL[WEAPONS[itemId].pal]; FXb(px, py - 6, c.L, 30, 5, { up: 1.5 }); FXb(px, py - 6, '#ffffff', 14, 3.6); FXw(px, py, c.L, 170, { life: 1.2 }); FXw(px, py, c.M, 110, { life: 0.9 }); ring(px, py, c.L, 120, 34, 6); try { shake = Math.max(shake, 4); } catch (e) { } floatingTexts.push({ x: px - 70, y: py - 50, text: '✨ ' + NAME[itemId] + ' викувано!', color: T(3).c, life: 140 }); } } catch (e) { }
+            return r;
+        };
+    })(craftItem);
+
+    // ---------- здобич: дуже рідко ----------
+    const MOBD = { harpy: 0.012, medusa: 0.015, stalker: 0.012, wight: 0.015, deadminer: 0.01, frostwraith: 0.012, specter: 0.012, cinder: 0.012 };
+    v18Loot = (function (o) {
+        return function (m) {
+            o.apply(this, arguments);
+            try { if (!m) return; const p = MOBD[m.type]; if (p && Math.random() < p) { const cx = m.x + (m.width || 20) / 2, cy = m.y + (m.height || 20) / 3; v20Drop('primal_shard', 1, cx, cy, (Math.random() - 0.5) * 4); FXb(cx, cy, '#b49cff', 16, 3.4, { up: 1 }); floatingTexts.push({ x: cx - 40, y: cy - 40, text: '✨ Першоуламок!', color: T(3).c, life: 120 }); } } catch (e) { }
+        };
+    })(v18Loot);
+    bossLoot = (function (o) {
+        return function (b) {
+            o.apply(this, arguments);
+            try { if (!b) return; const strong = b.k === 'astral' || b.k === 'weaver' || b.k === 'magma' || b.k === 'tempest', p = strong ? 0.4 : 0.22; if (Math.random() < p) { const n = Math.random() < 0.25 ? 2 : 1; floatingItems.push({ x: b.x + b.w / 2, y: b.y + b.h / 2, vx: 0.6, vy: -5, itemId: 'primal_shard', count: n }); floatingTexts.push({ x: b.x, y: b.y - 20, text: '✨ Першоуламок!', color: T(3).c, life: 140 }); } } catch (e) { console.error('zepic boss', e); }
+        };
+    })(bossLoot);
+    try { zgLoot = (function (o) { return function (kind) { const a = o.apply(this, arguments); try { const fr = a.map((s, i) => s ? -1 : i).filter(i => i >= 0); if (fr.length && Math.random() < (kind === 'vault' || kind === 'hall' ? 0.14 : 0.025)) a[fr[Math.random() * fr.length | 0]] = { id: 'primal_shard', count: 1 }; } catch (e) { } return a; }; })(zgLoot); } catch (e) { }
+    try { zrLoot = (function (o) { return function (t, rich) { const L = o.apply(this, arguments); try { L.push(['primal_shard', 1, 1, 0.006 * (rich ? 1.5 : 1) * (t + 1)]); } catch (e) { } return L; }; })(zrLoot); } catch (e) { }
+    window.__zepic = { E, WE, MYW, procHit, aoe };
+})();
 // ===== v46.0 «Ігнарох»: піщані черв'яки, жаби-шамани, матеріали та Ріг Двох Полум'їв (виклик дракона) =====
 (function () {
     'use strict';
@@ -44254,6 +44763,40 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     });
     window.__zboat = { B };
 })();
+// ===== v46.20 «Нові глибини»: сяйво кристалів і моху в глибоких печерах + назви залів =====
+(function () {
+    'use strict';
+    const Z = window.__zr; if (!Z) return;
+    const low = () => { try { return window.__zlow && window.__zlow(); } catch (e) { return false; } };
+    const fxOn = () => { try { return !window.__zfeat || window.__zfeat.on('fxrich'); } catch (e) { return true; } };
+    const SP = {}; // спрайти м'якого сяйва
+    const spr = (id, col) => { let c = SP[id]; if (c) return c; c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 1, 32, 32, 32); r.addColorStop(0, col.replace('A', '0.55')); r.addColorStop(0.45, col.replace('A', '0.16')); r.addColorStop(1, col.replace('A', '0')); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return SP[id] = c; };
+    const COL = { 67: 'rgba(150,215,255,A)', 29: 'rgba(120,230,255,A)', 64: 'rgba(60,240,190,A)', 65: 'rgba(110,245,255,A)' };
+    Z.DRAW.push((t, x0, x1) => {
+        const cw = currentWorld, zd = cw && cw.zd; if (!zd || !zd.EX || !worldMap.length || !fxOn()) return;
+        const r0 = Math.max(0, Math.floor(camera.y / 32) - 1), r1 = Math.min(worldMap.length - 1, Math.ceil((camera.y + canvas.height) / 32) + 1);
+        if (r1 < zd.y0) return;
+        const c0 = Math.max(0, Math.floor(x0 / 32)), c1 = Math.min(cw.width - 1, Math.ceil(x1 / 32)), L = low(), step = L ? 2 : 1;
+        ctx.globalCompositeOperation = 'lighter'; let n = 0;
+        for (let y = Math.max(r0, zd.y0); y <= r1; y++) { const row = worldMap[y]; for (let x = c0; x <= c1; x += step) {
+            const b = row[x]; if (b !== 67 && b !== 64 && b !== 65 && b !== 29) continue;
+            if (b === 29 && ((x * 7 + y * 13) % 5)) continue; // руду підсвічуємо рідше
+            if (++n > 220) break;
+            const ph = (x * 12.9898 + y * 78.233) % 6.28, pul = 0.62 + 0.38 * Math.sin(t * 1.3 + ph), R = b === 64 ? 30 : 38;
+            ctx.globalAlpha = (b === 64 ? 0.5 : 0.7) * pul; const s = spr(b, COL[b]); ctx.drawImage(s, x * 32 + 16 - R, y * 32 + 16 - R, R * 2, R * 2);
+            if (!L && (b === 67 || b === 65) && ((x + y) & 1)) { const k = (t * 0.22 + ph) % 1; ctx.globalAlpha = 0.8 * Math.sin(k * 3.14); ctx.fillStyle = b === 67 ? '#d8f4ff' : '#bfffee'; ctx.fillRect(x * 32 + 10 + Math.sin(t + ph) * 8, y * 32 + 16 - k * 34, 2, 2); }
+        } if (n > 220) break; }
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    });
+    const NAMES = { crystal: ['💎 Кришталевий грот', 'Стіни тихо сяють холодним світлом. У глибині — скриня.'], garden: ['🌿 Сяючий сад', 'Світний мох, водоспад і тихе озерце.'] }, SEEN = {}; let tk = 0;
+    Z.TICK.push(() => {
+        try {
+            const zd = currentWorld && currentWorld.zd, G = zd && zd.gl; if (!G || !G.length) return; if (++tk % 20) return;
+            const px = (player.x + 12) / 32, py = (player.y + 22) / 32;
+            for (const q of G) { const u = (px - q.cx) / (q.rx + 1), v = (py - q.cy) / (q.ry + 1); if (u * u + v * v < 1 && !SEEN[q.k]) { SEEN[q.k] = 1; v26Banner(NAMES[q.k][0], NAMES[q.k][1]); try { v20Tone('sine', 520, 780, 0.7, 0.05); } catch (e) { } } }
+        } catch (e) { }
+    });
+})();
 // ===== v46.10 «Швидкість»: крафт і пошук без підвисань =====
 (function () {
     'use strict';
@@ -45392,12 +45935,24 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.19', 'Видимий герой', 'new'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.22', 'Епічний арсенал', 'new'], ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.22': [
+                ['#c9a0ff', '⚔️ 20 епічних зброй', 'По 5 нових епічних зброй для воїна, стрільця, мага й прикликача: Місячний Розтинач, Лук Терновий Вінок, Посох Космічного Дощу, Кістяний Батіг Жнеця та інші. У кожної — власна анімація, ефекти й унікальна пасивка.'],
+                ['#b49cff', '💠 Першоуламок', 'Новий дуже рідкісний ресурс: випадає з босів, скарбниць і глибинних створінь. З нього (разом з іншими рідкісними матеріалами) кують епічну зброю на високому рівні. Крафт дорогий, а рецепти треба знайти чи купити: Сторінки рецептів тепер відкривають і нову зброю.']
+            ],
+            '46.21': [
+                ['#9ad4ff', '💎 Грот і сад у старих світах', 'Кришталевий грот і Сяючий сад тепер з’являються й у вже створених світах: при першому заході вони додаються в зону глибин (у вільні місця, без шкоди будівлям і скринях).'],
+            ],
+            '46.20': [
+                ['#7fe0ff', '⛏ Глибше', 'Нижня зона «Глибини» стала на 28 блоків глибшою: більше руд, печер і шахт до самої Безодні (у нових світах).'],
+                ['#9ad4ff', '💎 Кришталевий грот', 'Великий зал із кристалами в стінах, стелі й на підлозі. Сяє холодним світлом, у глибині ховається скриня зі скарбом.'],
+                ['#6ff0c0', '🌿 Сяючий сад', 'Підземний сад: світний мох, світлогриби, ліани, тихе озерце з ліліями та водоспад зі стелі.'],
+            ],
             '46.19': [
                 ['#6fe0b0', '👤 Видимий герой', 'Біля вівтарів легенд і в болоті герой більше не зникає з екрана. Колір води болота знову рівний і природний.'],
             ],
