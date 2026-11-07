@@ -1,7 +1,7 @@
 {
-  "version": "46.17",
-  "name": "Охайний HUD",
-  "notes": "v46.17 Сповіщення подій не перекриває Біржу",
+  "version": "46.18",
+  "name": "Видимий герой",
+  "notes": "v46.18 Герой видимий у воді болота",
   "file": "index.html",
-  "sha256": "6c579fc80290454e4ae76d6aa5bf13d2e4aaaf2188b8f99d21a46e7f034db0f0"
+  "sha256": "2f8b685d9bdd25ad7c805b5dd3f5ff971f675dfd22ebcd4a1e1a3290b480e673"
 }
