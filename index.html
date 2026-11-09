@@ -11330,7 +11330,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.38', GAME_VER_NAME = 'Без обводок';
+        const GAME_VER = '46.39', GAME_VER_NAME = 'Біоми Ультра+';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -46145,16 +46145,54 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     // ====================== ПАРАЛАКС-ФОН (піксель-арт: небо, хмари, три шари лісу; день / вечір / ніч) ======================
     const PS = 2, TWL = 768, TW = TWL * PS; // тайл 1536px, 2 px на одиницю — м'яке згладжування
     const PH = ['day', 'dusk', 'night'];
-    const TONE = { // [глибока тінь, тінь, основа, світло]
+    let TONE = { // [глибока тінь, тінь, основа, світло]
         day: ['#112c1a', '#1e4f2a', '#33803a', '#6cb552'], dusk: ['#1a2630', '#2a3c44', '#47594f', '#9c7a58'], night: ['#040c10', '#09191b', '#102a26', '#25574a']
     };
-    const TRUNK = { day: ['#3b281b', '#5a3f2a'], dusk: ['#2a2024', '#4a3633'], night: ['#07080b', '#12141a'] };
-    const HAZE = { day: [191, 224, 245], dusk: [233, 150, 120], night: [24, 52, 110] };
-    const SKY = { day: ['#2f7fe0', '#a8dcf6'], dusk: ['#4a3c8c', '#ff9c6a'], night: ['#030a24', '#10285a'] };
-    const CLD = { day: ['#9fbbe0', '#e4eefb', '#ffffff'], dusk: ['#8a5a82', '#f0a890', '#ffe2b8'], night: ['#0f2150', '#1b3a70', '#3a5f9a'] };
-    const ROCK = { day: ['#46403d', '#665a50', '#8a7a68', '#b8a58c'], dusk: ['#2e2a3e', '#4a3f55', '#7a5a66', '#c98a74'], night: ['#08122a', '#0e1c40', '#162a55', '#223f70'] };
-    const HILLC = { day: ['#3f7a3a', '#5a9a48', '#7cb85a', '#a4d878'], dusk: ['#2c3d44', '#44584f', '#6b7a5c', '#b0905f'], night: ['#0b1e2a', '#112c38', '#183c4a', '#235064'] };
+    let TRUNK = { day: ['#3b281b', '#5a3f2a'], dusk: ['#2a2024', '#4a3633'], night: ['#07080b', '#12141a'] };
+    let HAZE = { day: [191, 224, 245], dusk: [233, 150, 120], night: [24, 52, 110] };
+    let SKY = { day: ['#2f7fe0', '#a8dcf6'], dusk: ['#4a3c8c', '#ff9c6a'], night: ['#030a24', '#10285a'] };
+    let CLD = { day: ['#9fbbe0', '#e4eefb', '#ffffff'], dusk: ['#8a5a82', '#f0a890', '#ffe2b8'], night: ['#0f2150', '#1b3a70', '#3a5f9a'] };
+    let ROCK = { day: ['#46403d', '#665a50', '#8a7a68', '#b8a58c'], dusk: ['#2e2a3e', '#4a3f55', '#7a5a66', '#c98a74'], night: ['#08122a', '#0e1c40', '#162a55', '#223f70'] };
+    let HILLC = { day: ['#3f7a3a', '#5a9a48', '#7cb85a', '#a4d878'], dusk: ['#2c3d44', '#44584f', '#6b7a5c', '#b0905f'], night: ['#0b1e2a', '#112c38', '#183c4a', '#235064'] };
     const WFC = { day: '235,248,255', dusk: '255,225,215', night: '150,190,240' };
+    // ====== v46.39: БІОМНІ ФОНИ — ліс / зима / болото / пустеля; фон плавно перетікає між біомами ======
+    const BI = ['f', 's', 'w', 'd'], HM = { f: 1, s: 1.05, w: 1.3, d: 0.85 };
+    const BPAL = {
+        f: { TONE, TRUNK, HAZE, SKY, CLD, ROCK, HILLC, GT: TONE },
+        s: { // ❄ зима
+            TONE: { day: ['#1f3b4a', '#4d7a8c', '#a9cad8', '#f2faff'], dusk: ['#232a3e', '#4a5a78', '#9aa6c0', '#f5d6d0'], night: ['#050d1a', '#0e2036', '#1e3d5e', '#4a7aa8'] },
+            TRUNK: { day: ['#2b2320', '#4a3d36'], dusk: ['#22202a', '#3c3640'], night: ['#06080e', '#10141c'] },
+            HAZE: { day: [215, 232, 245], dusk: [225, 170, 170], night: [30, 60, 120] },
+            SKY: { day: ['#5b9bd8', '#d4ecfa'], dusk: ['#4a4c94', '#f0a8a0'], night: ['#050d2c', '#16305e'] },
+            CLD: CLD,
+            ROCK: { day: ['#5c6a7e', '#8ea0b6', '#c8d8e8', '#f4fbff'], dusk: ['#3a3a56', '#66668a', '#a8a0b8', '#f4d0d0'], night: ['#0a1630', '#142a52', '#24427a', '#4a72a8'] },
+            HILLC: { day: ['#7fa0b8', '#a8c4d6', '#d2e4ee', '#f6fcff'], dusk: ['#3c4a68', '#6a7894', '#a8aec0', '#f0d4cc'], night: ['#0e2038', '#18324e', '#244a6a', '#3a6a90'] },
+            GT: { day: ['#7e9db0', '#b4cdda', '#dbe9f1', '#f6fbff'], dusk: ['#3c4562', '#6a7690', '#a8aec2', '#f0d6d0'], night: ['#0a1a30', '#14305a', '#20406a', '#34608c'] }
+        },
+        w: { // 🌿 болото
+            TONE: { day: ['#0f2218', '#1d3d2a', '#3a6040', '#7a9a58'], dusk: ['#161e1c', '#26342c', '#4a5a40', '#8a8a58'], night: ['#030a08', '#08160f', '#0f2a1c', '#244a30'] },
+            TRUNK: { day: ['#2a2418', '#4a3f2a'], dusk: ['#1e1a18', '#38302a'], night: ['#06070a', '#10120e'] },
+            HAZE: { day: [170, 196, 160], dusk: [190, 150, 110], night: [20, 50, 50] },
+            SKY: { day: ['#6b8f86', '#c2d4a8'], dusk: ['#4a4268', '#d09070'], night: ['#040c14', '#0e2a30'] },
+            CLD: CLD,
+            ROCK: ROCK,
+            HILLC: { day: ['#254a30', '#3a6a40', '#5c8a4c', '#8aae5c'], dusk: ['#1c2c28', '#32443a', '#52604a', '#8a8a58'], night: ['#06140e', '#0c2418', '#143626', '#1e4a34'] },
+            GT: null
+        },
+        d: { // 🏜 пустеля
+            TONE: { day: ['#274a2a', '#3f7436', '#6c9c48', '#a8c864'], dusk: ['#2c3228', '#4a5a3c', '#78805a', '#c0a060'], night: ['#05100c', '#0c2018', '#163a2a', '#2a5a3c'] },
+            TRUNK: { day: ['#6a4a2a', '#a07a48'], dusk: ['#4a3438', '#7a5a50'], night: ['#0c0a10', '#1a1820'] },
+            HAZE: { day: [252, 226, 176], dusk: [242, 150, 110], night: [34, 40, 86] },
+            SKY: { day: ['#3a8ce0', '#f8e0b0'], dusk: ['#5a3a84', '#ff8c58'], night: ['#040a22', '#1a2a58'] },
+            CLD: CLD,
+            ROCK: { day: ['#7a3a22', '#a8582e', '#d27c46', '#f0aa6a'], dusk: ['#3a2434', '#6a3c44', '#a8605a', '#f0a070'], night: ['#0a0c20', '#161a3c', '#262c5a', '#3c4a80'] },
+            HILLC: { day: ['#c08a48', '#d8a45c', '#ecc27c', '#f8dc9c'], dusk: ['#5a4048', '#8a5a54', '#c08a64', '#f0b070'], night: ['#10162e', '#1c2644', '#2a3a5c', '#40547a'] },
+            GT: { day: ['#a8763a', '#cf9d54', '#e8bd78', '#f6d99a'], dusk: ['#4a3438', '#7a5250', '#b88060', '#e8a870'], night: ['#0c1226', '#18223e', '#26365a', '#3a4e78'] }
+        }
+    };
+    BPAL.w.GT = BPAL.w.TONE;
+    let CB = 'f'; // біом, для якого зараз будуються тайли
+    function setPal(b) { CB = b; const P = BPAL[b]; TONE = P.TONE; TRUNK = P.TRUNK; HAZE = P.HAZE; SKY = P.SKY; CLD = P.CLD; ROCK = P.ROCK; HILLC = P.HILLC; }
     const LAY = [
         { pf: 0.025, h: 170, trees: 'hills', haze: 0.38, blur: 1 },
         { pf: 0.07, h: 230, trees: 'rock', haze: 0.14, blur: 1 },
@@ -46163,14 +46201,18 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         { pf: 0.42, h: 240, trees: 'front', haze: 0 }
     ];
     const mixHex = (h, hz, a) => { const c = hex(h); return `rgb(${Math.round(c[0] + (hz[0] - c[0]) * a)},${Math.round(c[1] + (hz[1] - c[1]) * a)},${Math.round(c[2] + (hz[2] - c[2]) * a)})`; };
-    function layout(kind, li) {
-        const r = rnd(7000 + li * 31), out = []; const step = kind === 'far' ? 32 : kind === 'mid' ? 30 : 48;
+    function layout(kind, li, b) {
+        b = b || 'f'; const r = rnd(7000 + li * 31 + BI.indexOf(b) * 977), out = [];
+        const step = (kind === 'far' ? 32 : kind === 'mid' ? 30 : 48) * (b === 'd' ? 1.9 : b === 'w' ? 0.9 : 1);
         for (let x = r() * step; x < TWL; x += step * (0.6 + r() * 0.8)) {
-            const pine = kind === 'far' ? r() < 0.25 : kind === 'mid' ? r() < 0.55 : r() < 0.52;
-            const size = kind === 'far' ? 44 + r() * 32 : kind === 'mid' ? 52 + r() * 32 : (pine ? 72 + r() * 32 : 68 + r() * 40);
-            out.push({ x: Math.floor(x), pine, size: Math.floor(size), seed: (r() * 1e6) | 0, d: r() });
+            let k, size;
+            if (b === 's') { k = 'pine'; size = kind === 'far' ? 44 + r() * 32 : kind === 'mid' ? 52 + r() * 32 : 72 + r() * 34; }
+            else if (b === 'd') { k = r() < (kind === 'front' ? 0.42 : 0.28) ? 'palm' : 'cactus'; size = k === 'palm' ? (kind === 'far' ? 54 + r() * 24 : 76 + r() * 34) : (kind === 'far' ? 34 + r() * 24 : 52 + r() * 42); }
+            else if (b === 'w') { k = r() < 0.72 ? 'willow' : 'cypress'; size = kind === 'far' ? 50 + r() * 30 : kind === 'mid' ? 58 + r() * 32 : 78 + r() * 40; }
+            else { const pine = kind === 'far' ? r() < 0.25 : kind === 'mid' ? r() < 0.55 : r() < 0.52; k = pine ? 'pine' : 'oak'; size = kind === 'far' ? 44 + r() * 32 : kind === 'mid' ? 52 + r() * 32 : (pine ? 72 + r() * 32 : 68 + r() * 40); }
+            out.push({ x: Math.floor(x), k, size: Math.floor(size), seed: (r() * 1e6) | 0, d: r() });
         }
-        if (kind === 'front') out.push({ x: 600, pine: false, size: 128, seed: 424242, d: 0.5, big: 1 }); // гігантський дуб
+        if (kind === 'front') out.push(b === 's' ? { x: 600, k: 'pine', size: 150, seed: 424242, d: 0.5 } : b === 'd' ? { x: 600, k: 'cactus', size: 120, seed: 424242, d: 0.5, big: 1 } : b === 'w' ? { x: 600, k: 'willow', size: 128, seed: 424242, d: 0.5, big: 1 } : { x: 600, k: 'oak', size: 128, seed: 424242, d: 0.5, big: 1 }); // гігант біому
         return out;
     }
     const mixT = (A, B, k) => { const a = hex(A), b = hex(B); return `rgb(${Math.round(a[0] + (b[0] - a[0]) * k)},${Math.round(a[1] + (b[1] - a[1]) * k)},${Math.round(a[2] + (b[2] - a[2]) * k)})`; };
@@ -46214,18 +46256,110 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         leafPass(g, r, tn, Math.floor(size * size * (big ? 0.9 : 0.7)), inC, (x, y) => { let best = 0; for (const c of cs) { const dx = x - c[0], dy = y - c[1], q = (dx * dx + dy * dy) / (c[2] * c[2]); if (q < 1) { const l = 0.55 * (1 - q) + (-dx * 0.5 - dy * 0.8) / c[2] * 0.4 + 0.25; if (l > best) best = l; } } return best; }, { W, H: cH + cr * 3, lr });
         return cv;
     }
+    // ---- пустеля: кактус сагуаро ----
+    function cactusSprite(T, ph, size, seed, big) {
+        const r = rnd(seed), W = Math.floor(size * 0.95) + 14, H = size + 10, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), tn = TONE[ph], cx = W / 2, tw = Math.max(4, size * (big ? 0.105 : 0.115));
+        g.lineCap = 'round'; g.lineJoin = 'round';
+        const tube = (pts, w) => {
+            const path = (dx) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0] + dx, p[1]) : g.moveTo(p[0] + dx, p[1])); };
+            g.strokeStyle = tn[0]; g.lineWidth = w + 2.4; path(0); g.stroke();
+            g.strokeStyle = tn[1]; g.lineWidth = w; path(0); g.stroke();
+            g.strokeStyle = tn[2]; g.globalAlpha = 0.75; g.lineWidth = w * 0.42; path(-w * 0.2); g.stroke(); g.globalAlpha = 1;
+            g.strokeStyle = tn[3]; g.globalAlpha = 0.35; g.lineWidth = Math.max(1, w * 0.12); path(-w * 0.3); g.stroke(); g.globalAlpha = 1;
+        };
+        const arms = []; let side = r() < 0.5 ? -1 : 1; const na = 1 + (r() > 0.35 ? 1 : 0) + (big ? 1 : 0);
+        for (let i = 0; i < na; i++) { const ay = H * (0.34 + 0.12 * i + r() * 0.16), reach = tw * (1.5 + r() * 0.9), up = H * (0.16 + r() * 0.2); arms.push([[cx, ay + tw * 0.3], [cx + side * reach, ay + tw * 0.3], [cx + side * reach, ay - up]]); side = -side; }
+        tube([[cx, H - 1], [cx, 6 + tw * 0.5]], tw);
+        for (const a of arms) tube(a, tw * 0.7);
+        // ребра й колючки
+        g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 0.8; for (const k of [-0.22, 0.2]) { g.beginPath(); g.moveTo(cx + tw * k, H - 2); g.lineTo(cx + tw * k, 10); g.stroke(); }
+        g.fillStyle = 'rgba(255,240,200,.55)'; for (let i = 0; i < size * 0.6; i++) { g.fillRect(cx + (r() - 0.5) * tw * 0.9, 8 + r() * (H - 12), 1, 1); }
+        if (r() < 0.5) { g.fillStyle = ph === 'night' ? '#6a3a60' : '#ff7fb0'; const fx = cx + (r() - 0.5) * tw * 0.4; g.beginPath(); g.arc(fx, 7, 2.4, 0, TAU); g.fill(); }
+        return cv;
+    }
+    // ---- пустеля: пальма ----
+    function palmSprite(T, ph, size, seed) {
+        const r = rnd(seed), W = Math.floor(size * 1.5), H = Math.floor(size * 1.12) + 8, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), tn = TONE[ph], tk = TRUNK[ph];
+        const bx = W / 2 + (r() - 0.5) * 10, lean = (r() - 0.5) * size * 0.34, topX = bx + lean, topY = H * 0.3 + 4, ctrlX = bx + lean * 0.1 + (r() - 0.5) * 6, ctrlY = H * 0.65;
+        const q = (t) => [(1 - t) * (1 - t) * bx + 2 * (1 - t) * t * ctrlX + t * t * topX, (1 - t) * (1 - t) * H + 2 * (1 - t) * t * ctrlY + t * t * topY];
+        const w0 = Math.max(4, size * 0.075), w1 = w0 * 0.62;
+        for (let i = 0; i <= 40; i++) { const t = i / 40, p = q(t), w = w0 + (w1 - w0) * t; g.fillStyle = i % 3 === 0 ? tk[0] : tk[1]; g.beginPath(); g.ellipse(p[0], p[1], w / 2 + 0.5, 2.6, 0, 0, TAU); g.fill(); }
+        g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 0.9; for (let i = 1; i < 18; i++) { const p = q(i / 18), w = w0 + (w1 - w0) * (i / 18); g.beginPath(); g.moveTo(p[0] - w / 2, p[1]); g.lineTo(p[0] + w / 2, p[1] + 1.2); g.stroke(); }
+        const nf = 8 + ((r() * 3) | 0);
+        for (let f = 0; f < nf; f++) {
+            const a = -Math.PI + (f + 0.5) / nf * Math.PI + (r() - 0.5) * 0.25, len = size * (0.5 + r() * 0.2), ex = topX + Math.cos(a) * len, ey = topY + Math.sin(a) * len * 0.55 + len * 0.38 * Math.abs(Math.cos(a)), cxp = topX + Math.cos(a) * len * 0.55, cyp = topY + Math.sin(a) * len * 0.8 - 4;
+            g.strokeStyle = tn[1]; g.lineWidth = 2.2; g.beginPath(); g.moveTo(topX, topY); g.quadraticCurveTo(cxp, cyp, ex, ey); g.stroke();
+            const nl = Math.floor(len / 3.2);
+            for (let i = 2; i < nl; i++) {
+                const t = i / nl, px = (1 - t) * (1 - t) * topX + 2 * (1 - t) * t * cxp + t * t * ex, py = (1 - t) * (1 - t) * topY + 2 * (1 - t) * t * cyp + t * t * ey, tx = 2 * (1 - t) * (cxp - topX) + 2 * t * (ex - cxp), ty = 2 * (1 - t) * (cyp - topY) + 2 * t * (ey - cyp), tl = Math.hypot(tx, ty) || 1, nx = -ty / tl, ny = tx / tl, ll = (1 - t * 0.7) * size * 0.2;
+                g.strokeStyle = toneAt(tn, 0.3 + r() * 0.6 + (a < -Math.PI / 2 ? 0.1 : 0)); g.lineWidth = 1.4;
+                for (const s of [-1, 1]) { g.beginPath(); g.moveTo(px, py); g.lineTo(px + (nx * s * 0.85 + tx / tl * 0.35) * ll, py + (ny * s * 0.85 + ty / tl * 0.35) * ll + ll * 0.35); g.stroke(); }
+            }
+        }
+        g.fillStyle = tk[0]; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(topX + (i - 1) * 4, topY + 4 + (i % 2) * 2, 2.8, 0, TAU); g.fill(); }
+        return cv;
+    }
+    // ---- болото: верба зі звисаючим мохом / вузький кипарис ----
+    function willowSprite(T, ph, size, seed, big, narrow) {
+        const r = rnd(seed), W = Math.floor(size * (narrow ? 0.85 : 1.35)), H = Math.floor(size * (big ? 1.5 : 1.25)), cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), tn = TONE[ph], tk = TRUNK[ph];
+        const cH = narrow ? H * 0.38 : H * 0.32, tw = big ? 13 : 4.5 + r() * 2.5, tx = W / 2 + (r() - 0.5) * 8;
+        const tg = g.createLinearGradient(tx - tw, 0, tx + tw, 0); tg.addColorStop(0, tk[1]); tg.addColorStop(1, tk[0]); g.fillStyle = tg;
+        g.beginPath(); g.moveTo(tx - tw * 1.7, H); g.quadraticCurveTo(tx - tw * 0.6, H - H * 0.12, tx - tw * 0.5, H * 0.62); g.lineTo(tx - tw * 0.4 + (r() - 0.5) * 6, cH); g.lineTo(tx + tw * 0.4 + (r() - 0.5) * 6, cH); g.lineTo(tx + tw * 0.5, H * 0.62); g.quadraticCurveTo(tx + tw * 0.6, H - H * 0.12, tx + tw * 1.7, H); g.closePath(); g.fill();
+        g.strokeStyle = tk[0]; g.lineWidth = Math.max(1.4, tw * 0.3); g.lineCap = 'round'; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(tx, cH + tw * 2); g.lineTo(tx + (r() - 0.5) * W * 0.5, cH - r() * H * 0.1); g.stroke(); }
+        const cs = [], n = narrow ? 6 : 7 + ((r() * 3) | 0), cr = size * (narrow ? 0.17 : 0.2);
+        for (let i = 0; i < n; i++) cs.push([W / 2 + (r() - 0.5) * (W - cr * 2.4) * (narrow ? 0.7 : 1), cH + (narrow ? (r() - 0.5) * H * 0.34 : (r() - 0.5) * cr * 1.6), cr * (0.75 + r() * 0.7)]);
+        const inC = (x, y) => { for (const c of cs) { const dx = x - c[0], dy = y - c[1]; if (dx * dx + dy * dy < c[2] * c[2]) return true; } return false; };
+        g.fillStyle = tn[0]; for (const c of cs) { g.beginPath(); g.arc(c[0], c[1], c[2] * 0.93, 0, TAU); g.fill(); }
+        leafPass(g, r, tn, Math.floor(size * size * 0.5), inC, (x, y) => { let best = 0; for (const c of cs) { const dx = x - c[0], dy = y - c[1], qq = (dx * dx + dy * dy) / (c[2] * c[2]); if (qq < 1) best = Math.max(best, 1 - qq * 0.6 - (dy / c[2]) * 0.25 - (dx / c[2]) * 0.15); } return best - 0.25; }, { W, H, lr: Math.max(2.2, size * 0.045) });
+        // звисаючий мох / гілки
+        g.lineCap = 'round'; const ns = Math.floor(size * (big ? 1.4 : 1.0));
+        for (let i = 0; i < ns; i++) { const c = cs[(r() * cs.length) | 0], x = c[0] + (r() - 0.5) * c[2] * 1.6, y0 = c[1] + c[2] * 0.35 + r() * c[2] * 0.4, len = Math.min(H - y0 - 4, H * (0.22 + r() * 0.36)), sw = (r() - 0.5) * 7;
+            g.strokeStyle = toneAt(tn, 0.25 + r() * 0.5); g.globalAlpha = 0.5 + r() * 0.35; g.lineWidth = 0.9 + r() * 1.1; g.beginPath(); g.moveTo(x, y0); g.quadraticCurveTo(x + sw, y0 + len * 0.5, x + sw * 0.3, y0 + len); g.stroke(); }
+        g.globalAlpha = 1; return cv;
+    }
     function hazeAndBlur(L, ph, cv, g, Ht, blurPx) {
-        g.globalCompositeOperation = 'source-atop'; const hz = HAZE[ph], gr = g.createLinearGradient(0, 0, 0, Ht); gr.addColorStop(0, `rgba(${hz[0]},${hz[1]},${hz[2]},${L.haze * 0.8})`); gr.addColorStop(1, `rgba(${hz[0]},${hz[1]},${hz[2]},${Math.min(0.9, L.haze + 0.2)})`); g.fillStyle = gr; g.fillRect(0, 0, TWL, Ht); g.globalCompositeOperation = 'source-over';
+        const lh = Math.min(0.95, L.haze * HM[CB]);
+        g.globalCompositeOperation = 'source-atop'; const hz = HAZE[ph], gr = g.createLinearGradient(0, 0, 0, Ht); gr.addColorStop(0, `rgba(${hz[0]},${hz[1]},${hz[2]},${lh * 0.8})`); gr.addColorStop(1, `rgba(${hz[0]},${hz[1]},${hz[2]},${Math.min(0.9, lh + 0.2)})`); g.fillStyle = gr; g.fillRect(0, 0, TWL, Ht); g.globalCompositeOperation = 'source-over';
         const c2 = document.createElement('canvas'); c2.width = TWL; c2.height = Ht; const g2 = c2.getContext('2d'); try { g2.filter = `blur(${blurPx}px)`; } catch (e) { } g2.drawImage(cv, 0, 0); return c2;
     }
-    function hillsTile(L, ph, cv, g, Ht) {
-        const r = rnd(808), c = HILLC[ph], floor = Ht - 28, p = [r() * 6, r() * 6, r() * 6];
+    function hillsTile(L, ph, cv, g, Ht, seed, pines) {
+        if (seed == null) { seed = 808; pines = true; }
+        const r = rnd(seed), c = HILLC[ph], floor = Ht - 28, p = [r() * 6, r() * 6, r() * 6];
         const yAt = x => { const t = x / TWL * TAU; return floor - 30 - (0.5 + 0.5 * Math.sin(t * 2 + p[0])) * 70 - (0.5 + 0.5 * Math.sin(t * 5 + p[1])) * 28 - (0.5 + 0.5 * Math.sin(t * 11 + p[2])) * 8; };
         const gr = g.createLinearGradient(0, floor - 130, 0, Ht); gr.addColorStop(0, c[3]); gr.addColorStop(0.35, c[2]); gr.addColorStop(1, c[1]); g.fillStyle = gr;
         g.beginPath(); g.moveTo(0, Ht); for (let x = 0; x <= TWL; x += 3) g.lineTo(x, yAt(x)); g.lineTo(TWL, Ht); g.fill();
         g.lineCap = 'round'; for (let i = 0; i < 700; i++) { const x = r() * TWL, y = yAt(x) + 4 + r() * 60; g.strokeStyle = toneAt(c, 0.2 + r() * 0.8); g.globalAlpha = 0.25; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - 0.5) * 8, y - 3 - r() * 4); g.stroke(); } g.globalAlpha = 1;
-        for (let x = 4; x < TWL; x += 6 + r() * 8) { const y = yAt(x) + 2, h = 6 + r() * 9; g.fillStyle = c[0]; g.beginPath(); g.moveTo(x - h * 0.32, y); g.lineTo(x, y - h); g.lineTo(x + h * 0.32, y); g.fill(); }
+        if (pines) for (let x = 4; x < TWL; x += 6 + r() * 8) { const y = yAt(x) + 2, h = 6 + r() * 9; g.fillStyle = c[0]; g.beginPath(); g.moveTo(x - h * 0.32, y); g.lineTo(x, y - h); g.lineTo(x + h * 0.32, y); g.fill(); }
         return hazeAndBlur(L, ph, cv, g, Ht, 1.6);
+    }
+    // ---- пустеля: бархани ----
+    function duneTile(L, ph, cv, g, Ht) {
+        const r = rnd(909), c = HILLC[ph], floor = Ht - 28, p = [r() * 6, r() * 6, r() * 6];
+        const yAt = x => { const t = x / TWL * TAU; return floor - 26 - (0.5 + 0.5 * Math.sin(t * 3 + p[0])) * 64 - (0.5 + 0.5 * Math.sin(t * 7 + p[1])) * 22 - (0.5 + 0.5 * Math.sin(t * 13 + p[2])) * 5; };
+        const gr = g.createLinearGradient(0, floor - 130, 0, Ht); gr.addColorStop(0, c[3]); gr.addColorStop(0.4, c[2]); gr.addColorStop(1, c[1]); g.fillStyle = gr;
+        g.beginPath(); g.moveTo(0, Ht); for (let x = 0; x <= TWL; x += 3) g.lineTo(x, yAt(x)); g.lineTo(TWL, Ht); g.fill();
+        const sh = hex(c[0]); for (let x = 0; x < TWL; x += 2) { const s = (yAt(x + 3) - yAt(x - 3)) / 6, a = clamp(s * 0.9, 0, 0.55); if (a < 0.03) continue; const y = yAt(x); const lg = g.createLinearGradient(0, y, 0, y + 70); lg.addColorStop(0, `rgba(${sh[0]},${sh[1]},${sh[2]},${a})`); lg.addColorStop(1, `rgba(${sh[0]},${sh[1]},${sh[2]},0)`); g.fillStyle = lg; g.fillRect(x, y, 2, 70); }
+        g.strokeStyle = 'rgba(255,244,214,.38)'; g.lineWidth = 1.6; g.beginPath(); for (let x = 0; x <= TWL; x += 3) x ? g.lineTo(x, yAt(x) + 0.5) : g.moveTo(x, yAt(x) + 0.5); g.stroke();
+        g.lineCap = 'round'; for (let i = 0; i < 420; i++) { const x = r() * TWL, y = yAt(x) + 8 + r() * 50, l = 8 + r() * 14; g.strokeStyle = r() < 0.5 ? 'rgba(80,40,10,.14)' : 'rgba(255,240,200,.14)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - 2.5, x + l, y); g.stroke(); }
+        return hazeAndBlur(L, ph, cv, g, Ht, 1.6);
+    }
+    // ---- пустеля: меси (червоні плато з шарами породи) ----
+    function mesaTile(L, ph, cv, g, Ht) {
+        const c = ROCK[ph], floor = Ht - 28, r0 = rnd(4321), lay = [];
+        for (let i = 0; i < 5; i++) lay.push({ x: Math.floor(i * TWL / 5 + 30 + r0() * 60), w: Math.floor(70 + r0() * 90), h: Math.floor(70 + r0() * 110), seed: (r0() * 1e6) | 0 });
+        for (const m of lay) {
+            const r = rnd(m.seed); for (const ox of [0, -TWL, TWL]) {
+                const x0 = m.x - m.w / 2 + ox, x1 = m.x + m.w / 2 + ox, topY = floor - m.h; if (x1 + m.w * 0.3 < -20 || x0 - m.w * 0.3 > TWL + 20) continue;
+                const step = m.h * (0.42 + r() * 0.2), sin = m.w * (0.07 + r() * 0.08), sk = m.w * 0.28;
+                g.save(); g.beginPath(); g.moveTo(x0 - sk, Ht); g.lineTo(x0 - sk, floor + 2); g.lineTo(x0 - m.w * 0.04, floor - m.h * 0.32); g.lineTo(x0, floor - step); g.lineTo(x0 + sin, floor - step - 3); g.lineTo(x0 + sin, topY + 5); g.lineTo(x0 + sin + 5, topY); g.lineTo(x1 - sin - 5, topY + r() * 3); g.lineTo(x1 - sin, topY + 5); g.lineTo(x1 - sin, floor - step - 3); g.lineTo(x1, floor - step); g.lineTo(x1 + m.w * 0.04, floor - m.h * 0.32); g.lineTo(x1 + sk, floor + 2); g.lineTo(x1 + sk, Ht); g.closePath(); g.clip();
+                const gr = g.createLinearGradient(0, topY, 0, Ht); gr.addColorStop(0, c[3]); gr.addColorStop(0.4, c[2]); gr.addColorStop(1, c[1]); g.fillStyle = gr; g.fillRect(x0 - sk, topY - 4, m.w + sk * 2, Ht);
+                for (let y = topY + 4; y < floor + 4; y += 4 + r() * 7) { g.fillStyle = r() < 0.5 ? 'rgba(60,20,10,.14)' : 'rgba(255,200,140,.10)'; g.fillRect(x0 - sk, y, m.w + sk * 2, 1.5 + r() * 3); }
+                g.lineWidth = 1; for (let i = 0; i < m.w / 9; i++) { const x = x0 + r() * m.w, y = topY + 4 + r() * 18; g.strokeStyle = 'rgba(50,16,8,.22)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - 0.5) * 5, y + 26 + r() * 60); g.stroke(); }
+                const sg = g.createLinearGradient(x0, 0, x1, 0); sg.addColorStop(0, 'rgba(255,230,190,.14)'); sg.addColorStop(0.55, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(30,8,20,.42)'); g.fillStyle = sg; g.fillRect(x0 - sk, topY - 4, m.w + sk * 2, Ht);
+                g.restore();
+            }
+        }
+        return hazeAndBlur(L, ph, cv, g, Ht, 1.2);
     }
     let WF = null;
     function rockLayout() { if (WF) return WF; const r = rnd(1234), out = []; const n = 4; for (let i = 0; i < n; i++) out.push({ x: Math.floor(i * TWL / n + r() * 70 + 40), w: Math.floor(70 + r() * 70), h: Math.floor(90 + r() * 100), wf: i === 1 || i === 3, seed: (r() * 1e6) | 0 }); return WF = out; }
@@ -46244,7 +46378,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
                 // трав'яна шапка + мініатюрні сосни
                 g.lineCap = 'round'; for (const t of top) { g.strokeStyle = toneAt(hc, 0.3 + r() * 0.6); g.lineWidth = 3; g.beginPath(); g.moveTo(t[0], t[1] - 1); g.lineTo(t[0] + (r() - 0.5) * 3, t[1] + 4 + r() * 3); g.stroke(); }
                 for (let i = 0; i < m.w / 14; i++) { const k = top[Math.floor(r() * top.length)], h = 14 + r() * 18; if (!k) continue; g.fillStyle = hc[0]; g.beginPath(); g.moveTo(k[0] - h * 0.3, k[1] + 1); g.lineTo(k[0], k[1] - h); g.lineTo(k[0] + h * 0.3, k[1] + 1); g.fill(); }
-                if (m.wf && ox === 0) { // водоспад: біла стрічка з обрива
+                if (m.wf && ox === 0 && CB === 'f') { // водоспад: біла стрічка з обрива
                     const wx = x1 - 20, wg = g.createLinearGradient(0, topY, 0, floor); wg.addColorStop(0, `rgba(${WFC[ph]},.95)`); wg.addColorStop(1, `rgba(${WFC[ph]},.55)`); g.fillStyle = wg; g.fillRect(wx, topY + 6, 6, floor - topY - 6);
                     g.fillStyle = `rgba(${WFC[ph]},.35)`; g.fillRect(wx - 2, topY + 6, 10, floor - topY - 6);
                     const mg = g.createRadialGradient(wx + 3, floor, 2, wx + 3, floor, 34); mg.addColorStop(0, `rgba(${WFC[ph]},.8)`); mg.addColorStop(1, `rgba(${WFC[ph]},0)`); g.fillStyle = mg; g.fillRect(wx - 34, floor - 34, 74, 40);
@@ -46253,20 +46387,26 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         }
         return hazeAndBlur(L, ph, cv, g, Ht, 1.2);
     }
-    function buildTile(L, li, ph) {
+    function buildTile(L, li, ph, b) {
+        b = b || 'f'; setPal(b);
         const Ht = L.h + 36, cv = document.createElement('canvas'); cv.width = TWL; cv.height = Ht; const g = cv.getContext('2d'); g.imageSmoothingEnabled = true;
-        if (L.trees === 'hills') return hillsTile(L, ph, cv, g, Ht);
-        if (L.trees === 'rock') return rockTile(L, ph, cv, g, Ht);
-        const lay = L.lay || (L.lay = layout(L.trees, li)), floor = Ht - 28;
-        for (const t of lay.slice().sort((a, b) => a.d - b.d)) {
-            const sp = t.pine ? pineSprite(0, ph, t.size, t.seed) : oakSprite(0, ph, t.size, t.seed, t.big);
+        if (L.trees === 'hills') return b === 'd' ? duneTile(L, ph, cv, g, Ht) : hillsTile(L, ph, cv, g, Ht, 808, b !== 'w');
+        if (L.trees === 'rock') return b === 'd' ? mesaTile(L, ph, cv, g, Ht) : b === 'w' ? hillsTile(L, ph, cv, g, Ht, 1717, false) : rockTile(L, ph, cv, g, Ht);
+        const lay = L.lay && L.lay[b] || ((L.lay = L.lay || {})[b] = layout(L.trees, li, b)), floor = Ht - 28;
+        for (const t of lay.slice().sort((a, b2) => a.d - b2.d)) {
+            const sp = t.k === 'pine' ? pineSprite(0, ph, t.size, t.seed) : t.k === 'cactus' ? cactusSprite(0, ph, t.size, t.seed, t.big) : t.k === 'palm' ? palmSprite(0, ph, t.size, t.seed) : t.k === 'willow' ? willowSprite(0, ph, t.size, t.seed, t.big, false) : t.k === 'cypress' ? willowSprite(0, ph, t.size, t.seed, false, true) : oakSprite(0, ph, t.size, t.seed, t.big);
             const y = Math.floor(floor - sp.height + 6 + (L.trees === 'far' ? 8 : 0));
             for (const ox of (t.x < sp.width ? [0, TWL] : t.x > TWL - sp.width ? [0, -TWL] : [0])) g.drawImage(sp, t.x - (sp.width >> 1) + ox, y);
         }
-        // підлісок/трава внизу тайла
-        g.fillStyle = TONE[ph][L.trees === 'front' ? 0 : 1]; g.fillRect(0, floor, TWL, Ht - floor);
-        const r = rnd(55 + li); g.lineCap = 'round'; for (let x = 0; x < TWL; x += 2.5) { const hh = 3 + r() * (L.trees === 'front' ? 11 : 6); g.strokeStyle = toneAt(TONE[ph], r() * 0.8); g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, floor + 3); g.quadraticCurveTo(x + (r() - 0.5) * 4, floor - hh * 0.6, x + (r() - 0.5) * 6, floor - hh); g.stroke(); }
-        if (L.haze > 0) { g.globalCompositeOperation = 'source-atop'; const hz = HAZE[ph]; g.fillStyle = `rgba(${hz[0]},${hz[1]},${hz[2]},${L.haze})`; g.fillRect(0, 0, TWL, Ht); g.globalCompositeOperation = 'source-over'; }
+        // підлісок / трава / пісок / сніг внизу тайла
+        const GTn = BPAL[b].GT[ph];
+        g.fillStyle = GTn[L.trees === 'front' ? 0 : 1]; g.fillRect(0, floor, TWL, Ht - floor);
+        const r = rnd(55 + li + BI.indexOf(b) * 13); g.lineCap = 'round'; const tall = b === 'w' ? 1.7 : b === 'd' ? 0.55 : 1;
+        for (let x = 0; x < TWL; x += 2.5) { const hh = (3 + r() * (L.trees === 'front' ? 11 : 6)) * tall; g.strokeStyle = toneAt(b === 'w' ? TONE[ph] : GTn, r() * 0.8); g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, floor + 3); g.quadraticCurveTo(x + (r() - 0.5) * 4, floor - hh * 0.6, x + (r() - 0.5) * 6, floor - hh); g.stroke(); }
+        if (b === 'w' && L.trees !== 'far') for (let x = 6 + r() * 12; x < TWL; x += 14 + r() * 26) { const hh = 14 + r() * 12; g.strokeStyle = toneAt(TONE[ph], 0.3 + r() * 0.3); g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, floor + 3); g.lineTo(x + (r() - 0.5) * 3, floor - hh); g.stroke(); g.fillStyle = TRUNK[ph][1]; g.beginPath(); g.ellipse(x + (r() - 0.5) * 2, floor - hh - 3, 1.8, 4.5, 0, 0, TAU); g.fill(); } // рогіз
+        if (b === 'd' && L.trees === 'front') for (let x = 10 + r() * 30; x < TWL; x += 40 + r() * 70) { g.fillStyle = BPAL.d.ROCK[ph][1]; g.beginPath(); g.ellipse(x, floor + 1, 5 + r() * 5, 3 + r() * 2, 0, Math.PI, 0); g.fill(); } // камінці
+        const hzA = Math.min(0.95, L.haze * HM[b]);
+        if (hzA > 0) { g.globalCompositeOperation = 'source-atop'; const hz = HAZE[ph]; g.fillStyle = `rgba(${hz[0]},${hz[1]},${hz[2]},${hzA})`; g.fillRect(0, 0, TWL, Ht); g.globalCompositeOperation = 'source-over'; }
         if (L.blur) { const c2 = document.createElement('canvas'); c2.width = TWL; c2.height = Ht; const g2 = c2.getContext('2d'); try { g2.filter = 'blur(2px)'; } catch (e) { } g2.drawImage(cv, 0, 0); return c2; }
         return cv;
     }
@@ -46283,45 +46423,75 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         for (let i = 0; i < 9; i++) { const x = W * (0.2 + r() * 0.55), y = H * (0.25 + r() * 0.25), rad = 16 + r() * 22, gr = g.createRadialGradient(x - 6, y - 6, 1, x, y, rad); gr.addColorStop(0, `rgba(${hi[0]},${hi[1]},${hi[2]},.55)`); gr.addColorStop(1, `rgba(${hi[0]},${hi[1]},${hi[2]},0)`); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
         return cv;
     }
-    let tiles = null, clouds = null;
-    function ensureTiles() {
-        if (tiles) return; tiles = {}; clouds = {};
-        for (const ph of PH) { tiles[ph] = LAY.map((L, i) => buildTile(L, i, ph)); clouds[ph] = [1, 2, 3, 4, 5].map(i => buildCloud(ph, 300 + i * 17)); }
-    }
+    let clouds = null;
+    function ensureTiles() { if (clouds) return; clouds = {}; setPal('f'); for (const ph of PH) clouds[ph] = [1, 2, 3, 4, 5].map(i => buildCloud(ph, 300 + i * 17)); }
     const lerpC = (a, b, k) => { const A = hex(a), B = hex(b); return [Math.round(A[0] + (B[0] - A[0]) * k), Math.round(A[1] + (B[1] - A[1]) * k), Math.round(A[2] + (B[2] - A[2]) * k)]; };
     const SKYSTARS = []; { const r = rnd(99); for (let i = 0; i < 70; i++) SKYSTARS.push([r(), r() * 0.6, r() * 6, 1 + ((r() * 2) | 0)]); }
     let gTop = null, gT0 = 0; // gTop — згладжена висота поверхні в СВІТОВИХ координатах (px)
+    // ---- ледача генерація тайлів: біом × фаза × шар ----
+    const TL = {}; let tileBudget = 0, warmQ = null, warmWorld = null, warmTm = 0, firstDraw = true;
+    function getTile(b, ph, i) {
+        const k = b + ph + i; let T = TL[k]; if (T) return T; if (tileBudget <= 0) return null; tileBudget--;
+        try { T = TL[k] = buildTile(LAY[i], i, ph, b); } catch (e) { console.warn('ultra tile', b, ph, i, e); T = TL[k] = document.createElement('canvas'); T.width = 4; T.height = 4; } return T;
+    }
+    function presentBiomes() { const cw = currentWorld, s = ['f']; if (cw.swp) s.push('w'); const bio = cw.bio || ''; if (bio.indexOf('s') >= 0) s.push('s'); if (bio.indexOf('d') >= 0) s.push('d'); return s; }
+    function warmStart(dom) {
+        const pres = presentBiomes(); pres.sort((a, b) => (b === dom) - (a === dom)); warmQ = []; for (const b of pres) for (const ph of ['day', 'night', 'dusk']) for (let i = 0; i < LAY.length; i++) warmQ.push([b, ph, i]);
+        const near = b => { if (b === 'f') return true; try { const pc = Math.floor(player.x / 32), Wd = currentWorld.width; for (let c = Math.max(0, pc - 500); c < Math.min(Wd, pc + 500); c += 8) if (bioAt(c) === b) return true; } catch (e) { } return false; };
+        let idle = 0;
+        const step = () => { warmTm = 0; if (!warmQ || !warmQ.length || warmWorld !== currentWorld) return; const [b, ph, i] = warmQ.shift(); if (TL[b + ph + i]) { warmTm = setTimeout(step, 10); return; } if (!near(b) && idle++ < 400) { warmQ.push([b, ph, i]); warmTm = setTimeout(step, 1500); return; } if (gameState === 'PLAYING') { tileBudget = 1; getTile(b, ph, i); } warmTm = setTimeout(step, 350); };
+        warmTm = setTimeout(step, 600);
+    }
+    // ---- вага біомів: ковзне вікно навколо центру екрана + плавне згладжування в часі ----
+    let BW = null, bwT = 0;
+    let FORCE = null; // службово: примусовий біом фону (тести)
+    function bioAt(c) { if (FORCE) return FORCE; try { const cw = currentWorld, s = cw.swp; if (s && c >= s.x0 && c <= s.x1) return 'w'; const b = cw.bio && cw.bio[c]; return b === 's' ? 's' : b === 'd' ? 'd' : 'f'; } catch (e) { return 'f'; } }
+    function bioWeights(dtm) {
+        const Wd = currentWorld.width, mid = (camera.x + canvas.width / 2) / 32, tg = { f: 0, s: 0, w: 0, d: 0 }; let S = 0;
+        for (let k = -34; k <= 34; k += 2) { const w = 1 - Math.abs(k) / 36, c = clamp(Math.round(mid + k), 0, Wd - 1); tg[bioAt(c)] += w; S += w; }
+        for (const b of BI) tg[b] /= S;
+        if (!BW) BW = tg; else { const a = 1 - Math.exp(-dtm / 0.55); for (const b of BI) BW[b] += (tg[b] - BW[b]) * a; }
+        return BW;
+    }
+    const CM = { f: 1, s: 1, w: 0.95, d: 0.45 };
+    const mixA = (c, d, k) => [c[0] + (d[0] - c[0]) * k, c[1] + (d[1] - c[1]) * k, c[2] + (d[2] - c[2]) * k];
+    function fillCol(b, L, ph) { const P = BPAL[b]; const base = L.trees === 'hills' ? P.HILLC[ph][1] : L.trees === 'rock' ? (b === 'w' ? P.HILLC[ph][1] : P.ROCK[ph][1]) : P.GT[ph][L.trees === 'front' ? 0 : 1]; return mixHex(base, P.HAZE[ph], Math.min(0.95, L.haze * HM[b] + (L.blur ? 0.25 : 0))); }
     function drawParallax(t) {
         const W = canvas.width, H = canvas.height, sw = surf() * 32, now = performance.now(), dtm = Math.min(0.25, Math.max(0.001, (now - gT0) / 1000)); gT0 = now;
         // згладжування за часом (не залежить від FPS); різкий розрив (телепорт) — миттєво. Фон прив'язаний до камери, тож стрибок гравця не смикає його
         if (gTop == null || Math.abs(sw - gTop) > 900) gTop = sw; else gTop += (sw - gTop) * (1 - Math.exp(-dtm / 0.45));
         const base = gTop - camera.y + 40, dp = Math.sin(gameTime), kd = clamp(dp * 3 + 0.5, 0, 1), dusk = Math.max(0, 1 - Math.abs(dp) / 0.3);
         if (base < -20) return; ensureTiles();
+        const bw = bioWeights(dtm); let dom = 'f'; for (const b of BI) if (bw[b] > bw[dom]) dom = b;
+        if (warmWorld !== currentWorld) { warmWorld = currentWorld; if (warmTm) clearTimeout(warmTm); warmStart(dom); }
+        tileBudget = firstDraw ? 15 : 2; firstDraw = false;
+        const du = dusk * 0.9, pw = { day: kd * (1 - du), dusk: du, night: (1 - kd) * (1 - du) };
         ctx.save(); ctx.imageSmoothingEnabled = false;
-        // небо
-        const top = lerpC(SKY.night[0], SKY.day[0], kd), bot = lerpC(SKY.night[1], SKY.day[1], kd), dt = hex(SKY.dusk[0]), db = hex(SKY.dusk[1]);
-        const m = (c, d, k) => `rgb(${Math.round(c[0] + (d[0] - c[0]) * k)},${Math.round(c[1] + (d[1] - c[1]) * k)},${Math.round(c[2] + (d[2] - c[2]) * k)})`;
-        const sg = ctx.createLinearGradient(0, 0, 0, Math.max(60, base)); sg.addColorStop(0, m(top, dt, dusk * 0.7)); sg.addColorStop(1, m(bot, db, dusk * 0.8)); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, Math.max(H, 1));
+        // небо: суміш неба біомів
+        let top = [0, 0, 0], bot = [0, 0, 0], sS = 0;
+        for (const b of BI) { const w = bw[b]; if (w < 0.004) continue; const S = BPAL[b].SKY, tp = lerpC(S.night[0], S.day[0], kd), bt = lerpC(S.night[1], S.day[1], kd), t2 = mixA(tp, hex(S.dusk[0]), dusk * 0.7), b2 = mixA(bt, hex(S.dusk[1]), dusk * 0.8); for (let k = 0; k < 3; k++) { top[k] += t2[k] * w; bot[k] += b2[k] * w; } sS += w; }
+        const rgb = a => `rgb(${Math.round(a[0] / sS)},${Math.round(a[1] / sS)},${Math.round(a[2] / sS)})`;
+        const sg = ctx.createLinearGradient(0, 0, 0, Math.max(60, base)); sg.addColorStop(0, rgb(top)); sg.addColorStop(1, rgb(bot)); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, Math.max(H, 1));
         if (kd < 0.9) { ctx.fillStyle = '#fff'; for (const s of SKYSTARS) { const a = (1 - kd) * (0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s[2]))); ctx.globalAlpha = a; ctx.fillRect(Math.round(((s[0] * W - camera.x * 0.02) % W + W) % W), Math.round(s[1] * Math.max(120, base) - camera.y * 0.01), s[3], s[3]); } ctx.globalAlpha = 1; }
         try { drawSunMoon(dp); } catch (e) { }
-        // хмари (м'які)
+        // хмари (м'які); у пустелі рідші
+        let cm = 0; for (const b of BI) cm += bw[b] * CM[b];
         ctx.imageSmoothingEnabled = true;
         const CW = 3200; for (let i = 0; i < 9; i++) {
             const cx = (((i * 391 + 120 - camera.x * 0.07 + t * (4 + (i % 3) * 2)) % CW) + CW) % CW - 260, cy = 30 + ((i * 97) % 170) + (Math.max(0, base - 560) * 0.15) - camera.y * 0.02, k = i % 5;
             if (cx > W + 40 || cy > H) continue; const sc = 1;
-            for (const [ph, al] of [['night', 1], ['day', kd], ['dusk', dusk * 0.85]]) { if (al < 0.02) continue; const sp = clouds[ph][k]; ctx.globalAlpha = al * (ph === 'night' ? 0.9 : 0.95); ctx.drawImage(sp, Math.round(cx), Math.round(cy), sp.width * sc, sp.height * sc); }
+            for (const [ph, al] of [['night', 1], ['day', kd], ['dusk', dusk * 0.85]]) { if (al < 0.02) continue; const sp = clouds[ph][k]; ctx.globalAlpha = al * (ph === 'night' ? 0.9 : 0.95) * cm; ctx.drawImage(sp, Math.round(cx), Math.round(cy), sp.width * sc, sp.height * sc); }
         }
         ctx.globalAlpha = 1;
-        // ліс (згладжене масштабування — без «квадратиків»)
+        // шари фону: кожен біом × фаза змішуються нормованими вагами
         ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
         for (let i = 0; i < LAY.length; i++) {
             const L = LAY[i], Ht = (L.h + 36) * PS, yy = Math.round(base - Ht + 28 * PS - 8), ox = -((((camera.x * L.pf) % TW) + TW) % TW); if (yy > H) continue;
-            for (const [ph, al] of [['night', 1], ['day', kd], ['dusk', dusk * 0.9]]) {
-                if (al < 0.02) continue; const T = tiles[ph][i]; ctx.globalAlpha = al;
-                for (let x = ox - TW; x < W; x += TW) if (x + TW > 0) ctx.drawImage(T, Math.round(x), yy, TW, Ht);
-                const bt = yy + Ht; if (bt < H) { ctx.fillStyle = mixHex(L.trees === 'hills' ? HILLC[ph][1] : L.trees === 'rock' ? ROCK[ph][1] : TONE[ph][L.trees === 'front' ? 0 : 1], HAZE[ph], Math.min(0.95, L.haze + (L.blur ? 0.25 : 0))); ctx.fillRect(0, bt - 1, W, H - bt + 1); }
-            }
-            try { if (L.trees === 'rock') shimmer(ox, yy, t, Math.max(kd, 0.35)); if (L.trees === 'far' || L.trees === 'mid') mist(i, base, t, kd, dusk, W); } catch (e) { }
+            const E = []; for (const b of BI) { if (bw[b] < 0.008) continue; for (const ph of PH) { const w = bw[b] * pw[ph]; if (w < 0.008) continue; const T = getTile(b, ph, i); if (T) E.push([T, w, b, ph]); } }
+            let S = 0; const bt = yy + Ht;
+            for (const e of E) { S += e[1]; ctx.globalAlpha = e[1] / S; for (let x = ox - TW; x < W; x += TW) if (x + TW > 0) ctx.drawImage(e[0], Math.round(x), yy, TW, Ht); if (bt < H) { ctx.fillStyle = fillCol(e[2], L, e[3]); ctx.fillRect(0, bt - 1, W, H - bt + 1); } }
+            ctx.globalAlpha = 1;
+            try { if (L.trees === 'rock' && bw.f > 0.02) shimmer(ox, yy, t, Math.max(kd, 0.35) * bw.f); if (L.trees === 'far' || L.trees === 'mid') mist(i, base, t, pw, bw, W); } catch (e) { }
         }
         ctx.restore();
     }
@@ -46335,16 +46505,19 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     }
     const Ht0 = m => 230 + 36 - 28 - m.h; // верх урвища в координатах тайла
     const mistSpr = {};
-    function mistOf(ph) {
-        if (mistSpr[ph]) return mistSpr[ph]; const cv = document.createElement('canvas'); cv.width = 640; cv.height = 160; const g = cv.getContext('2d'), hz = HAZE[ph], r = rnd(77);
+    function mistOf(ph, b) {
+        const key = b + ph; if (mistSpr[key]) return mistSpr[key]; const cv = document.createElement('canvas'); cv.width = 640; cv.height = 160; const g = cv.getContext('2d'), hz = BPAL[b].HAZE[ph], r = rnd(77);
         for (let i = 0; i < 7; i++) { const x = 60 + r() * 520, y = 60 + r() * 40, rad = 60 + r() * 60, gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(${hz[0]},${hz[1]},${hz[2]},.42)`); gr.addColorStop(1, `rgba(${hz[0]},${hz[1]},${hz[2]},0)`); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
-        return mistSpr[ph] = cv;
+        return mistSpr[key] = cv;
     }
-    function mist(i, base, t, kd, dusk, W) {
+    function mist(i, base, t, pw, bw, W) {
         const CW = 2400; ctx.save();
-        for (let k = 0; k < 3; k++) {
-            const x = (((k * 800 - camera.x * (0.1 + i * 0.05) + t * (5 + k * 3)) % CW) + CW) % CW - 400, y = base - 70 - k * 55 - i * 20;
-            for (const [ph, al] of [['night', 1], ['day', kd], ['dusk', dusk * 0.9]]) { if (al < 0.02) continue; ctx.globalAlpha = al * (ph === 'night' ? 0.8 : 0.55); ctx.drawImage(mistOf(ph), Math.round(x), Math.round(y), 1000, 250); }
+        for (const b of BI) {
+            const w = bw[b]; if (w < 0.01) continue; const n = b === 'w' ? 5 : 3, gain = b === 'w' ? 1.7 : b === 'd' ? 0.35 : 1;
+            for (let k = 0; k < n; k++) {
+                const x = (((k * (b === 'w' ? 520 : 800) - camera.x * (0.1 + i * 0.05) + t * (5 + k * 3)) % CW) + CW) % CW - 400, y = base - 70 - k * (b === 'w' ? 30 : 55) - i * 20;
+                for (const ph of PH) { const a = pw[ph] * w * gain * (ph === 'night' ? 0.8 : 0.55); if (a < 0.01) continue; ctx.globalAlpha = Math.min(1, a); ctx.drawImage(mistOf(ph, b), Math.round(x), Math.round(y), 1000, 250); }
+            }
         }
         ctx.restore();
     }
@@ -46624,7 +46797,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
             return r;
         };
     })(libOverlay);
-    window.__zultra = { cfg, save, apply() { gTop = null; } };
+    window.__zultra = { cfg, save, apply() { gTop = null; BW = null; }, force(b) { FORCE = b; BW = null; }, bw() { return BW; } };
 })();
 // 46.29: великі меблі й декор стали компактнішими (нова площа + менша текстура). Уже поставлені у світах лишаються як були.
 (function () {
@@ -46817,12 +46990,15 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.38', 'Без обводок', 'new'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.39', 'Біоми Ультра+', 'new'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.39': [
+                ['#bfe3ff', '🌍 Фон «Ультра+» для кожного біому', 'Зима — засніжені ялини й крижані гори, болото — верби зі звисаючим мохом і густий туман, пустеля — бархани, червоні меси, кактуси й пальми. Коли ідеш між біомами, небо й фон плавно перетікають один в інший.']
+            ],
             '46.38': [
                 ['#e8e8f0', '🚫 Без білої обводки', 'Прибрано біле підсвічування-рамку, що з\'являлась навколо станцій, скринь та іншого начиння при наведенні курсора.']
             ],
