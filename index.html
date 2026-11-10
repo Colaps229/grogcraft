@@ -2695,15 +2695,44 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             openScreen('main-menu');
         }
 
+        // рядки вже збережених світів: щоб не розбирати й не збирати наново весь список при кожному збереженні
+        const SVC = { raw: null, parts: null };
+        function svWrite(name, worldStr) {
+            const raw = localStorage.getItem('grogcraft_worlds') || '[]';
+            if (SVC.raw !== raw || !SVC.parts) { const arr = JSON.parse(raw); SVC.parts = arr.map(w => ({ n: w && w.meta ? w.meta.name : null, s: JSON.stringify(w) })); }
+            const parts = SVC.parts, ix = parts.findIndex(p => p.n === name);
+            if (ix >= 0) parts[ix] = { n: name, s: worldStr }; else parts.push({ n: name, s: worldStr });
+            const full = '[' + parts.map(p => p.s).join(',') + ']';
+            try { localStorage.setItem('grogcraft_worlds', full); SVC.raw = full; } catch (e) { SVC.raw = null; SVC.parts = null; throw e; }
+        }
+        // карта для збереження: той самий формат, що v16Pack ({rle:1,rows}), але рядок блоків пакується наново тільки якщо він змінився
+        const SVM = { w: null, copy: [], str: [] };
+        function svMapStr() {
+            const map = worldMap, H = map.length; if (SVM.w !== map || SVM.str.length !== H) { SVM.w = map; SVM.copy = new Array(H); SVM.str = new Array(H); }
+            for (let y = 0; y < H; y++) {
+                const r = map[y], n = r.length; let c = SVM.copy[y], same = !!c && c.length === n && SVM.str[y] !== undefined;
+                if (same) for (let x = 0; x < n; x++) if (r[x] !== c[x]) { same = false; break; }
+                if (same) continue;
+                if (!c || c.length !== n) c = SVM.copy[y] = new Int32Array(n);
+                const out = []; let v = r[0], k = 0;
+                for (let x = 0; x < n; x++) { c[x] = r[x]; if (r[x] === v) k++; else { out.push(v, k); v = r[x]; k = 1; } }
+                out.push(v, k); SVM.str[y] = JSON.stringify(out);
+            }
+            return '{"rle":1,"rows":[' + SVM.str.join(',') + ']}';
+        }
         function saveGameWithAnimation() {
             playSound('click');
             currentWorld.lastSaved = Date.now();
-            let savedWorlds = JSON.parse(localStorage.getItem('grogcraft_worlds') || '[]');
-            let existingIdx = savedWorlds.findIndex(w => w.meta.name === currentWorld.name);
-            let worldSaveData = { meta: currentWorld, map: v16Pack(worldMap), sh: surfaceHeights, chests: chestsData, inventory: inventory, player: { x: player.x, y: player.y, health: player.health, hunger: player.hunger, armor: player.armor, rpg: rpgSave() } };
-            if (existingIdx >= 0) savedWorlds[existingIdx] = worldSaveData;
-            else savedWorlds.push(worldSaveData);
-            try { localStorage.setItem('grogcraft_worlds', JSON.stringify(savedWorlds)); } catch (e) { alert('Не вдалося зберегти світ: закінчилось місце у браузері. Видали старі світи.'); return; }
+            const svName = currentWorld.name, svMapS = svMapStr();
+            const svRest = JSON.stringify({ meta: currentWorld, sh: surfaceHeights, chests: chestsData, inventory: inventory, player: { x: player.x, y: player.y, health: player.health, hunger: player.hunger, armor: player.armor, rpg: rpgSave() } });
+            const svJob = window.__svJob = { name: svName };
+            const svFin = (mapStr) => {
+                if (window.__svJob !== svJob) return true; window.__svJob = null;
+                try { svWrite(svName, svRest.slice(0, -1) + ',"map":' + mapStr + '}'); return true; } catch (e) { alert('Не вдалося зберегти світ: закінчилось місце у браузері. Видали старі світи.'); return false; }
+            };
+            if (typeof V375 !== 'undefined' && V375.auto && typeof requestAnimationFrame === 'function' && !document.hidden) {
+                requestAnimationFrame(() => requestAnimationFrame(() => svFin(svMapS))); // запис у сховище — окремим кадром, не разом зі знімком
+            } else if (!svFin(svMapS)) return;
 
             let banner = document.getElementById('notification-banner');
             banner.classList.add('show');
@@ -7535,7 +7564,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         function mapRgb(h) { if (mapRGB[h]) return mapRGB[h]; const c = parseInt(h.slice(1), 16); return mapRGB[h] = [c >> 16, (c >> 8) & 255, c & 255]; }
         function mapBuild() {
             const W = currentWorld.width, H = currentWorld.height;
-            if (!mapCv || mapW !== W || mapH !== H) { mapCv = document.createElement('canvas'); mapCv.width = W; mapCv.height = H; mapW = W; mapH = H; mapImg = mapCv.getContext('2d').createImageData(W, H); }
+            if (!mapCv || mapW !== W || mapH !== H) { mapCv = document.createElement('canvas'); mapCv.width = W; mapCv.height = H; mapW = W; mapH = H; mapImg = mapCv.getContext('2d', { willReadFrequently: true }).createImageData(W, H); }
             const d = mapImg.data, wl = currentWorld.walls || {}, PK0 = (currentWorld.zf && currentWorld.zf.sky && currentWorld.zf.sky.pk) ? currentWorld.zf.sky.pk.y0 : -1;
             for (let y = 0; y < H; y++) {
                 const row = worldMap[y], dep = (PK0 >= 0 && y >= PK0) ? 0 : Math.max(0, Math.min(1, (y - 30) / (H - 30)));
@@ -11230,7 +11259,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         try { const s = +localStorage.getItem('gc_mmz'); if (s >= 1 && s <= 8) V19M.z = s; } catch (e) { }
         mapBuild = function (x0, y0, x1, y1) {
             const W = currentWorld.width, H = currentWorld.height;
-            if (!mapCv || mapW !== W || mapH !== H) { mapCv = document.createElement('canvas'); mapCv.width = W; mapCv.height = H; mapW = W; mapH = H; mapImg = mapCv.getContext('2d').createImageData(W, H); x0 = undefined; }
+            if (!mapCv || mapW !== W || mapH !== H) { mapCv = document.createElement('canvas'); mapCv.width = W; mapCv.height = H; mapW = W; mapH = H; mapImg = mapCv.getContext('2d', { willReadFrequently: true }).createImageData(W, H); x0 = undefined; }
             if (x0 === undefined) { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; }
             x0 = Math.max(0, x0 | 0); y0 = Math.max(0, y0 | 0); x1 = Math.min(W - 1, x1 | 0); y1 = Math.min(H - 1, y1 | 0); if (x1 < x0 || y1 < y0) return;
             const d = mapImg.data, wl = currentWorld.walls || {}, PK0 = (currentWorld.zf && currentWorld.zf.sky && currentWorld.zf.sky.pk) ? currentWorld.zf.sky.pk.y0 : -1;
@@ -11323,19 +11352,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
             tip.style.display = 'block'; tip.textContent = best ? best.label : `X ${bx} · Y ${by}${by >= (surfaceHeights[bx] || 0) ? ' · глибина ' + (by - (surfaceHeights[bx] || 0)) : ''}`; tip.style.left = Math.min(rc.width - 160, x + 14) + 'px'; tip.style.top = Math.max(4, y - 28) + 'px';
         };
         mapTick = function () {
-            mapUiInit(); v19MapUi(); const mm = document.getElementById('minimap'); const hudOn = !document.getElementById('game-hud').classList.contains('hidden') && gameState === 'PLAYING';
+            mapUiInit(); v19MapUi(); const mm = document.getElementById('minimap'); if (!V19M.wrf && mm && mm.firstElementChild) { V19M.wrf = 1; try { mm.firstElementChild.getContext('2d', { willReadFrequently: true }); } catch (e) { } } const hudOn = !document.getElementById('game-hud').classList.contains('hidden') && gameState === 'PLAYING';
             mm.style.display = hudOn && !mapOpen ? 'block' : 'none'; if (!hudOn && !mapOpen) return;
             const W = currentWorld.width, H = currentWorld.height, S = V19M.z; mapTimer++;
             const pcx = (player.x + 12) / 32, pcy = (player.y + 20) / 32;
             if (!mapCv || mapW !== W || mapH !== H || V19M.wkey !== currentWorld.name + W) { V19M.wkey = currentWorld.name + W; mapBuild(); V19M.fullAt = mapTimer; }
-            else if (mapTimer % 20 === 10) { const n = Math.max(4, Math.ceil(W / 100)); V19M.rx = (V19M.rx || 0) % W; mapBuild(V19M.rx, 0, V19M.rx + n - 1, H - 1); V19M.rx += n; }
-            else if (mapTimer % 20 === 0) { const hw = Math.ceil(110 / S) + 16, hh = Math.ceil(62 / S) + 12; mapBuild(Math.floor(pcx - hw * 2), Math.floor(pcy - hh * 2), Math.ceil(pcx + hw * 2), Math.ceil(pcy + hh * 2)); }
+            else {
+                const hw = Math.ceil(110 / S) + 16, hh = Math.ceil(62 / S) + 12, nx0 = Math.floor(pcx - hw * 2), nw = hw * 4 + 2, st = Math.max(6, Math.ceil(nw / 24));
+                V19M.nx = (V19M.nx || 0) % nw; mapBuild(nx0 + V19M.nx, Math.floor(pcy - hh * 2), nx0 + V19M.nx + st - 1, Math.ceil(pcy + hh * 2)); V19M.nx += st;
+                if (mapTimer % 4 === 0) { const n = Math.max(1, Math.ceil(W / 1500)); V19M.rx = (V19M.rx || 0) % W; mapBuild(V19M.rx, 0, V19M.rx + n - 1, H - 1); V19M.rx += n; }
+            }
             if (mapOpen) { if (mapTimer % 6 === 0) mapDrawBig(); return; }
             if (mapTimer % 3) return;
             const cv = mm.firstElementChild, c = cv.getContext('2d'), vw = cv.width / S, vh = cv.height / S; c.imageSmoothingEnabled = false; c.fillStyle = '#0d1520'; c.fillRect(0, 0, cv.width, cv.height);
             let sx = pcx - vw / 2, sy = window.mvY(pcy) - vh / 2; if (vw < W) sx = Math.max(0, Math.min(W - vw, sx)); else sx = (W - vw) / 2; if (vh < H) sy = Math.max(0, Math.min(H - vh, sy)); else sy = (H - vh) / 2;
             const dx0 = Math.max(0, -sx), dy0 = Math.max(0, -sy);
-            c.drawImage(window.mvCv(), Math.max(0, sx), Math.max(0, sy), Math.min(W, vw) - 0, Math.min(H, vh) - 0, dx0 * S, dy0 * S, Math.min(W, vw) * S, Math.min(H, vh) * S);
+            { const ax = Math.max(0, sx), ay = Math.max(0, sy), aw = Math.min(W, vw), ah = Math.min(H, vh);
+              if (!mapImg) c.drawImage(window.mvCv(), ax, ay, aw, ah, dx0 * S, dy0 * S, aw * S, ah * S);
+              else { // рядки карти можуть бути переставлені (небесний шар показується зверху): hSky рядків з кінця світу йдуть першими
+                const ix = Math.floor(ax), iy = Math.floor(ay), iw = Math.min(W - ix, Math.ceil(aw) + 2), ih = Math.min(H - iy, Math.ceil(ah) + 2), hSky = window.mvY(0) | 0, y0p = hSky > 0 ? H - hSky : 0;
+                let q = V19M.sc; if (!q || q.width < iw || q.height < ih) { q = V19M.sc = document.createElement('canvas'); q.width = iw + 8; q.height = ih + 8; q.getContext('2d', { willReadFrequently: true }); }
+                const qc = q.getContext('2d'), mid = Math.max(iy, Math.min(iy + ih, hSky));
+                if (mid > iy) qc.putImageData(mapImg, -ix, -iy - y0p, ix, iy + y0p, iw, mid - iy);
+                if (iy + ih > mid) qc.putImageData(mapImg, -ix, -iy + hSky, ix, mid - hSky, iw, iy + ih - mid);
+                c.drawImage(q, ax - ix, ay - iy, aw, ah, dx0 * S, dy0 * S, aw * S, ah * S); } }
             const t = performance.now() / 1000;
             for (const p of mapPlayers()) {
                 const x = (p.x / 32 - sx) * S, y = (p.y / 32 - sy) * S;
@@ -11349,7 +11389,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.45', GAME_VER_NAME = 'Без мікрофризів';
+        const GAME_VER = '46.47', GAME_VER_NAME = 'Тихий берег';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -16603,7 +16643,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 return r;
             };
         })(mapDrawBig);
-        saveGameWithAnimation = (function (o) { return function () { try { v27Save(true); } catch (e) { } return o.apply(this, arguments); }; })(saveGameWithAnimation);
+        saveGameWithAnimation = (function (o) { return function () { try { v27Save(!currentWorld || currentWorld.fog == null); } catch (e) { } return o.apply(this, arguments); }; })(saveGameWithAnimation);
         window.addEventListener('beforeunload', () => { try { if (V27.ex && V27.dirty) v27Save(); } catch (e) { } });
 
         // ================= 📖 v27: ГАЙДИ =================
@@ -18683,17 +18723,18 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         function v34Toast(txt) { try { if (typeof v33Toast === 'function') v33Toast(txt); } catch (e) { } }
 
         // ---- об’ємні краї блоків ----
+        const V34EC = [1, 0.8].map(hi => [['255,255,255', 0.17], ['255,255,255', 0.07], ['0,0,0', 0.28], ['0,0,0', 0.12], ['255,255,255', 0.08], ['0,0,0', 0.18]].map(q => 'rgba(' + q[0] + ',' + q[1] * hi + ')'));
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
                 o(bId, x, y, t);
                 if (V34G.eff < 1 || !V34G.ready || V34_OP[bId] !== 1) return;
                 const px = x * 32, py = y * 32, cw = currentWorld.width, ch = currentWorld.height;
                 const up = y > 0 ? V34_OP[worldMap[y - 1][x]] : 1, dn = y < ch - 1 ? V34_OP[worldMap[y + 1][x]] : 1, lf = x > 0 ? V34_OP[worldMap[y][x - 1]] : 1, rt = x < cw - 1 ? V34_OP[worldMap[y][x + 1]] : 1;
-                const hi = V34G.eff === 2 ? 1 : 0.8;
-                if (up !== 1) { ctx.fillStyle = 'rgba(255,255,255,' + 0.17 * hi + ')'; ctx.fillRect(px, py, 32, 2); ctx.fillStyle = 'rgba(255,255,255,' + 0.07 * hi + ')'; ctx.fillRect(px, py + 2, 32, 2); }
-                if (dn !== 1) { ctx.fillStyle = 'rgba(0,0,0,' + 0.28 * hi + ')'; ctx.fillRect(px, py + 29, 32, 3); ctx.fillStyle = 'rgba(0,0,0,' + 0.12 * hi + ')'; ctx.fillRect(px, py + 26, 32, 3); }
-                if (lf !== 1) { ctx.fillStyle = 'rgba(255,255,255,' + 0.08 * hi + ')'; ctx.fillRect(px, py, 2, 32); }
-                if (rt !== 1) { ctx.fillStyle = 'rgba(0,0,0,' + 0.18 * hi + ')'; ctx.fillRect(px + 29, py, 3, 32); }
+                const EC = V34G.eff === 2 ? V34EC[0] : V34EC[1];
+                if (up !== 1) { ctx.fillStyle = EC[0]; ctx.fillRect(px, py, 32, 2); ctx.fillStyle = EC[1]; ctx.fillRect(px, py + 2, 32, 2); }
+                if (dn !== 1) { ctx.fillStyle = EC[2]; ctx.fillRect(px, py + 29, 32, 3); ctx.fillStyle = EC[3]; ctx.fillRect(px, py + 26, 32, 3); }
+                if (lf !== 1) { ctx.fillStyle = EC[4]; ctx.fillRect(px, py, 2, 32); }
+                if (rt !== 1) { ctx.fillStyle = EC[5]; ctx.fillRect(px + 29, py, 3, 32); }
             };
         })(drawBlockTile);
 
@@ -19514,7 +19555,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         v23Meta('ladder', 'Драбина', 0, '🧱 Блок', 'Піднімайся на W / ↑ / Пропуск, спускайся на S / ↓. Ставиться в одну колонку один над одним — так виберешся з будь-якої печери.');
         recipes.push({ result: 'platform', count: 4, req: { plank: 1 } }, { result: 'ladder', count: 4, req: { plank: 2 } });
         const v36catOld = catOf; catOf = function (id) { return (id === 'platform' || id === 'ladder') ? 'build' : v36catOld(id); };
-        drawBlockTile = (function (o) { return function (bId, x, y, t) { if (bId === 68) { v36PaintPlat(ctx, x * 32, y * 32, false); return; } if (bId === 69) { v36PaintLad(ctx, x * 32, y * 32); return; } return o.apply(this, arguments); }; })(drawBlockTile);
+        drawBlockTile = (function (o) { return function (bId, x, y, t) { if (bId === 68) { v36PaintPlat(ctx, x * 32, y * 32, false); return; } if (bId === 69) { v36PaintLad(ctx, x * 32, y * 32); return; } return o(bId, x, y, t); }; })(drawBlockTile);
 
         // ---------- фізика гравця ----------
         function v36OnLadder() {
@@ -21116,8 +21157,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 const C = new WeakMap();
                 const dyn = b => b === 42 || b === 13 || b === 5 || b === 14 || b === 9 || b === 10 || (b >= 16 && b <= 19) || (b >= 25 && b <= 30) || (b >= 32 && b <= 35) || (b >= 37 && b <= 41);
                 return function (bId, x, y, t) {
-                    if (!Q.lite || dyn(bId)) return o.apply(this, arguments);
-                    const bd = BLOCKS[bId]; if (!bd) return o.apply(this, arguments);
+                    if (!Q.lite || dyn(bId)) return o(bId, x, y, t);
+                    const bd = BLOCKS[bId]; if (!bd) return o(bId, x, y, t);
                     const sp = spriteOf(bd.item); if (!sp) return;
                     let key = 0;
                     if (bd.solid) {
@@ -21305,8 +21346,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             for (let y = y1; y >= y0; y--) {
                 const row = worldMap[y], dn = worldMap[y + 1], up = worldMap[y - 1], base = y * W;
                 let x = x0;
+                const ok = xx => row[xx] === 13 && up[xx] !== 13 && (BLOCKS[dn[xx]].solid || (dn[xx] === 13 && !WL[base + W + xx]));
                 while (x <= x1) {
-                    const ok = xx => row[xx] === 13 && up[xx] !== 13 && (BLOCKS[dn[xx]].solid || (dn[xx] === 13 && !WL[base + W + xx]));
                     if (!ok(x)) { x++; continue; }
                     let e = x, tot = 0, mn = F, mx = 0;
                     while (e <= x1 && ok(e)) { const l = WL[base + e] || F; tot += l; if (l < mn) mn = l; if (l > mx) mx = l; e++; }
@@ -22184,11 +22225,11 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // малювання тропічних блоків (гойдання, ковзання, вогонь)
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
-                if (bId < 71 && bId !== 4) return o.apply(this, arguments);
+                if (bId < 71 && bId !== 4) return o(bId, x, y, t);
                 const px = x * 32, py = y * 32;
-                if (bId === 4 && v16Bio(x) === 'j') { const sp = spriteOf('jungle_log'); if (sp) { ctx.drawImage(sp, px, py, 32, 32); return; } return o.apply(this, arguments); }
+                if (bId === 4 && v16Bio(x) === 'j') { const sp = spriteOf('jungle_log'); if (sp) { ctx.drawImage(sp, px, py, 32, 32); return; } return o(bId, x, y, t); }
                 if (bId === 71) {
-                    o.apply(this, arguments);
+                    o(bId, x, y, t);
                     const up = y > 0 ? worldMap[y - 1][x] : 1;
                     if (up === 0 || up === 14) {
                         ctx.save(); ctx.fillStyle = '#3fb540';
@@ -22197,7 +22238,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     }
                     return;
                 }
-                if (bId === 72 || bId === 76) return o.apply(this, arguments);
+                if (bId === 72 || bId === 76) return o(bId, x, y, t);
                 const bd = BLOCKS[bId], sp = spriteOf(bd.item); if (!sp) return;
                 if (bId === 73 || bId === 75) {
                     const up = y > 0 ? worldMap[y - 1][x] : 0, k = bId === 73 ? (up === 73 ? 0.5 : 1) : 1, sway = Math.sin(t * 1.5 + x * 0.8) * 0.035 * k + Math.sin(t * 0.7 + x) * 0.012;
@@ -22217,7 +22258,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     ctx.fillStyle = 'rgba(255,230,140,' + 0.85 * fl + ')'; ctx.beginPath(); ctx.moveTo(px + 13, py + 9); ctx.quadraticCurveTo(px + 14 + Math.sin(t * 11 + x) * 2, py - 1, px + 16 + Math.sin(t * 9) * 1.5, py - 4 - fl * 2); ctx.quadraticCurveTo(px + 19, py + 1, px + 19, py + 9); ctx.fill(); ctx.restore();
                     return;
                 }
-                return o.apply(this, arguments);
+                return o(bId, x, y, t);
             };
         })(drawBlockTile);
         // листя джунглів
@@ -29079,10 +29120,10 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     return;
                 }
                 if (bId === 84 || bId === 87 || bId === 86) {
-                    o.apply(this, arguments); const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE;
+                    o(bId, x, y, t); const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE;
                     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.14 + 0.1 * Math.sin(t * 3 + x * 2 + y); ctx.fillStyle = bId === 87 ? '#8fa8ff' : '#ff8a2a'; ctx.fillRect(px + 2, py + 2, 28, 28); ctx.restore(); return;
                 }
-                return o.apply(this, arguments);
+                return o(bId, x, y, t);
             };
         })(drawBlockTile);
         updateGame = (function (o) {
@@ -30388,8 +30429,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         const ZL_RUNE = { 97: 0, 98: 1, 99: 2, 100: 3 };
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
-                if (bId < 88 || bId > 104) return o.apply(this, arguments);
-                o.apply(this, arguments); const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE, S = zlSt();
+                if (bId < 88 || bId > 104) return o(bId, x, y, t);
+                o(bId, x, y, t); const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE, S = zlSt();
                 ctx.save();
                 if (bId === 90) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 + 0.12 * Math.sin(t * 2.6 + x * 1.3); ctx.fillStyle = '#7fe8ff'; ctx.beginPath(); ctx.arc(px + 16, py + 17, 15, 0, 7); ctx.fill(); }
                 else if (bId === 88) { const lit = S['a:' + x + ',' + y], p = 0.5 + 0.5 * Math.sin(t * 3 + x); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = lit ? 0.55 + 0.25 * p : 0.12 + 0.08 * p; const g = ctx.createRadialGradient(px + 16, py + 9, 1, px + 16, py + 9, lit ? 24 : 10); g.addColorStop(0, lit ? '#d8fbff' : '#7fe8ff'); g.addColorStop(1, 'rgba(60,200,255,0)'); ctx.fillStyle = g; ctx.fillRect(px - 8, py - 14, 48, 48); if (lit && ((t * 12 + x) % 5) < 0.2) createParticles(px + 16, py + 6, '#bff4ff', 1, 1.2, 2, 30); }
@@ -30918,7 +30959,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         // ---------- візуал ----------
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
-                o.apply(this, arguments); if (bId < 97 || bId > 102) return;
+                o(bId, x, y, t); if (bId < 97 || bId > 102) return;
                 const S = zlSt(), px = x * 32, py = y * 32; let lit = 0;
                 if (bId >= 97 && bId <= 100) { const k = bId - 97, rs = S.rs || 0, seq = zqSeq(); lit = S.sol ? 1 : (seq.indexOf(k) < rs ? 1 : 0); if (lit) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 + 0.2 * Math.sin(t * 4 + k); const g = ctx.createRadialGradient(px + 16, py + 16, 2, px + 16, py + 16, 30); g.addColorStop(0, ZQ_GL[k][1]); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(px - 14, py - 14, 60, 60); ctx.restore(); if (((t * 10 + x) % 6) < 0.2) createParticles(px + 16, py + 4, ZQ_GL[k][1], 1, 1, 2, 28); } }
                 else if (bId === 101) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.12 + 0.1 * Math.sin(t * 2.4 + x); ctx.fillStyle = '#b8a8ff'; ctx.fillRect(px + 4, py + 4, 24, 24); ctx.restore(); }
@@ -31607,7 +31648,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         function ztTinted(sp, col) { const key = col; let m = ztCache.get(sp); if (!m) { m = {}; ztCache.set(sp, m); } if (m[key]) return m[key]; const cv = document.createElement('canvas'); cv.width = sp.width || 32; cv.height = sp.height || 32; const c = cv.getContext('2d'); c.drawImage(sp, 0, 0); c.globalCompositeOperation = 'source-atop'; c.fillStyle = col; c.fillRect(0, 0, cv.width, cv.height); return (m[key] = cv); }
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
-                o.apply(this, arguments);
+                o(bId, x, y, t);
                 try {
                     if (ZSN.s < 0 || (bId !== 2 && bId !== 5 && bId !== 71)) return; const s = ZSN.s, bd = BLOCKS[bId], sp = spriteOf(bd.item); if (!sp) return; const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE;
                     const open = y > 0 && !BLOCKS[worldMap[y - 1][x]].solid && worldMap[y - 1][x] !== 5;
@@ -32263,7 +32304,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         drawBossesAll = (function (o) { return function (t) { o.apply(this, arguments); try { if (SPL.sim.ents.length) { ctx.save(); splDraw(ctx, SPL.sim); ctx.restore(); } } catch (e) { } }; })(drawBossesAll);
         drawBlockTile = (function (o) {
             return function (bId, x, y, t) {
-                o.apply(this, arguments);
+                o(bId, x, y, t);
                 if (bId === 106) { try { const px = x * BLOCK_SIZE, py = y * BLOCK_SIZE; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(150,110,255,${0.12 + 0.06 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.arc(px + 16, py + 8, 14 + Math.sin(t * 2) * 2, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(200,170,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(px + 16, py + 4 - Math.sin(t * 2) * 3, 8, 3, t * 0.8, 0, 7); ctx.stroke(); ctx.restore(); } catch (e) { } }
             };
         })(drawBlockTile);
@@ -34614,7 +34655,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         try {
             const p = pk(); if (!p || !mapCv) return mapCv;
             const W = mapCv.width, H = mapCv.height, key = currentWorld.name + '|' + W + '|' + H + '|' + p.y0;
-            if (!MV.cv || MV.key !== key) { MV.cv = document.createElement('canvas'); MV.cv.width = W; MV.cv.height = H; MV.key = key; MV.d = { x0: 0, y0: 0, x1: 1e9, y1: 1e9 }; }
+            if (!MV.cv || MV.key !== key) { MV.cv = document.createElement('canvas'); MV.cv.width = W; MV.cv.height = H; MV.cv.getContext('2d', { willReadFrequently: true }); MV.key = key; MV.d = { x0: 0, y0: 0, x1: 1e9, y1: 1e9 }; }
             if (MV.d) {
                 const d = MV.d; MV.d = null; const x0 = Math.max(0, d.x0 | 0), x1 = Math.min(W - 1, d.x1 | 0), ya = Math.max(0, d.y0 | 0), yb = Math.min(H - 1, d.y1 | 0), h = P(), c = MV.cv.getContext('2d');
                 if (x1 >= x0) {
@@ -35992,6 +36033,16 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         (() => {
             const D = { on: 0, mini: 0, ft: new Float32Array(240), fi: 0, fc: 0, upd: 0, ren: 0, u1: 0, r1: 0, rtt: -1, rttMax: 0, rtts: [], pend: {}, lastPing: 0, lastDom: 0, gpu: '', soft: 0, since: performance.now(), drops: 0, last: 0, hist: [] };
             try { const c = document.createElement('canvas'), g = c.getContext('webgl') || c.getContext('experimental-webgl'); const e = g && g.getExtension('WEBGL_debug_renderer_info'); D.gpu = e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : (g ? 'WebGL' : 'немає WebGL'); D.soft = /swiftshader|llvmpipe|software|basic render/i.test(D.gpu) ? 1 : 0; } catch (e) { }
+            // v46.46: розклад кадру по частинах (рахується лише коли панель F3 відкрита)
+            const T = window.__zdT = { on: 0, cur: {}, acc: {}, pk: {}, avg: {}, mx: {}, n: 0, add(k, ms) { this.cur[k] = (this.cur[k] || 0) + ms; },
+                frame() { for (const k in this.cur) { const v = this.cur[k]; this.acc[k] = (this.acc[k] || 0) + v; if (v > (this.pk[k] || 0)) this.pk[k] = v; this.cur[k] = 0; } if (++this.n >= 45) { for (const k in this.acc) { this.avg[k] = this.acc[k] / this.n; this.mx[k] = this.pk[k] || 0; this.acc[k] = 0; this.pk[k] = 0; } this.n = 0; } } };
+            const TPARTS = [['blk', 'світ (блоки)'], ['bg', 'фон Ультра+'], ['fx', 'ефекти Ультра+'], ['light', 'освітлення'], ['map', 'мінікарта'], ['hud', 'інтерфейс']];
+            setTimeout(() => { // після всіх модулів — щоб виміряти остаточні версії функцій
+                const wrap = (get, set, key) => { try { const o = get(); if (typeof o !== 'function') return; set(function () { if (!T.on) return o.apply(this, arguments); const t = performance.now(); try { return o.apply(this, arguments); } finally { T.add(key, performance.now() - t); } }); } catch (e) { } };
+                try { const o = drawBlockTile; drawBlockTile = function (bId, x, y, t) { if (!T.on) return o(bId, x, y, t); const a = performance.now(); o(bId, x, y, t); T.cur.blk = (T.cur.blk || 0) + performance.now() - a; }; } catch (e) { }
+                wrap(() => v34Overlay, f => { v34Overlay = f; }, 'light'); wrap(() => mapTick, f => { mapTick = f; }, 'map'); wrap(() => v19Hud, f => { v19Hud = f; }, 'hud');
+                try { const o = saveGameWithAnimation; saveGameWithAnimation = function () { const t = performance.now(); try { return o.apply(this, arguments); } finally { D.saveMs = performance.now() - t; D.saveAt = Date.now(); } }; } catch (e) { }
+            }, 0);
             const el = document.createElement('div'); el.id = 'zd-box';
             el.style.cssText = "position:fixed;left:8px;top:8px;z-index:9300;display:none;min-width:262px;padding:9px 11px 8px;border-radius:12px;background:rgba(8,14,26,.82);border:1px solid rgba(120,190,255,.28);box-shadow:0 8px 28px rgba(0,0,0,.55);backdrop-filter:blur(4px);font:600 11.5px/1.45 Consolas,'Courier New',monospace;color:#cfe0f5;pointer-events:none;user-select:none";
             const cv = document.createElement('canvas'); cv.width = 240; cv.height = 46; cv.style.cssText = 'position:relative!important;inset:auto!important;display:block;width:240px;height:46px;margin:5px 0 3px;border-radius:6px;background:rgba(0,0,0,.35)';
@@ -36017,7 +36068,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             function report() {
                 const s = stats(); return ['GrogCraft ' + s.ver + ' · ' + new Date().toISOString(), 'FPS ' + s.fps.toFixed(0) + ' (кадр ' + s.avg.toFixed(1) + ' мс, p99 ' + s.p99.toFixed(1) + ', макс ' + s.mx.toFixed(0) + ', просадок ' + s.drops + ')', 'update ' + s.upd.toFixed(2) + ' мс · render ' + s.ren.toFixed(2) + ' мс',
                     'частинки ' + s.parts + ' · моби ' + s.mobs + ' · тварини ' + s.animals + ' · предмети ' + s.items + ' · стріли ' + s.arrows + ' · тексти ' + s.texts, 'DOM-вузлів ' + s.dom + ' · пам\'ять JS ' + (s.mem < 0 ? 'н/д' : s.mem + ' МБ'),
-                    'канвас ' + s.cw + '×' + s.ch + ' (dpr ' + s.dpr + ') · lite ' + s.lite, 'GPU: ' + D.gpu + (D.soft ? ' (ПРОГРАМНИЙ рендер!)' : ''), 'онлайн: ' + (s.mpOn ? 'так, гравців ' + s.players + ', пінг ' + (s.rtt < 0 ? 'н/д' : s.rtt + ' мс (макс ' + s.rttMax + ')') : 'ні') + (s.vc ? ' · голос: ' + s.vc : ''), navigator.userAgent].join('\n');
+                    'канвас ' + s.cw + '×' + s.ch + ' (dpr ' + s.dpr + ') · lite ' + s.lite, 'розклад кадру (сер/пік мс): ' + TPARTS.map(([k, nm]) => nm + ' ' + (T.avg[k] || 0).toFixed(1) + '/' + (T.mx[k] || 0).toFixed(1)).join(' · ') + (D.saveMs ? ' · збереження ' + D.saveMs.toFixed(0) + ' мс' : ''), (() => { try { const u = window.__zultra; return 'Ультра+: ' + (u && u.cfg.on ? 'увімк., потоки ' + (u.dbg().wkBad ? 'вимк.' : u.dbg().wk) : 'вимк.'); } catch (e) { return 'Ультра+: ?'; } })(), 'GPU: ' + D.gpu + (D.soft ? ' (ПРОГРАМНИЙ рендер!)' : ''), 'онлайн: ' + (s.mpOn ? 'так, гравців ' + s.players + ', пінг ' + (s.rtt < 0 ? 'н/д' : s.rtt + ' мс (макс ' + s.rttMax + ')') : 'ні') + (s.vc ? ' · голос: ' + s.vc : ''), navigator.userAgent].join('\n');
             }
             function copyReport() {
                 const t = report();
@@ -36041,6 +36092,11 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     h += row('онлайн', s.mpOn ? 'так · ' + s.players + ' гр.' : 'ні', s.mpOn ? '#7dffb0' : '#7f95b3');
                     if (s.mpOn) h += row('пінг', s.rtt < 0 ? '…' : s.rtt + ' мс (макс ' + s.rttMax + ')', s.rtt < 0 ? '#7f95b3' : col(s.rtt, 80, 180));
                     if (s.vc) h += row('голос', s.vc);
+                    h += '<div style="margin-top:4px;border-top:1px solid rgba(255,255,255,.12);padding-top:3px;color:#8fd0ff">розклад кадру: сер / пік, мс</div>'; let sum = 0;
+                    for (const [k, nm] of TPARTS) { const a = T.avg[k] || 0, m = T.mx[k] || 0; sum += a; if (a < 0.005 && m < 0.05) continue; h += row(nm, a.toFixed(1) + ' / ' + m.toFixed(1), col(m, 6, 12)); }
+                    h += row('інше', Math.max(0, s.upd + s.ren - sum).toFixed(1));
+                    try { const u = window.__zultra && window.__zultra.cfg.on ? window.__zultra.dbg() : null; if (u) h += row('Ультра+ потоки / черга', (u.wkBad ? 'вимк.' : u.wk) + ' / ' + u.jobs, u.wkBad ? '#ffd86b' : '#e8f2ff'); } catch (e) { }
+                    if (D.saveMs) h += row('збереження (останнє)', D.saveMs.toFixed(0) + ' мс', col(D.saveMs, 20, 45));
                 }
                 tx.innerHTML = h;
                 const W = 240, H = 46; cx.clearRect(0, 0, W, H);
@@ -36057,7 +36113,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                     const t = performance.now();
                     try { return o.apply(this, arguments); }
                     finally {
-                        const t2 = performance.now(); D.ren += t2 - t; D.nr = (D.nr || 0) + 1;
+                        const t2 = performance.now(); D.ren += t2 - t; D.nr = (D.nr || 0) + 1; if (T.on) T.frame();
                         if (D.last) { const dt = t2 - D.last; if (dt < 1000) { D.ft[D.fi] = dt; D.fi = (D.fi + 1) % 240; D.fc++; if (dt > 34 && D.fc > 60) D.drops++; } } D.last = t2;
                         if (D.nr >= 15) { D.u1 = D.upd / Math.max(1, D.nu); D.r1 = D.ren / D.nr; D.upd = D.ren = D.nu = D.nr = 0; }
                         if (D.on && t2 - (D.lp || 0) > 250) { D.lp = t2; if (t2 - D.lastDom > 2000) { D.lastDom = t2 - 0; D.domN = document.getElementsByTagName('*').length; } paint(); }
@@ -36087,7 +36143,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             mpLeave = (function (o) { return function () { D.rtt = -1; D.rttMax = 0; D.pend = {}; return o.apply(this, arguments); }; })(mpLeave);
 
             // ---------- клавіші ----------
-            function setOn(v) { D.on = v; el.style.display = v ? 'block' : 'none'; if (v) { D.lp = 0; D.lastDom = 0; paint(); } try { localStorage.setItem('zd_on', v ? (D.mini ? '2' : '1') : '0'); } catch (e) { } }
+            function setOn(v) { D.on = v; T.on = v ? 1 : 0; el.style.display = v ? 'block' : 'none'; if (v) { D.lp = 0; D.lastDom = 0; paint(); } try { localStorage.setItem('zd_on', v ? (D.mini ? '2' : '1') : '0'); } catch (e) { } }
             window.addEventListener('keydown', e => {
                 if (e.code !== 'F3') return; if (e.repeat) return;
                 const t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA') return;
@@ -36959,7 +37015,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 return function (bId, x, y, t) {
                     const px = x * 32, py = y * 32;
                     if (bId === 24 && cfg.grow) { try { return sapling(bId, x, y, t, px, py, o, arguments, this); } catch (e) { } }
-                    const r = o.apply(this, arguments);
+                    const r = o(bId, x, y, t);
                     try {
                         if (cfg.season) { if (bId === 5) leaf(x, y, px, py); else if (bId === 2) grass(x, y, px, py); else if (bId === 13) ice(x, y, px, py); }
                         if (cfg.living) {
@@ -37475,7 +37531,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 }
                 ctx.restore();
             }
-            drawBlockTile = (function (o) { return function (bId, x, y, t) { if (bId === CORE) { try { drawCore(x, y, t); } catch (e) { } return; } return o.apply(this, arguments); }; })(drawBlockTile);
+            drawBlockTile = (function (o) { return function (bId, x, y, t) { if (bId === CORE) { try { drawCore(x, y, t); } catch (e) { } return; } return o(bId, x, y, t); }; })(drawBlockTile);
             drawLibEntities = (function (o) {
                 return function (t) {
                     o.apply(this, arguments);
@@ -39998,7 +40054,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             if (bId === 4 || bId === 5) {
                 try { ctx.save(); try { (bId === 5 ? leaf : log)(ctx, x * 32, y * 32, x, y, t, treeType(x), false); } finally { ctx.restore(); } return; } catch (e) { console.error('ztree', e); }
             } else if (bId === 24) { const T = treeType(x); if (T === 'j' || T === 'b') { try { ctx.save(); let ok = false; try { ok = sap(ctx, x * 32, y * 32, x, y, t, T); } finally { ctx.restore(); } if (ok) return; } catch (e) { } } }
-            return o.apply(this, arguments);
+            return o(bId, x, y, t);
         };
     })(drawBlockTile);
     // дерево, що падає після зрубування
@@ -40147,7 +40203,8 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
     const Z = window.__zr; if (!Z) return;
     const TAU = Math.PI * 2;
     const rich = () => { try { return window.__zfeat.on('fxrich'); } catch (e) { return true; } };
-    const rgb = c => { if (c[0] !== '#') return [255, 255, 255]; let h = c.slice(1); if (h.length === 3) h = h.replace(/./g, '$&$&'); const n = parseInt(h.slice(0, 6), 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+    const RGBM = new Map(), RGBW = [255, 255, 255]; // v46.46: розбір кольору кешується (раніше — новий масив і рядки на кожну частинку щокадру)
+    const rgb = c => { if (c[0] !== '#') return RGBW; let v = RGBM.get(c); if (v) return v; let h = c.slice(1); if (h.length === 3) h = h.replace(/./g, '$&$&'); const n = parseInt(h.slice(0, 6), 16) || 0; v = [n >> 16 & 255, n >> 8 & 255, n & 255]; if (RGBM.size < 800) RGBM.set(c, v); return v; };
     const rgba = (c, a) => { const q = rgb(c); return 'rgba(' + q[0] + ',' + q[1] + ',' + q[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')'; };
     const mix = (a, b, k) => { const p = rgb(a), q = rgb(b); return 'rgb(' + Math.round(p[0] + (q[0] - p[0]) * k) + ',' + Math.round(p[1] + (q[1] - p[1]) * k) + ',' + Math.round(p[2] + (q[2] - p[2]) * k) + ')'; };
     // ---------- частинки ----------
@@ -44753,12 +44810,38 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         for (let i = 0; i < 34; i++) { const k = kinds[i < 8 ? 0 : i < 14 ? 1 : i < 22 ? 2 : i < 25 ? 3 : i < 29 ? 4 : i < 31 ? 5 : i < 32 ? 6 : i < 33 ? 7 : 8]; fish.push({ k, off: Math.random() * 1000, sp: 0.5 + Math.random() * 0.9, fr: Math.random(), dir: Math.random() < 0.5 ? 1 : -1, ph: Math.random() * 6.28, n: k === 'sardine' ? 6 : 1 }); }
         const chestX = wreckX + 4;
         cw.ocn = { x0, x1, H0, floors, dec, vents, fish, rocks, wx: wreckX, chest: 0 };
+        try { mkShore(cw.ocn, false); } catch (e) { console.error('zocean shore', e); } cw.ocn.shore = 1;
         return true;
+    }
+    // ---- v46.47: берег океану. Рівень моря = середня висота ділянки, тож земля за краєм бувала НИЖЧОЮ за воду —
+    // океан витікав на поверхню й стояв «стіною». Тепер за кожним краєм насипається піщаний берег (верх на 1 блок вище води, далі схил).
+    // repair=true (старі світи, один раз): спершу прибрати воду, що вже витекла, потім насип і долити океан до рівня.
+    function mkShore(O, repair) {
+        const cw = currentWorld, w = cw.width, h = cw.height, H0 = O.H0; let ch = 0;
+        const put = (x, y, v) => { worldMap[y][x] = v; try { if (V376.map === worldMap && V376.WL) { const k = y * w + x; V376.WL[k] = 0; if (V376.SH) V376.SH[k] = v === 13 ? V376F : 0; } } catch (e) { } ch++; };
+        const hard = (x, y) => { const v = worldMap[y][x]; return v !== 0 && v !== 13 && !!(BLOCKS[v] && BLOCKS[v].solid); };
+        for (const [edge, dir] of [[O.x0, -1], [O.x1, 1]]) {
+            if (repair) { // вода, що витекла назовні: заливка від краю по сусідніх клітинках води (лише поза океаном, не далі 90 блоків)
+                const q = [], seen = new Set(); for (let d = 1; d <= 3; d++) for (let y = Math.max(1, H0 - 3); y < Math.min(h - 2, H0 + 40); y++) { const x = edge + dir * d; if (x > 1 && x < w - 2 && worldMap[y][x] === 13) { q.push(x, y); seen.add(y * w + x); } }
+                for (let i = 0; i < q.length && i < 16000; i += 2) { const x = q[i], y = q[i + 1]; put(x, y, 0); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 2 || nx > w - 3 || ny < 1 || ny > h - 3 || (nx - edge) * dir < 1 || (nx - edge) * dir > 90) continue; const k = ny * w + nx; if (seen.has(k) || worldMap[ny][nx] !== 13) continue; seen.add(k); q.push(nx, ny); } }
+            }
+            for (let d = 1; d <= 60; d++) {
+                const x = edge + dir * d; if (x < 2 || x > w - 3) break; const top = H0 - 1 + Math.max(0, d - 3); if (top > h - 4) break;
+                let g = top; while (g < h - 3 && !hard(x, g)) g++;
+                if (g <= top) { if (d > 3) break; continue; } // земля тут і так не нижча за насип
+                for (let y = top; y < g; y++) { const v = worldMap[y][x]; if (v === 0 || v === 13 || (!repair && !hard(x, y))) put(x, y, 11); }
+                if (surfaceHeights[x] == null || surfaceHeights[x] > top) surfaceHeights[x] = top;
+            }
+        }
+        if (repair) for (let x = O.x0; x <= O.x1; x++) for (let y = H0; y < h - 3; y++) { const v = worldMap[y][x]; if (v === 13) { try { if (V376.map === worldMap && V376.WL && V376.WL[y * w + x]) put(x, y, 13); } catch (e) { } continue; } if (v !== 0) break; put(x, y, 13); }
+        return ch;
     }
     generateWorldData = (function (o) { return function () { const r = o.apply(this, arguments); try { mkOcean(); } catch (e) { console.error('zocean gen', e); } return r; }; })(generateWorldData);
     let retro = 0;
     Z.TICK.push(() => {
-        if (typeof gameState === 'undefined' || gameState !== 'PLAYING') return; const cw = currentWorld; if (!cw || cw.ocn || cw.noOcn || retro || (MP && MP.sh)) return;
+        if (typeof gameState === 'undefined' || gameState !== 'PLAYING') return; const cw = currentWorld;
+        if (cw && cw.ocn && !cw.ocn.shore && !(MP && MP.sh)) { cw.ocn.shore = 1; try { const n = mkShore(cw.ocn, true); if (n > 40) toast('🌊 Берег океану підсипано — вода більше не витікає'); } catch (e) { console.error('zocean shore', e); } }
+        if (!cw || cw.ocn || cw.noOcn || retro || (MP && MP.sh)) return;
         retro = 1; setTimeout(() => { try { if (mkOcean()) toast('🌊 Десь у світі з’явився океан…'); } catch (e) { console.error(e); } }, 5500);
     });
     const ocn = () => (currentWorld && currentWorld.ocn) || null;
@@ -46735,6 +46818,16 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         }
         ctx.restore();
     }
+    // v46.46: пелюстка/листок — готовий спрайт (радіус 16 у полотні 40×40) замість градієнта й контуру на кожну частинку щокадру
+    const PETS = {};
+    function petalOf(col, kind, hl) {
+        const key = col[0] + col[1] + kind + hl; let c = PETS[key]; if (c) return c;
+        c = PETS[key] = document.createElement('canvas'); c.width = c.height = 40; const g = c.getContext('2d'), r = 16; g.translate(20, 20);
+        const gr = g.createLinearGradient(-r, 0, r, 0); gr.addColorStop(0, col[0]); gr.addColorStop(1, col[1]); g.fillStyle = gr; g.beginPath();
+        if (kind === 2) { g.moveTo(-r, 0); g.quadraticCurveTo(0, -r * 0.8, r, 0); g.quadraticCurveTo(0, r * 0.8, -r, 0); g.fill(); g.strokeStyle = 'rgba(90,30,10,.35)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-r, 0); g.lineTo(r * 0.9, 0); g.stroke(); }
+        else { g.moveTo(-r, 0); g.bezierCurveTo(-r * 0.6, -r * 0.95, r * 0.5, -r * 0.8, r, -r * 0.1); g.bezierCurveTo(r * 0.55, r * 0.7, -r * 0.5, r * 0.8, -r, 0); g.fill(); if (hl) { g.globalAlpha = 0.5; g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(-r * 0.2, -r * 0.15, r * 0.35, r * 0.12, 0, 0, TAU); g.fill(); } }
+        return c;
+    }
     const DOTS = {};
     function dotOf(col) { const k = col[0] + col[1]; let c = DOTS[k]; if (!c) { c = DOTS[k] = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, col[0]); gr.addColorStop(0.4, col[1]); const h = hex(col[1]); gr.addColorStop(1, `rgba(${h[0]},${h[1]},${h[2]},0)`); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); } return c; }
     function petals(t, W, H, depth) {
@@ -46753,10 +46846,9 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
                 if (s === 1 || s === 3) { // пилок / іскринки — м'які цятки
                     ctx.globalCompositeOperation = 'lighter'; const r = p.r * 0.9; ctx.globalAlpha = a * 0.55 * (0.6 + 0.4 * Math.sin(p.fl * 2)); ctx.drawImage(dotOf(col), -r * 2.2, -r * 2.2, r * 4.4, r * 4.4);
                 } else if (s === 2) { // листок
-                    ctx.scale(1, sq); const r = p.r * 1.25, g = ctx.createLinearGradient(-r, 0, r, 0); g.addColorStop(0, col[0]); g.addColorStop(1, col[1]); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-r, 0); ctx.quadraticCurveTo(0, -r * 0.8, r, 0); ctx.quadraticCurveTo(0, r * 0.8, -r, 0); ctx.fill(); ctx.strokeStyle = 'rgba(90,30,10,.35)'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r * 0.9, 0); ctx.stroke();
+                    const k = p.r * 1.25 / 16; ctx.scale(k, sq * k); ctx.drawImage(petalOf(col, 2, 0), -20, -20);
                 } else { // пелюстка сакури
-                    ctx.scale(1, sq); const r = p.r, g = ctx.createLinearGradient(-r, 0, r, 0); g.addColorStop(0, col[0]); g.addColorStop(1, col[1]); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-r, 0); ctx.bezierCurveTo(-r * 0.6, -r * 0.95, r * 0.5, -r * 0.8, r, -r * 0.1); ctx.bezierCurveTo(r * 0.55, r * 0.7, -r * 0.5, r * 0.8, -r, 0); ctx.fill();
-                    if (p.z > 0.5) { ctx.globalAlpha = a * 0.5; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.15, r * 0.35, r * 0.12, 0, 0, TAU); ctx.fill(); }
+                    const k = p.r / 16; ctx.scale(k, sq * k); ctx.drawImage(petalOf(col, 0, p.z > 0.5 ? 1 : 0), -20, -20);
                 }
                 ctx.restore();
             }
@@ -46911,9 +47003,9 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
     }
     drawBlockTile = (function (o) {
         return function (bId, x, y, t) {
-            if (!cfg.on || (bId !== 1 && bId !== 2)) return o.apply(this, arguments);
+            if (!cfg.on || (bId !== 1 && bId !== 2)) return o(bId, x, y, t);
             const v = (((x * 73856093) ^ (y * 19349663)) >>> 0) % 6; TVAR = v;
-            try { o.apply(this, arguments); } finally { TVAR = -1; }
+            try { o(bId, x, y, t); } finally { TVAR = -1; }
             if (bId === 2 && y > 0 && worldMap[y - 1][x] === 0) { ensureTerr(); const tf = TERR.tuft[(v + x) % 6]; ctx.drawImage(tf, x * 32, y * 32 - 12, 32, 14); try { drawDecor(x, y, t); } catch (e) { } }
         };
     })(drawBlockTile);
@@ -46937,7 +47029,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         ctx.save(); ctx.translate(-((camera.x * 0.5) % 64), -((camera.y * 0.5) % 64)); ctx.fillStyle = caveWallPat;
         ctx.fillRect(0, Math.max(0, top + 100) + ((camera.y * 0.5) % 64), W + 64, H + 64); ctx.restore();
     }
-    drawCaveBackdrop = (function (o) { return function () { let ok = false; try { if (active() && cfg.para && !boss) { drawParallax(performance.now() / 1000); ok = true; } } catch (e) { cfg.para = 0; console.warn('ultra para', e); } if (ok) { try { return caveBack(); } catch (e) { console.warn('ultra cave', e); } } return o.apply(this, arguments); }; })(drawCaveBackdrop);
+    drawCaveBackdrop = (function (o) { return function () { let ok = false; try { if (active() && cfg.para && !boss) { const zT = window.__zdT, z0 = performance.now(); drawParallax(z0 / 1000); if (zT && zT.on) zT.add('bg', performance.now() - z0); ok = true; } } catch (e) { cfg.para = 0; console.warn('ultra para', e); } if (ok) { try { return caveBack(); } catch (e) { console.warn('ultra cave', e); } } return o.apply(this, arguments); }; })(drawCaveBackdrop);
     // ====================== КІНО-ОБРОБКА: тонування, відблиск, віньєтка ======================
     let vigC = null, vigW = 0, vigH = 0;
     function grade(t, W, H, dp, depth) {
@@ -46967,6 +47059,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         return function (t) {
             const r = o.apply(this, arguments);
             if (!active()) return r;
+            const zT = window.__zdT, zt0 = zT && zT.on ? performance.now() : 0;
             ctx.save();
             try {
                 const W = canvas.width, H = canvas.height, dp = Math.sin(gameTime), depth = (camera.y + H / 2) / 32 - surf();
@@ -46976,7 +47069,7 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
                 if (cfg.petals) { critters(t, W, H, dp, depth); petals(t, W, H, depth); try { snowFx(t, W, H, depth); } catch (e) { } }
                 if (cfg.grade !== 0) grade(t, W, H, dp, depth);
             } catch (e) { console.warn('ultra', e); cfg.light = cfg.rays = cfg.petals = cfg.grade = 0; }
-            ctx.restore();
+            ctx.restore(); if (zt0) zT.add('fx', performance.now() - zt0);
             return r;
         };
     })(libOverlay);
@@ -47176,12 +47269,21 @@ ${k.pp ? `<div class="card"><div><b>${VG_PROF[k.pp] ? VG_PROF[k.pp].ico + ' Сп
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.45', 'Без мікрофризів', 'new'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.47', 'Тихий берег', 'new'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.47': [
+                ['#7fd0ff', '🌊 Океан більше не витікає', 'Якщо земля поруч з океаном була нижчою за рівень моря, вода стікала на поверхню й стояла «стіною». Тепер океан має піщаний берег. У старих світах берег підсипається сам при вході, а вода, що витекла, прибирається.'],
+                ['#9ad1ff', '🗺 Мінікарта без ривків', 'Мінікарта оновлюється потроху щокадру, а не великим шматком кілька разів на секунду — зникли регулярні мікропідвисання під час бігу.']
+            ],
+            '46.46': [
+                ['#9ad1ff', '💾 Збереження без ривка', 'Автозбереження більше не зупиняє гру: карта пакується лише там, де щось змінилось, а запис розкладено на два кадри. Інші світи при цьому не перечитуються.'],
+                ['#7dffb0', '🧹 Менше сміття в пам’яті', 'Гра майже вдвічі менше смітить у пам’ять щокадру — рідше короткі паузи під час бігу.'],
+                ['#ffd27a', '📊 F3: розклад кадру', 'Панель F3 показує, скільки мілісекунд іде на блоки, фон і ефекти «Ультра+», освітлення, мінікарту та інтерфейс, а також час останнього збереження. Shift+F3 копіює звіт.']
+            ],
             '46.45': [
                 ['#9ad1ff', '⚡ Плавніший біг', 'Прибрано регулярні мікропідвисання: мінікарта більше не перемальовується цілком раз на 15 секунд, а книга колекцій не перераховується щосекунди.'],
                 ['#ffd27a', '🌟 «Ультра+» без ривків', 'Ліс, гори й хмари фону тепер готуються у фоновому потоці й не зупиняють гру — ні на вході у світ, ні під час бігу між біомами. Фон починає готуватись ще в меню.']
