@@ -1,7 +1,7 @@
 {
-  "version": "46.51",
-  "name": "Плавний вхід",
-  "notes": "46.51: плавний вхід у світ",
+  "version": "46.52",
+  "name": "Швидкий старт",
+  "notes": "46.52: швидкий старт",
   "file": "index.html",
-  "sha256": "cc6760553940f86cb1b2791b81b6d7f8ff3d0f2778c36b238ce367c5d8e1122a"
+  "sha256": "f8593fba0f3f743a62da2a441dff031a614c2530cca31e5eadcbd5fc5656a472"
 }
