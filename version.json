@@ -1,7 +1,7 @@
 {
-  "version": "46.52",
-  "name": "Швидкий старт",
-  "notes": "46.52: швидкий старт",
+  "version": "46.53",
+  "name": "Світло на вході",
+  "notes": "46.53: діагностика входу",
   "file": "index.html",
-  "sha256": "f8593fba0f3f743a62da2a441dff031a614c2530cca31e5eadcbd5fc5656a472"
+  "sha256": "73dad225c65ad67ec66caeaa40d54e909a0463bb1277a971ba87ca5260db94ec"
 }
