@@ -11392,7 +11392,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.63', GAME_VER_NAME = 'Характер, Фото, Моди';
+        const GAME_VER = '46.64', GAME_VER_NAME = 'Моди без меж';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -48205,6 +48205,170 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         window.__znew = { P, complete, show, STEPS };
     } catch (e) { console.error('znew', e); }
 })();
+// ===== v46.64: МОДИ 2 — предмети, зброя, їжа, зілля, моби, боси, механіки, малювання текстур =====
+// Викликається з zmod.js (window.__zmodX(body)) лише для підписаних і дозволених модів. Усе — декларативні дані з жорсткими обмеженнями балансу.
+// Моди світу (моби, боси, правила) вимкнені в мультиплеєрі, щоб не розсинхронізувати гравців.
+(function () {
+    'use strict';
+    try {
+        const Z = window.__zr; if (!Z || !Z.TICK || !Z.DRAW) return;
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, +v || 0));
+        const ID = /^[a-z0-9_]{2,24}$/, HEX = /^#[0-9a-fA-F]{6}$/;
+        const playing = () => { try { return gameState === 'PLAYING'; } catch (e) { return false; } };
+        const mp = () => false; // у мультиплеєрі набір модів у всіх гравців однаковий (перевірка входу в zmodmp.js), тож механіки можна вмикати
+        const toast = t => { try { Z.toast(String(t).slice(0, 120)); } catch (e) { } };
+        const CAP = { wd: [45, 80, 125, 175, 235], mobHp: 1500, mobDmg: 60, bossHp: 60000, bossDmg: 110, food: 60, potHp: 200, potMana: 120 };
+        const M = { items: {}, mobs: {}, bosses: {}, rules: [], tex: {}, canv: {}, spawnT: 0, boss: null, bar: null, buf: {}, gives: 0, giveT: 0 };
+        const P = []; // снаряди босів/мобів
+        // ---------- текстури ----------
+        // tex: {w,h,fr,pal:['#rrggbb',...≤32],px:'...'}  px: символ на піксель; '.' — прозорий, інакше індекс палітри в base36 (0-9a-v)
+        function texOk(t) { return t && Number.isInteger(t.w) && Number.isInteger(t.h) && t.w >= 4 && t.h >= 4 && t.w <= 48 && t.h <= 48 && (t.fr === 1 || t.fr === 2) && Array.isArray(t.pal) && t.pal.length > 0 && t.pal.length <= 32 && t.pal.every(c => HEX.test(c)) && typeof t.px === 'string' && t.px.length === t.w * t.h * t.fr; }
+        function texCanvas(t, f) {
+            const c = document.createElement('canvas'); c.width = t.w; c.height = t.h; const g = c.getContext('2d'), im = g.createImageData(t.w, t.h), n = t.w * t.h, o = (f || 0) * n;
+            const rgb = t.pal.map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+            for (let i = 0; i < n; i++) { const ch = t.px[o + i]; if (ch === '.') continue; const k = parseInt(ch, 32); const q = rgb[k]; if (!q) continue; im.data[i * 4] = q[0]; im.data[i * 4 + 1] = q[1]; im.data[i * 4 + 2] = q[2]; im.data[i * 4 + 3] = 255; }
+            g.putImageData(im, 0, 0); return c;
+        }
+        function itemUrl(t) { const s = document.createElement('canvas'); s.width = s.height = 32; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; const c = texCanvas(t, 0), k = Math.min(32 / t.w, 32 / t.h), w = Math.round(t.w * k), h = Math.round(t.h * k); g.drawImage(c, Math.round((32 - w) / 2), Math.round((32 - h) / 2), w, h); return s.toDataURL(); }
+        const tk = (modId, name) => modId + '/' + name;
+        // ---------- предмети ----------
+        const TIERS = () => RPG_TIERS;
+        const ORB = { stardust: 1, solar: 1, nebula: 1 };
+        function regItem(mod, d, texs) {
+            if (!d || !ID.test(d.id || '') || typeof d.name !== 'string' || !d.name || d.name.length > 40) return;
+            const id = 'x_' + d.id; if ((typeof ITEM_METADATA !== 'undefined') && ITEM_METADATA[id] && !M.items[id]) return; // не перекривати чуже
+            const tex = texs[d.tex]; if (!texOk(tex)) return; const tier = clamp(d.tier | 0, 0, 4), T = TIERS()[tier], desc = String(d.desc || '').slice(0, 200), col = T.c;
+            itemSprites[id] = itemUrl(tex); M.items[id] = d.kind;
+            const meta = (type, stat) => { ITEM_METADATA[id] = { name: d.name, rarity: T.r, color: col, type: type + ' · мод', stat: stat || undefined, desc }; };
+            switch (d.kind) {
+                case 'weapon': {
+                    const wk = d.wk === 'bow' ? 'bow' : d.wk === 'staff' ? 'staff' : 'sword', t = wk === 'sword' ? 'melee' : wk === 'bow' ? 'ranged' : 'magic';
+                    const dmg = Math.round(clamp(d.dmg, 1, CAP.wd[tier])), cd = Math.round(clamp(d.cd, 8, 60)) || 20, opt = {}; const pal = wk === 'sword' ? 'steel' : wk === 'bow' ? 'wood' : 'stardust';
+                    if (wk === 'bow') opt.ammo = 'arrow'; if (wk === 'staff') { opt.mana = Math.round(clamp(d.mana, 4, 40)) || 8; opt.orb = ORB[d.orb] ? d.orb : 'stardust'; opt.aoe = 70; }
+                    WEAPONS[id] = Object.assign({ name: d.name, t, k: wk, pal, dmg, cd, tier, desc, aim: wk === 'sword' ? 0 : 1 }, opt); HELD_TOOLS[id] = 1; SWCOL[id] = HEX.test(d.glow || '') ? d.glow : RPG_PAL[pal].L; if (d.glow && HEX.test(d.glow)) SWORD_GLOW[id] = 1;
+                    meta(TYPE_ICON[t] + ' ' + TYPE_NAME[t], 'Шкода: ' + dmg + (opt.mana ? ' · Мана: ' + opt.mana : '') + (opt.ammo ? ' · Потрібні стріли' : '')); break; }
+                case 'food': { const v = Math.round(clamp(d.v, 1, CAP.food)); FOOD[id] = { n: d.name, v, col: HEX.test(d.col || '') ? d.col : '#c98a3c', d: desc }; meta('🍲 Страва', '+' + v + ' ситості'); break; }
+                case 'potion': { const hp = Math.round(clamp(d.hp, 0, CAP.potHp)), mana = Math.round(clamp(d.mana, 0, CAP.potMana)); if (!hp && !mana) return; const c = HEX.test(d.col || '') ? d.col : '#ff7a9a'; POTIONS[id] = { name: d.name, tier, col: [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)], desc, hp, mana }; meta('🧪 Зілля', (hp ? '+' + hp + ' здоров’я ' : '') + (mana ? '+' + mana + ' мани' : '')); break; }
+                case 'summon': { const b = String(d.boss || ''); M.items[id] = 'summon'; M.sum = M.sum || {}; M.sum[id] = 'x_' + b; meta('🌟 Виклик', 'ПКМ — викликати боса'); break; }
+                default: meta('Ресурс', '');
+            }
+        }
+        // ---------- моби та боси ----------
+        function parseMob(d, texs, boss) {
+            if (!d || !ID.test(d.id || '') || typeof d.name !== 'string' || !d.name || !texOk(texs[d.tex])) return null; const t = texs[d.tex];
+            const o = { id: 'x_' + d.id, name: d.name.slice(0, 40), tex: t, boss: !!boss, hp: Math.round(clamp(d.hp, 5, boss ? CAP.bossHp : CAP.mobHp)), dmg: Math.round(clamp(d.dmg, 1, boss ? CAP.bossDmg : CAP.mobDmg)), spd: clamp(d.speed || 1.2, 0.3, boss ? 3.5 : 3),
+                w: Math.round(clamp(d.w || t.w * 2, 14, boss ? 160 : 70)), h: Math.round(clamp(d.h || t.h * 2, 14, boss ? 160 : 70)), ai: ['walk', 'hop', 'fly', 'charge'].includes(d.ai) ? d.ai : 'walk', xp: Math.round(clamp(d.xp || 10, 1, boss ? 6000 : 400)),
+                drops: (Array.isArray(d.drops) ? d.drops : []).slice(0, 5).map(x => ({ item: String(x.item || ''), min: clamp(x.min || 1, 1, 5) | 0, max: clamp(x.max || x.min || 1, 1, 8) | 0, ch: clamp(x.chance == null ? 1 : x.chance, 0.01, 1) })),
+                spawn: { when: ['day', 'night', 'any'].includes(d.when) ? d.when : 'any', where: ['surface', 'cave', 'any'].includes(d.where) ? d.where : 'surface', rate: clamp(d.rate || 3, 1, 10), max: clamp(d.max || 3, 1, 6) | 0 },
+                phases: (boss && Array.isArray(d.phases) ? d.phases : []).slice(0, 4).map(p => ({ at: clamp(p.at, 0.05, 0.95), spd: clamp(p.spd || 1, 0.5, 2), say: String(p.say || '').slice(0, 80) })).sort((a, b) => b.at - a.at),
+                atk: (boss && Array.isArray(d.attacks) ? d.attacks : []).slice(0, 4).map(a => ({ k: ['shots', 'slam', 'summon', 'rain'].includes(a.k) ? a.k : 'shots', cd: clamp(a.cd || 4, 2, 20), n: clamp(a.n || 3, 1, 8) | 0, dmg: clamp(a.dmg || 10, 1, 90), mob: String(a.mob || ''), col: HEX.test(a.col || '') ? a.col : '#ff6a5a' })), intro: String(d.intro || '').slice(0, 80), outro: String(d.outro || '').slice(0, 80) };
+            o.drops = o.drops.filter(x => x.item); return o;
+        }
+        function regMob(o) { const key = o.id; (o.boss ? M.bosses : M.mobs)[key] = o; M.tex[key] = o.tex; M.canv[key] = [texCanvas(o.tex, 0), texCanvas(o.tex, o.tex.fr > 1 ? 1 : 0)]; try { V18DMG[key] = o.dmg; XP_BASE[key] = o.xp; } catch (e) { } }
+        const defOf = t => M.bosses[t] || M.mobs[t];
+        function spawn(o, x, y) {
+            const hp = Math.round(o.hp * (o.boss && typeof rpgBossHp === 'function' ? rpgBossHp() : rpgMobHp())); const m = { type: o.id, x, y, vx: 0, vy: 0, hp, maxHp: hp, width: o.w, height: o.h, frame: 0, mod: 1, _z1: 0, _ad: 0, boss: o.boss ? 1 : 0, ph: 0, at: [0, 0, 0, 0], t: 0, dash: 0 }; mobs.push(m); return m;
+        }
+        // ---------- правила (механіки) ----------
+        const COND = c => { if (!c) return true; try { if (c.night != null && c.night !== (Math.sin(gameTime) <= 0)) return false; if (c.cave != null && c.cave !== inCave()) return false; if (c.rain != null) { const S = window.__zlive && window.__zlive.S, r = !!(S && S.I > 0.35 && S.kind === 'rain'); if (c.rain !== r) return false; } if (c.hpBelow != null && !(player.health / player.maxHealth < clamp(c.hpBelow, 0.05, 1))) return false; if (c.has && !hasItemCount(String(c.has), 1)) return false; } catch (e) { return false; } return true; };
+        const inCave = () => { try { const col = Math.floor((player.x + 12) / 32), sf = surfaceHeights && surfaceHeights[col] != null ? surfaceHeights[col] : 30; return player.y / 32 > sf + 14; } catch (e) { return false; } };
+        function act(a) {
+            if (!a || typeof a !== 'object') return; if (M.gives > 40) return;
+            if (a.toast) toast(a.toast);
+            if (a.give) { const id = String(a.give), n = Math.round(clamp(a.n || 1, 1, 5)); if (typeof ITEM_METADATA !== 'undefined' && ITEM_METADATA[id]) { M.gives++; try { giveItem(id, n); } catch (e) { } } }
+            if (a.heal) { player.health = Math.min(player.maxHealth, player.health + clamp(a.heal, 1, player.maxHealth * 0.5)); try { updateHealthHUD(); } catch (e) { } }
+            if (a.mana) { try { RPG.mana = Math.min(RPG.maxMana, RPG.mana + clamp(a.mana, 1, 100)); } catch (e) { } }
+            if (a.xp) { try { addXP(clamp(a.xp, 1, 200)); } catch (e) { } }
+            if (a.buff && ['speed', 'regen'].includes(a.buff)) M.buf[a.buff] = Math.round(clamp(a.sec || 10, 2, 60) * 60);
+            if (a.spawn) { const o = M.mobs['x_' + String(a.spawn)] || M.mobs[String(a.spawn)]; if (o && !mp()) { for (let i = 0, n = Math.min(3, a.n | 0 || 1); i < n; i++) spawn(o, player.x + (i - 1) * 60 + 80, player.y - 40); } }
+            if (a.fx) { const f = { hearts: ['#ff7aa8', 10], sparkles: ['#ffe27a', 16], flames: ['#ff7a2a', 14], frost: ['#9fe8ff', 14] }[a.fx]; if (f) try { createParticles(player.x + 12, player.y + 10, f[0], f[1], 2.4, 3, 40); } catch (e) { } }
+        }
+        function fire(ev, key) { if (mp()) return; for (const r of M.rules) { if (r.ev !== ev || (r.key && r.key !== '*' && r.key !== key) || (r.cdT > 0) || !COND(r.when)) continue; r.cdT = r.cd * 60; r.run++; for (const a of r.do) act(a); } }
+        function parseRule(r) {
+            if (!r || !['every', 'night', 'day', 'kill', 'join', 'lowhp', 'use', 'rain', 'cave'].includes(r.ev)) return null; const o = { ev: r.ev, key: String(r.key || '').slice(0, 40), cd: clamp(r.cd || (r.ev === 'every' ? r.sec : 5), 5, 3600), when: r.when && typeof r.when === 'object' ? r.when : null, do: (Array.isArray(r.do) ? r.do : []).slice(0, 5).filter(a => a && typeof a === 'object'), cdT: 0, run: 0 };
+            if (r.ev === 'every') { o.sec = clamp(r.sec || 60, 5, 3600); o.cdT = o.sec * 60; } if (!o.do.length) return null; return o;
+        }
+        // ---------- реєстрація з zmod.js ----------
+        window.__zmodX = function (b) {
+            const d = b.data || {}; if (!d.tex && !d.items && !d.mobs && !d.bosses && !d.rules) return;
+            const texs = {}; if (d.tex && typeof d.tex === 'object') for (const k of Object.keys(d.tex).slice(0, 80)) if (texOk(d.tex[k])) texs[k] = d.tex[k];
+            for (const it of (Array.isArray(d.items) ? d.items : []).slice(0, 40)) try { regItem(b, it, texs); } catch (e) { console.warn('mod item', e); }
+            if (!mp()) {
+                for (const x of (Array.isArray(d.mobs) ? d.mobs : []).slice(0, 12)) { const o = parseMob(x, texs, false); if (o) regMob(o); }
+                for (const x of (Array.isArray(d.bosses) ? d.bosses : []).slice(0, 4)) { const o = parseMob(x, texs, true); if (o) regMob(o); }
+                for (const x of (Array.isArray(d.rules) ? d.rules : []).slice(0, 20)) { const o = parseRule(x); if (o && M.rules.length < 40) M.rules.push(o); }
+            }
+        };
+        // ---------- життєвий цикл ----------
+        const hurt = (n, who) => { if (player.damageCooldown > 0 || player.health <= 0) return; const d = Math.max(2, Math.round(n * (1 - defReduction()))); player.health -= d; player.damageCooldown = 34; try { shake = Math.max(shake, 5); updateHealthHUD(); } catch (e) { } if (player.health <= 0) { try { killPlayer('Вас вбив ' + who); } catch (e) { } } };
+        v18Sp = (function (o) { return function (t) { return (typeof t === 'string' && t.startsWith('x_')) || o(t); }; })(v18Sp);
+        rpgLoot = (function (o) { return function (m) {
+            try { if (m && m.mod) { const D = defOf(m.type); if (D) { for (const q of D.drops) if (Math.random() < q.ch) { const n = q.min + Math.floor(Math.random() * (q.max - q.min + 1)); floatingItems.push({ x: m.x + m.width / 2, y: m.y, vx: (Math.random() - .5) * 3, vy: -3, itemId: q.item, count: n }); } if (D.boss) { toast('☠ ' + D.name + ' повалено!' + (D.outro ? ' ' + D.outro : '')); M.boss = null; } fire('kill', m.type); return; } } else if (m) fire('kill', m.type); } catch (e) { }
+            return o.apply(this, arguments); }; })(rpgLoot);
+        let rc = false, secT = 0, jn = false, ln = null, lh = false, lr = null, lc = null;
+        const aliveMods = () => { let n = 0; for (const m of mobs) if (m.mod && !m.boss && m.hp > 0) n++; return n; };
+        function trySpawn() {
+            const keys = Object.keys(M.mobs); if (!keys.length || aliveMods() >= 8) return; const o = M.mobs[keys[Math.floor(Math.random() * keys.length)]]; if (aliveMods() >= o.spawn.max + 2) return;
+            if (Math.random() > o.spawn.rate / 28) return; const night = Math.sin(gameTime) <= 0; if ((o.spawn.when === 'day' && night) || (o.spawn.when === 'night' && !night)) return;
+            const side = Math.random() < .5 ? -1 : 1, x = player.x + side * (560 + Math.random() * 300), col = Math.floor(x / 32); if (!surfaceHeights || surfaceHeights[col] == null) return; const sf = surfaceHeights[col];
+            let y = null, cave = o.spawn.where === 'cave' || (o.spawn.where === 'any' && Math.random() < .4);
+            if (!cave) y = (sf - 2) * 32 - o.h; else { for (let r = sf + 14 + Math.floor(Math.random() * 20); r < sf + 60; r++) { if (!isSolid(col, r) && !isSolid(col, r - 1) && isSolid(col, r + 1)) { y = (r) * 32 - o.h + 32; break; } } if (y == null) return; }
+            if (o.spawn.where === 'cave' && !cave) return; spawn(o, x, y);
+        }
+        function projUpdate() {
+            for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; p.x += p.vx; p.y += p.vy; p.vy += p.g; p.life--; p.tr = ((p.tr || []).concat([[p.x, p.y]])).slice(-6);
+                if (p.life <= 0 || colSolid(Math.floor(p.x / 32), p.y - 2, 4)) { P.splice(i, 1); continue; }
+                if (p.x > player.x - 4 && p.x < player.x + 28 && p.y > player.y && p.y < player.y + 46) { hurt(p.dmg * rpgMobDmg(), p.who); P.splice(i, 1); } }
+        }
+        function bossBar(m) {
+            if (!M.bar) { const b = document.createElement('div'); b.id = 'zmb-bar'; b.innerHTML = '<b></b><div><i></i><u></u></div>'; document.body.appendChild(b); const s = document.createElement('style'); s.textContent = '#zmb-bar{position:fixed;left:50%;top:74px;width:min(520px,70vw);transform:translate(-50%,-70px);opacity:0;z-index:30;text-align:center;font:800 14px "Segoe UI",system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000;transition:transform .6s cubic-bezier(.2,1.2,.3,1),opacity .4s;pointer-events:none}#zmb-bar.on{transform:translate(-50%,0);opacity:1}#zmb-bar div{height:16px;margin-top:4px;background:#12060a;border:3px solid #6a1a28;border-radius:4px;position:relative;overflow:hidden;box-shadow:0 0 18px rgba(255,60,80,.35)}#zmb-bar i{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,#ff3b5c 0 12px,#c0203c 12px 14px);transition:width .25s}#zmb-bar u{position:absolute;inset:0 auto 0 0;background:#fff7;transition:width 1s .35s}'; document.head.appendChild(s); M.bar = b; }
+            const b = M.bar; if (m) { b.firstChild.textContent = defOf(m.type).name; const w = Math.max(0, m.hp / m.maxHp * 100) + '%'; b.querySelector('i').style.width = w; b.querySelector('u').style.width = w; b.classList.add('on'); } else b.classList.remove('on');
+        }
+        function bossAI(m, D, dx, dist) {
+            m.t++; const hpf = m.hp / m.maxHp; while (m.ph < D.phases.length && hpf <= D.phases[m.ph].at) { const p = D.phases[m.ph++]; if (p.say) toast(D.name + ': ' + p.say); try { createParticles(m.x + m.width / 2, m.y + m.height / 2, '#ff5a5a', 24, 4, 4, 40); shake = Math.max(shake, 8); } catch (e) { } }
+            const sp = D.spd * (m.ph ? D.phases[m.ph - 1].spd : 1); D.atk.forEach((a, i) => { if (--m.at[i] > 0) return; m.at[i] = Math.round(a.cd * 60 / (m.ph ? 1 + 0.15 * m.ph : 1)) + 20; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, tx = player.x + 12, ty = player.y + 22;
+                if (a.k === 'shots') { const base = Math.atan2(ty - cy, tx - cx); for (let k = 0; k < a.n; k++) { const an = base + (k - (a.n - 1) / 2) * 0.22; P.push({ x: cx, y: cy, vx: Math.cos(an) * 5, vy: Math.sin(an) * 5, g: 0, dmg: a.dmg, life: 150, col: a.col, who: D.name }); } }
+                else if (a.k === 'rain') { for (let k = 0; k < a.n + 2; k++) P.push({ x: tx + (k - (a.n + 2) / 2) * 46, y: cy - 260, vx: 0, vy: 3, g: 0.12, dmg: a.dmg, life: 120, col: a.col, who: D.name }); }
+                else if (a.k === 'slam') { m.vy = -11; m.slam = 1; m.slamD = a.dmg; }
+                else if (a.k === 'summon') { const o = M.mobs[a.mob]; if (o && aliveMods() < 5) for (let k = 0; k < Math.min(a.n, 3); k++) spawn(o, cx + (k - 1) * 50, m.y - 10); } });
+            if (m.slam && m.onGround && m.vy >= 0 && m.t > 5) { m.slam = 0; try { shake = Math.max(shake, 10); createParticles(m.x + m.width / 2, m.y + m.height, '#c9a46a', 20, 4, 4, 30); } catch (e) { } if (Math.abs(player.x + 12 - (m.x + m.width / 2)) < 170 && player.onGround) hurt(m.slamD * rpgMobDmg(), D.name); }
+            return sp;
+        }
+        function steer(m) {
+            const D = defOf(m.type); if (!D) return; const dx = (player.x + 12) - (m.x + m.width / 2), dist = Math.abs(dx), dir = dx > 0 ? 1 : -1; let sp = D.spd; if (m.frz > 0) return;
+            if (D.boss) sp = bossAI(m, D, dx, dist); if (dist > 900 && !D.boss) { m.vx = 0; return; }
+            m.frame += 0.08 * (1 + Math.abs(m.vx) * 0.5);
+            if (D.ai === 'fly') { const ty = player.y - 40 - Math.sin(m.t * 0.03 + m.x) * 24; m.vy = clamp((ty - m.y) * 0.04, -2.2, 2.2) - 0.5; m.vx = dist > 24 ? dir * sp : 0; m.t++; }
+            else if (D.ai === 'hop') { if (m.onGround) { m.vx *= 0.6; if ((m.hopT = (m.hopT || 0) + 1) > 55) { m.hopT = 0; m.vy = -9; m.vx = dir * sp * 2.2; } } }
+            else if (D.ai === 'charge') { m.t++; if (m.dash > 0) { m.dash--; m.vx = dir * sp * 3; } else { m.vx = dist > 24 ? dir * sp * 0.6 : 0; if (dist < 380 && m.t % 140 === 0) m.dash = 24; } }
+            else { m.vx = dist > 20 ? dir * sp : 0; if (m.onGround && Math.abs(m.vx) > 0 && colSolid(Math.floor((m.x + (dir > 0 ? m.width + 3 : -3)) / 32), m.y, m.height - 4)) m.vy = -9; }
+        }
+        Z.TICK.push(() => {
+            if (!playing()) { if (M.bar) bossBar(null); return; } if (mp()) return;
+            // правила
+            if (!jn) { jn = true; fire('join'); }
+            const nt = Math.sin(gameTime) <= 0; if (ln !== null && nt !== ln) fire(nt ? 'night' : 'day'); ln = nt;
+            const S = window.__zlive && window.__zlive.S, rn = !!(S && S.I > 0.35 && S.kind === 'rain'); if (lr !== null && rn && !lr) fire('rain'); lr = rn;
+            const lh2 = player.health > 0 && player.health / player.maxHealth < 0.3; if (lh2 && !lh) fire('lowhp'); lh = lh2;
+            if ((++secT) % 60 === 0) { const cv = inCave(); if (lc !== null && cv && !lc) fire('cave'); lc = cv; M.gives = Math.max(0, M.gives - 3); for (const r of M.rules) { if (r.cdT > 0) r.cdT -= 60; if (r.ev === 'every' && r.cdT <= 0 && COND(r.when)) { r.cdT = r.sec * 60; for (const a of r.do) act(a); } } }
+            const rd = !!mouse.rightDown; if (rd && !rc) { const it = inventory[selectedHotbarSlot]; if (it) { if (M.sum && M.sum[it.id]) { const o = M.bosses[M.sum[it.id]]; if (o && !M.boss) { it.count--; if (it.count <= 0) inventory[selectedHotbarSlot] = null; try { updateInventoryUI(); } catch (e) { } const m = spawn(o, player.x + 220, player.y - 80); M.boss = m; toast('☠ ' + o.name + ' пробуджується!' + (o.intro ? ' ' + o.intro : '')); try { shake = 12; } catch (e) { } } else if (!o) toast('Тут нічого не відбувається…'); else toast('Один бос за раз!'); } else fire('use', it.id); } } rc = rd;
+            if (M.buf.speed > 0) { M.buf.speed--; const dir = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0); if (dir && !colSolid(Math.floor((player.x + (dir > 0 ? 28 : -4)) / 32), player.y, 40)) player.x += dir * 1.3; }
+            if (M.buf.regen > 0) { M.buf.regen--; if (M.buf.regen % 60 === 0 && player.health < player.maxHealth && player.health > 0) { player.health = Math.min(player.maxHealth, player.health + Math.max(1, Math.round(player.maxHealth * 0.01))); try { updateHealthHUD(); } catch (e) { } } }
+            if (!Object.keys(M.mobs).length && !Object.keys(M.bosses).length) return;
+            if (++M.spawnT % 90 === 0) trySpawn();
+            let boss = null; for (const m of mobs) if (m.mod && m.hp > 0) { steer(m); if (m.boss) boss = m; } M.boss = boss; bossBar(boss); projUpdate();
+        });
+        Z.DRAW.push(function (t, x0, x1) {
+            if (!playing()) return; const c = ctx; c.imageSmoothingEnabled = false;
+            for (const m of mobs) { if (!m.mod || m.hp <= 0 || m.x + m.width < x0 - 40 || m.x > x1 + 40) continue; const cv = M.canv[m.type]; if (!cv) continue; const f = cv[Math.floor(m.frame) % 2], face = Math.abs(m.vx) > 0.05 ? (m.vx > 0 ? 1 : -1) : (m._f || 1); m._f = face; const bob = defOf(m.type) && defOf(m.type).ai === 'fly' ? Math.sin(t / 220 + m.x) * 2 : 0;
+                c.save(); c.translate(m.x + m.width / 2, m.y + m.height + bob); c.scale(face, 1); if (m.slam) c.scale(.9, 1.15); c.drawImage(f, -m.width / 2, -m.height, m.width, m.height);
+                if (m._flash > 0) { c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(-m.width / 2, -m.height, m.width, m.height); } c.restore();
+                if (m.boss) { c.save(); c.globalAlpha = .18 + Math.sin(t / 300) * .06; c.fillStyle = '#ff3b5c'; c.beginPath(); c.ellipse(m.x + m.width / 2, m.y + m.height, m.width * .7, 7, 0, 0, 7); c.fill(); c.restore(); } }
+            for (const p of P) { if (p.x < x0 - 30 || p.x > x1 + 30) continue; c.save(); (p.tr || []).forEach((q, i) => { c.globalAlpha = i / 12; c.fillStyle = p.col; c.beginPath(); c.arc(q[0], q[1], 3 + i * .4, 0, 7); c.fill(); }); c.globalAlpha = 1; c.shadowColor = p.col; c.shadowBlur = 12; c.fillStyle = p.col; c.beginPath(); c.arc(p.x, p.y, 6, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(p.x, p.y, 2.5, 0, 7); c.fill(); c.restore(); }
+        });
+        window.__zmx = { M, P, spawn, regMob, texCanvas, texOk, parseMob, fire, act, CAP };
+    } catch (e) { console.error('zmod2', e); }
+})();
 // ===== v46.63: МОДИ З ПЕРЕВІРКОЮ ПІДПИСУ (.zgmod) =====
 // Формат файлу: {"fmt":1,"body":"<JSON-рядок>","pub":"<SPKI base64>","sig":"<ECDSA P-256 SHA-256, P1363, base64>"}
 // Підпис перевіряється при додаванні ТА при кожному запуску. Автору довіряють за відбитком ключа (SHA-256). Дані-моди (рецепти, привітання) безпечні;
@@ -48240,10 +48404,10 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             return { b, fp: await fpOf(file.pub) };
         }
         // ---------- застосування ----------
-        const A = { rec: {}, tick: [], on: {} }; // A.rec[id] = кількість доданих рецептів
+        const A = { rec: {}, tick: [], on: {}, info: {} }; // A.rec[id] = кількість доданих рецептів
         const itemOk = id => { try { return typeof id === 'string' && id.length < 40 && (typeof itemSprites !== 'undefined') && itemSprites[id] !== undefined; } catch (e) { return false; } };
         function applyData(b) {
-            const d = b.data || {}; let n = 0;
+            const d = b.data || {}; let n = 0; try { if (window.__zmodX) window.__zmodX(b); } catch (e) { console.error('modx', e); }
             if (Array.isArray(d.recipes)) for (const r of d.recipes.slice(0, 30)) {
                 if (!r || !itemOk(r.result) || !r.req || typeof r.req !== 'object') continue; const cnt = Math.max(1, Math.min(64, r.count | 0 || 1)), req = {}; let ok = 1, tot = 0;
                 for (const k of Object.keys(r.req).slice(0, 6)) { const q = r.req[k] | 0; if (!itemOk(k) || q < 1 || q > 99) { ok = 0; break; } req[k] = q; tot += q; }
@@ -48267,7 +48431,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             for (let i = A.tick.length - 1; i >= 0; i--) { const q = A.tick[i], s = performance.now(); try { q.fn(); } catch (e) { A.tick.splice(i, 1); continue; } const dt = performance.now() - s; q.T.n++; q.T.t += dt; if (q.T.n >= 120) { if (q.T.t / q.T.n > 2) { A.tick.splice(i, 1); try { window.__zr.toast('⚠ Мод «' + q.id + '» вимкнено: надто повільний'); } catch (e) { } } q.T.n = 0; q.T.t = 0; } }
         });
         async function activate(m) {
-            if (A.on[m.id]) return; try { const v = await verify(m.file); if (!trust.includes(v.fp)) return; A.on[m.id] = 1; if (v.b.type === 'data') applyData(v.b); else applyScript(v.b, m); } catch (e) { console.warn('mod skip', m.id, e.message); }
+            if (A.on[m.id]) return; try { const v = await verify(m.file); if (!trust.includes(v.fp)) return; A.on[m.id] = 1; A.info[m.id] = { id: m.id, name: String(v.b.name || m.id), ver: String(v.b.ver || '1'), author: String(v.b.author || ''), h: String((m.file && m.file.sig) || '').slice(0, 24) }; if (v.b.type === 'data') applyData(v.b); else applyScript(v.b, m); } catch (e) { console.warn('mod skip', m.id, e.message); }
         }
         // ---------- додавання з діалогом довіри ----------
         const st = document.createElement('style'); st.textContent = `
@@ -48291,6 +48455,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         const hide = () => W.classList.remove('on'), showW = () => W.classList.add('on');
         W.addEventListener('mousedown', e => { if (e.target === W) hide(); }); ['keydown', 'keyup'].forEach(t => W.addEventListener(t, e => e.stopPropagation()));
         const toast = t => { try { window.__zr.toast(t); } catch (e) { } };
+        const inMp = () => { try { return !!MP; } catch (e) { return false; } }, MPLOCK = '🌐 Під час мультиплеєра моди змінювати не можна — вийди зі світу, щоб усі гравці мали однакові моди.';
         async function list() {
             const L = await all(); let h = '<h2>🧩 Моди</h2><p class="s">Кожен мод підписаний автором. Підпис перевіряється при додаванні й при кожному запуску гри.</p>';
             if (!L.length) h += '<div style="opacity:.6;padding:14px;text-align:center">Модів поки немає.</div>';
@@ -48306,21 +48471,23 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             if (a.dataset.a === 'x') return hide();
             const L = await all(), m = L.find(x => x.id === id); if (!m) return;
             if (a.dataset.a === 'd') { await del(id); toast('🧩 Мод видалено. Зміни зникнуть після перезапуску гри.'); return list(); }
-            if (a.dataset.a === 't') { if (!m.on && m.kind === 'script' && !(await confirmScript(m))) return; m.on = m.on ? 0 : 1; await put(m); if (m.on) await activate(m); else toast('🧩 Мод вимкнено — повністю після перезапуску гри.'); list(); }
+            if (a.dataset.a === 't') { if (!m.on && inMp()) { toast(MPLOCK); return; } if (!m.on && m.kind === 'script' && !(await confirmScript(m))) return; m.on = m.on ? 0 : 1; await put(m); if (m.on) await activate(m); else toast('🧩 Мод вимкнено — повністю після перезапуску гри.'); list(); }
         });
         const ask = (title, html, yes, no) => new Promise(res => {
             P.innerHTML = '<h2>' + title + '</h2>' + html + '<div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button class="zmd-b" id="zmd-n">' + no + '</button><button class="zmd-b pr" id="zmd-y">' + yes + '</button></div>';
             showW(); P.querySelector('#zmd-y').onclick = () => res(true); P.querySelector('#zmd-n').onclick = () => res(false);
         });
         const confirmScript = m => ask('⚠ Скриптовий мод', '<div class="zmd-warn">Скрипт виконується всередині гри з повним доступом (як частина самої гри). Це <b>не</b> пісочниця. Вмикай такі моди лише від авторів, яким довіряєш.</div><p>«' + esc(m.name) + '» · ' + esc(m.author || '—') + '</p>', 'Розумію, увімкнути', 'Скасувати').then(r => { if (!r) list(); return r; });
+        const contents = b => { const d = b.data || {}, n = a => Array.isArray(a) ? a.length : 0, r = []; if (n(d.items)) r.push('предметів: ' + n(d.items)); if (n(d.mobs)) r.push('мобів: ' + n(d.mobs)); if (n(d.bosses)) r.push('босів: ' + n(d.bosses)); if (n(d.rules)) r.push('механік: ' + n(d.rules)); if (n(d.recipes)) r.push('рецептів: ' + n(d.recipes)); if (d.tex) r.push('текстур: ' + Object.keys(d.tex).length); return r.length ? 'У моді — ' + r.join(', ') + '.' : ''; };
         async function addFile(f) {
             try {
+                if (inMp()) throw new Error(MPLOCK);
                 if (f.size > MAXB * 1.5) throw new Error('Файл завеликий'); let file; try { file = JSON.parse(await f.text()); } catch (e) { throw new Error('Це не файл .zgmod'); }
                 const v = await verify(file), b = v.b, known = trust.includes(v.fp);
                 const html = '<p><b style="font-size:15px">' + esc(b.name) + '</b> v' + esc(b.ver || '1') + '<br><span style="opacity:.75">' + esc(b.desc || '') + '</span></p><p>Автор: <b>' + esc(b.author || '—') + '</b><br>Відбиток ключа: <span class="zmd-fp">' + v.fp + '</span></p>'
                     + '<div class="zmd-warn" style="background:rgba(30,120,60,.2);border-color:#2a9a54">✔ Підпис дійсний — файл не змінено після підписання.</div>'
                     + (known ? '<p style="opacity:.8">Цей автор у твоєму списку довірених.</p>' : '<div class="zmd-warn">Автор тобі ще невідомий. Підпис доводить лише <i>що файл від власника цього ключа</i>, а не те, що власник — добра людина. Звір відбиток із джерелом моду.</div>')
-                    + (b.type === 'script' ? '<div class="zmd-warn">⚠ Це скриптовий мод: матиме повний доступ до гри.</div>' : '<p style="opacity:.8">Це безпечний мод даних (рецепти / привітання): коду не виконує.</p>');
+                    + (b.type === 'script' ? '<div class="zmd-warn">⚠ Це скриптовий мод: матиме повний доступ до гри.</div>' : '<p style="opacity:.8">Це безпечний мод даних: коду не виконує. ' + contents(b) + '</p>');
                 if (!(await ask('🧩 Додати мод?', html, known ? 'Додати' : 'Довіряти і додати', 'Скасувати'))) return list();
                 if (!known) { trust.push(v.fp); saveTrust(); }
                 const m = { id: b.id, name: b.name, ver: b.ver, author: b.author, desc: (b.desc || '').slice(0, 200), kind: b.type, fp: v.fp, file, on: b.type === 'script' ? 0 : 1, ts: Date.now() };
@@ -48334,19 +48501,91 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         let motdDone = 0;
         window.__zr.TICK.push(() => { if (!motdDone && A.motd && A.motd.length && typeof gameState !== 'undefined' && gameState === 'PLAYING') { motdDone = 1; A.motd.slice(0, 3).forEach((q, i) => setTimeout(() => toast('🧩 ' + q[0] + ': ' + q[1]), 1500 + i * 2600)); } });
         (async () => { for (const m of await all()) if (m.on) await activate(m); })();
-        window.__zmod = { verify, all, activate, trust: () => trust.slice(), A, list, addFile };
+        window.__zmod = { inMp, verify, all, activate, trust: () => trust.slice(), A, list, addFile };
     } catch (e) { console.error('zmod', e); }
+})();
+// ===== 46.64 «Однакові моди в мультиплеєрі» — вхід у чужий світ лише з тим самим набором модів =====
+(function () {
+    'use strict';
+    const Z = () => window.__zmod;
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // набір активних модів цього гравця (те, що реально працює зараз), відсортований за id
+    function mine() { const z = Z(); if (!z || !z.A) return []; return Object.keys(z.A.on).filter(id => z.A.on[id] && z.A.info[id]).sort().map(id => z.A.info[id]); }
+    const nm = m => '«' + m.name + '» v' + m.ver + (m.author ? ' (' + m.author + ')' : '');
+    // порівняння: host — список хоста, my — список гравця
+    function diff(host, my) {
+        host = Array.isArray(host) ? host.filter(x => x && x.id) : []; const mh = {}, mm = {}; host.forEach(x => mh[x.id] = x); my.forEach(x => mm[x.id] = x);
+        const need = [], extra = [], wrong = [];
+        for (const x of host) { const y = mm[x.id]; if (!y) need.push(x); else if (y.ver !== x.ver || (x.h && y.h && x.h !== y.h)) wrong.push([x, y]); }
+        for (const y of my) if (!mh[y.id]) extra.push(y);
+        return { need, extra, wrong, ok: !need.length && !extra.length && !wrong.length };
+    }
+    function text(d) {
+        const p = [];
+        if (d.need.length) p.push('Потрібно встановити моди: ' + d.need.map(nm).join(', ') + '.');
+        if (d.wrong.length) p.push('Інша версія мода: ' + d.wrong.map(w => '«' + w[0].name + '» — у хоста v' + w[0].ver + ', у тебе v' + w[1].ver).join('; ') + '.');
+        if (d.extra.length) p.push('Вимкни або видали зайві моди (їх немає у хоста): ' + d.extra.map(nm).join(', ') + '.');
+        return '🧩 Вхід заборонено: набір модів має бути однаковий з хостом. ' + p.join(' ');
+    }
+    window.__zmodmp = { mine, diff, text };
+    // хост кладе свій список модів у мета-дані світу в знімку (relay-сервер передає meta як є)
+    try {
+        mpSnapshot = (function (o) {
+            return function () {
+                const r = o.apply(this, arguments);
+                try { const L = mine(); if (r && r.world && r.world.meta) r.world.meta = Object.assign({}, r.world.meta, { zmods: L }); } catch (e) { }
+                return r;
+            };
+        })(mpSnapshot);
+    } catch (e) { console.error('zmodmp snap', e); }
+    // гість перевіряє список перед завантаженням світу
+    try {
+        mpJoinWorld = (function (o) {
+            return function (m) {
+                let d = null;
+                try { d = diff(m && m.snap && m.snap.meta && m.snap.meta.zmods, mine()); } catch (e) { d = null; }
+                if (d && !d.ok) {
+                    const my = MP, msg = text(d);
+                    try { if (my) my.fail = true; } catch (e) { }
+                    try { MP = null; } catch (e) { }
+                    try { my.ws.close(); } catch (e) { }
+                    try { mpPill(); } catch (e) { }
+                    try { mpStatus(msg, true); } catch (e) { }
+                    try { window.__zmodmp.last = { d, msg }; showDlg(d, msg); } catch (e) { }
+                    return;
+                }
+                return o.apply(this, arguments);
+            };
+        })(mpJoinWorld);
+    } catch (e) { console.error('zmodmp join', e); }
+    function showDlg(d, msg) {
+        let w = document.getElementById('zmp-w');
+        if (!w) {
+            w = document.createElement('div'); w.id = 'zmp-w';
+            w.style.cssText = 'position:fixed;inset:0;z-index:99996;display:flex;align-items:center;justify-content:center;background:rgba(4,8,14,.75);font:500 14px "Segoe UI",system-ui,sans-serif;color:#e4eefc';
+            w.addEventListener('keydown', e => e.stopPropagation()); document.body.appendChild(w);
+        }
+        const li = (t, a, c) => a.length ? '<h3 style="margin:10px 0 4px;color:' + c + '">' + t + '</h3>' + a.map(x => '<div style="padding:6px 9px;margin:3px 0;border-radius:8px;background:rgba(255,255,255,.07)"><b>' + esc(x.name) + '</b> v' + esc(x.ver) + '<small style="opacity:.7"> ' + esc(x.author || '') + '</small></div>').join('') : '';
+        w.innerHTML = '<div style="width:min(520px,92vw);max-height:84vh;overflow:auto;background:linear-gradient(160deg,#14233b,#0a1424);border:2px solid #c8742a;border-radius:16px;padding:16px 18px"><h2 style="margin:0 0 6px;color:#ffb45b">🧩 Не той набір модів</h2><p style="opacity:.85;margin:0">Щоб зайти до цього світу, у тебе мають бути <b>ті самі моди</b>, що й у хоста — ні більше, ні менше.</p>'
+            + li('Потрібно встановити', d.need, '#ff9a6a') + li('Інша версія (оновити)', d.wrong.map(w => w[0]), '#ffd86b') + li('Зайві — вимкни й перезапусти гру', d.extra, '#9fd0ff')
+            + '<div style="text-align:right;margin-top:12px"><button id="zmp-x" style="padding:6px 14px;border-radius:9px;border:1.5px solid #3d6a9a;background:#1e5a9a;color:#fff;cursor:pointer">Зрозуміло</button></div></div>';
+        w.style.display = 'flex'; w.querySelector('#zmp-x').onclick = () => { w.style.display = 'none'; };
+    }
 })();
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.63', 'Характер, Фото, Моди', 'new'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.64', 'Моди без меж', 'new'], ['46.63', 'Характер, Фото, Моди'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.64': [
+                ['#ffb45b', '🌐 Однакові моди в мультиплеєрі', 'Зайти до світу друга можна лише з тим самим набором модів: якщо чогось бракує — гра покаже, які моди встановити; якщо є зайвий свій мод або інша версія — теж не пустить. Під час гри в мультиплеєрі моди змінювати не можна. Мобів, босів і механіки модів у спільному світі тепер можна використовувати — у всіх вони однакові.'],
+                ['#9be8a8', '🛠 Моди без меж', 'Моди тепер можуть додавати власні предмети, зброю (меч, лук, посох), їжу, зілля, мобів, босів зі шкалою здоров’я, фазами й атаками та правила «коли — якщо — тоді». Текстури малюються в конструкторі на сайті. Усе з жорсткими лімітами балансу, а моди світу вимкнені в мультиплеєрі.']
+            ],
             '46.63': [
                 ['#ff9ac8', '💗 Характер фамільярів', 'Кожен фамільяр має рису (Допитливий, Хоробрий, Соня, Ласкавий, Жартівник, Буркотун) і настрій. Він коментує ніч, дощ, печери, босів і твоє здоров’я в бульбашці над головою. Щасливий (настрій від 75) отримує на 5% більше досвіду. Штрафів немає; репліки вимикаються кнопкою 💬 біля фамільяра.'],
                 ['#9fd6ff', '📸 Режим фотографії (F8)', 'Ховає інтерфейс, додає кіносмуги, 8 фільтрів, віньєтку та рамки (полароїд, кіно, золота). Enter — знімок, він летить у щоденник (F4) і його можна зберегти файлом.'],
