@@ -11389,7 +11389,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.49', GAME_VER_NAME = 'Табір біля вогню';
+        const GAME_VER = '46.50', GAME_VER_NAME = 'Летючий острів';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -40039,6 +40039,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
         else { c.fillStyle = c2; c.beginPath(); c.ellipse(x0 + 8 + h * 8, oy + 14 + h * 8, 3, 4.5, 0, 0, 7); c.fill(); c.fillStyle = c3; c.fillRect(x0 + 5, oy + 3, 2, 8); if (h > 0.84) { c.fillStyle = 'rgba(70,150,80,.7)'; c.fillRect(x0 + W - 10, oy + 6, 9, 10); } }
         if (topc) { c.fillStyle = c2; c.fillRect(x0 - 1, oy, W + 2, 3); c.fillStyle = c3; c.fillRect(x0 - 1, oy, W + 2, 1.2); }
     }
+    window.__zTree2 = { leaf, log, season };
     // ---------- саджанці різних видів ----------
     function sap(c, ox, oy, x, y, t, T) {
         const sp = currentWorld.saps && currentWorld.saps[x + ',' + y]; const p = Math.max(0, Math.min(1, (sp === undefined ? 1 : sp) / 5400)), sc = 0.4 + 0.6 * (1 - Math.pow(1 - p, 2)), sw = Math.sin(t * 1.9 + x) * (0.015 + 0.03 * p);
@@ -47406,40 +47407,105 @@ html.zmn .input-group input:focus,html.zmn .input-group select:focus{border-colo
                 g.beginPath(); g.moveTo(-r, 0); g.bezierCurveTo(-r * 0.6, -r * 0.95, r * 0.5, -r * 0.8, r, -r * 0.1); g.bezierCurveTo(r * 0.55, r * 0.7, -r * 0.5, r * 0.8, -r, 0); g.fill();
             }
             function sun(C, kd, dusk) { // сонце й місяць по дузі; малюється одразу після неба (за хмарами й лісом)
-                const h = hourNow(), a = (h - 6) / 24 * TAU, dp = Math.sin(a), base = H * 0.66;
+                const h = hourNow(), a = (h - 6) / 24 * TAU, dp = Math.sin(a), base = H * 0.8;
                 if (dp > -0.15) { const x = W * (0.56 - 0.4 * Math.cos(a)), y = base * 0.96 - dp * base * 0.82, R = 34 * (W / 1280) + 8, col = mix([255, 244, 200], [255, 160, 90], dusk); C.save(); C.globalCompositeOperation = 'lighter'; C.globalAlpha = 0.5 + 0.3 * dusk; C.drawImage(tint(col), x - R * 7, y - R * 7, R * 14, R * 14); C.globalAlpha = 1; C.globalCompositeOperation = 'source-over'; C.fillStyle = rgb(mix([255, 250, 225], [255, 205, 150], dusk)); C.beginPath(); C.arc(x, y, R, 0, TAU); C.fill(); C.restore(); }
                 if (dp < 0.15) { const x = W * (0.56 + 0.4 * Math.cos(a)), y = base * 0.96 + dp * base * 0.82, R = 26 * (W / 1280) + 6; C.save(); C.globalAlpha = clamp(0.15 - dp, 0, 1) * 3 > 1 ? 1 : clamp(0.15 - dp, 0, 1) * 3; C.globalCompositeOperation = 'lighter'; C.drawImage(tint([170, 200, 255]), x - R * 5, y - R * 5, R * 10, R * 10); C.globalCompositeOperation = 'source-over'; C.fillStyle = '#eef3ff'; C.beginPath(); C.arc(x, y, R, 0, TAU); C.fill(); C.fillStyle = 'rgba(150,170,205,.5)'; for (const [dx, dy, rr] of [[-0.3, -0.2, 0.22], [0.25, 0.1, 0.16], [-0.05, 0.4, 0.13]]) { C.beginPath(); C.arc(x + dx * R, y + dy * R, rr * R, 0, TAU); C.fill(); } C.restore(); }
             }
             const TINT = {}; function tint(col) { const k = (col[0] >> 3) + '_' + (col[1] >> 3) + '_' + (col[2] >> 3); let t = TINT[k]; if (t) return t; sprites(); t = TINT[k] = document.createElement('canvas'); t.width = t.height = 128; const g = t.getContext('2d'); g.drawImage(glowSpr, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = rgb(col); g.fillRect(0, 0, 128, 128); return t; }
-            function foreground(t, dt, kd, dusk, camF, fireK) {
-                const gy = x => H - 78 * (H / 720) - ridge(x + camF) * (H / 720); // лінія землі у координатах екрана
-                const top = mix([14, 26, 30], [62, 122, 58], kd), bot = mix([5, 9, 16], [22, 54, 32], kd), campX = W * 0.74 - camF + 0, campOn = campX > -260 && campX < W + 260, cy = campOn ? gy(campX) : 0;
-                // тепле світло багаття на траві (під силуетом)
-                if (campOn) { c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = (0.16 + 0.5 * (1 - kd)) * fireK; c.drawImage(tint([255, 150, 60]), campX - 330, cy - 250, 660, 420); c.restore(); }
-                const g = c.createLinearGradient(0, H - 190 * (H / 720), 0, H); g.addColorStop(0, rgb(top)); g.addColorStop(1, rgb(bot)); c.fillStyle = g;
-                c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W + 16; x += 16) c.lineTo(x, gy(x)); c.lineTo(W, H); c.closePath(); c.fill();
-                // трава: пучки, що гойдаються
-                c.strokeStyle = rgb(mix(top, [120, 190, 90], 0.45 * kd)); c.lineWidth = 2; c.lineCap = 'round'; c.beginPath();
-                const x0 = Math.floor(camF / 13) * 13 - camF; for (let x = x0, i = Math.floor(camF / 13); x < W + 13; x += 13, i++) { const hgt = 9 + hsh(i * 3.1) * 17, sw = RM ? 0 : Math.sin(t * 1.4 + i * 0.7) * 4 * (0.4 + hsh(i)), y = gy(x); c.moveTo(x, y + 2); c.quadraticCurveTo(x + sw * 0.4, y - hgt * 0.6, x + sw, y - hgt); }
-                c.stroke();
-                if (!campOn) return;
-                // намет
-                const s = H / 720, tx = campX - 150 * s, ty = gy(tx) + 6; c.fillStyle = rgb(mix([20, 26, 40], [86, 74, 60], kd * 0.7)); c.beginPath(); c.moveTo(tx - 78 * s, ty); c.lineTo(tx, ty - 96 * s); c.lineTo(tx + 78 * s, ty); c.closePath(); c.fill();
-                c.fillStyle = rgb(mix([9, 12, 20], [40, 34, 30], kd * 0.6)); c.beginPath(); c.moveTo(tx - 6 * s, ty); c.lineTo(tx + 10 * s, ty - 62 * s); c.lineTo(tx + 34 * s, ty); c.closePath(); c.fill();
-                c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = (0.1 + 0.3 * (1 - kd)) * fireK; c.fillStyle = '#ff9a4a'; c.beginPath(); c.moveTo(tx + 10 * s, ty - 86 * s); c.lineTo(tx + 78 * s, ty); c.lineTo(tx + 40 * s, ty); c.closePath(); c.fill(); c.restore();
-                // кайло, встромлене в землю
-                const px = campX + 118 * s, py = gy(px) + 4; c.save(); c.translate(px, py); c.rotate(0.32); c.fillStyle = rgb(mix([24, 20, 20], [110, 78, 44], kd)); c.fillRect(-3 * s, -64 * s, 6 * s, 66 * s); c.strokeStyle = rgb(mix([60, 70, 90], [190, 200, 215], kd)); c.lineWidth = 7 * s; c.lineCap = 'round'; c.beginPath(); c.moveTo(-26 * s, -52 * s); c.quadraticCurveTo(0, -78 * s, 26 * s, -52 * s); c.stroke(); c.restore();
-                // дрова + полум'я
-                c.fillStyle = '#1c120c'; c.save(); c.translate(campX, cy + 3); c.rotate(0.2); c.fillRect(-30 * s, -5 * s, 60 * s, 10 * s); c.rotate(-0.42); c.fillRect(-30 * s, -5 * s, 60 * s, 10 * s); c.restore();
-                c.save(); c.globalCompositeOperation = 'lighter'; const fl = RM ? 0 : t;
-                for (const [w, hh2, col, o] of [[26, 58, 'rgba(255,90,20,.75)', 0], [18, 44, 'rgba(255,170,40,.85)', 1.7], [9, 26, 'rgba(255,240,190,.9)', 3.1]]) {
-                    const k = 1 + 0.16 * Math.sin(fl * 9 + o) + 0.1 * Math.sin(fl * 15.3 + o * 2), lean = Math.sin(fl * 3.1 + o) * 5 * s, hw = w * s, h = hh2 * s * k * (0.7 + 0.3 * fireK);
-                    c.fillStyle = col; c.beginPath(); c.moveTo(campX - hw, cy - 2); c.quadraticCurveTo(campX - hw * 1.05, cy - h * 0.55, campX + lean, cy - h); c.quadraticCurveTo(campX + hw * 1.05, cy - h * 0.55, campX + hw, cy - 2); c.closePath(); c.fill();
+            // ---------- v46.50: летючий острів зі справжніх блоків гри ----------
+            // Острів збирається зі спрайтів блоків (spriteOf) у «рідному» розмірі 32px і масштабується без згладжування.
+            // Герой і тварини малюються рідними функціями гри (drawHumanoid/drawAnimal) на ігровому полотні — у меню воно вільне — і копіюються сюди.
+            const ISL = [
+                '.............RRRb...',
+                '...........RRRRRbR..',
+                '.........RRRRRRRRRRR',
+                '.........PIIIIIIIIIP',
+                '.........PIIIIIIIIIP',
+                '.........PIIIIIIIIIP',
+                '.......HTPIIIIIIIIIP',
+                '.~~GGGGGGPPPPPPPPPPP',
+                '.DDDDDDDDDDDDDDDDDD.',
+                '..DDSDDDcDDSDDDDDD..',
+                '...SSiSSSSoSSSSSS...',
+                '....SSSxSSSSSSSS....',
+                '.....SScSSSSSSS.....',
+                '......SSvSSSSS......',
+                '.......SSSS.........'];
+            const LEG = { G: 'grass', D: 'dirt', S: 'stone', c: 'coal_ore', i: 'iron_ore', o: 'gold_ore', x: 'crystal_ore', W: 'wood', L: 'leaves', P: 'plank', R: 'plank', b: 'stone_bri', T: 'torch', H: 'chest', '~': 'water', v: 'vines' };
+            const IW = ISL[0].length * 32, IH = ISL.length * 32, SURF = 7 * 32;
+            let islC = null, layC = null, layG = null, islOk = 0;
+            const sprOf = id => { try { let sp = spriteOf(id); if (!sp && id === 'stone_bri') sp = spriteOf('stone_brick') || spriteOf('brick_wall') || spriteOf('stone'); return sp && sp.width ? sp : null; } catch (e) { return null; } };
+            function buildIsland() {
+                const cvs = document.createElement('canvas'); cvs.width = IW; cvs.height = IH; const g = cvs.getContext('2d'); g.imageSmoothingEnabled = false; let n = 0, miss = 0;
+                for (let r = 0; r < ISL.length; r++) for (let q = 0; q < ISL[r].length; q++) { const ch = ISL[r][q]; if (ch === '.') continue; if (ch === 'I') { let wt = null; try { wt = typeof WALL_TEX !== 'undefined' && WALL_TEX[1]; } catch (e) { } if (wt) g.drawImage(wt, q * 32, r * 32, 32, 32); else { const pk = sprOf('plank'); if (pk) g.drawImage(pk, q * 32, r * 32, 32, 32); g.fillStyle = 'rgba(10,8,14,.5)'; g.fillRect(q * 32, r * 32, 32, 32); } g.fillStyle = 'rgba(255,236,170,.12)'; g.fillRect(q * 32, r * 32, 32, 32); n++; continue; } const sp = sprOf(LEG[ch]); if (!sp) { miss++; continue; } g.drawImage(sp, 0, 0, sp.width, sp.height, q * 32, r * 32, 32, 32); n++;
+                    if (ch === 'R') { g.fillStyle = 'rgba(150,44,30,.62)'; g.fillRect(q * 32, r * 32, 32, 32); g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(q * 32, r * 32 + 28, 32, 4); }
                 }
-                c.globalAlpha = (0.3 + 0.45 * (1 - kd)) * (0.9 + 0.1 * Math.sin(fl * 11)); c.drawImage(tint([255, 140, 50]), campX - 150 * s, cy - 170 * s, 300 * s, 300 * s);
-                // іскри
-                if (!RM && SPK.length < 26 && Math.random() < dt * 14) SPK.push({ x: campX + (Math.random() - 0.5) * 22 * s + camF, y: cy - 30 * s, vx: (Math.random() - 0.5) * 22, vy: -50 - Math.random() * 60, l: 1, d: 0.5 + Math.random() * 0.7 });
-                for (let i = SPK.length - 1; i >= 0; i--) { const p = SPK[i]; p.l -= dt * p.d; if (p.l <= 0) { SPK.splice(i, 1); continue; } p.x += (p.vx + Math.sin(t * 3 + i) * 14) * dt; p.y += p.vy * dt; p.vy *= 1 - dt * 0.5; c.globalAlpha = p.l * 0.9; c.fillStyle = p.l > 0.5 ? '#ffd27a' : '#ff8a3a'; const r = 1.8 * s * (0.5 + p.l); c.fillRect(p.x - camF - r / 2, p.y - r / 2, r, r); }
+                { const wx = 16 * 32, wy = 3 * 32, gl = g.createLinearGradient(0, wy + 4, 0, wy + 60); gl.addColorStop(0, '#8fd0ff'); gl.addColorStop(1, '#d6efff'); g.fillStyle = '#5b4226'; g.fillRect(wx + 2, wy + 2, 60, 60); g.fillStyle = gl; g.fillRect(wx + 6, wy + 6, 52, 52); g.fillStyle = '#5b4226'; g.fillRect(wx + 30, wy + 6, 4, 52); g.fillRect(wx + 6, wy + 30, 52, 4); g.fillStyle = 'rgba(255,255,255,.45)'; g.fillRect(wx + 9, wy + 9, 5, 18); }
+                if (miss || !n) return false;
+                // низ острова темнішає донизу — об'єм
+                g.globalCompositeOperation = 'source-atop'; const sh = g.createLinearGradient(0, SURF + 20, 0, IH); sh.addColorStop(0, 'rgba(8,12,26,0)'); sh.addColorStop(1, 'rgba(8,12,26,.62)'); g.fillStyle = sh; g.fillRect(0, SURF, IW, IH - SURF); g.globalCompositeOperation = 'source-over';
+                islC = cvs; layC = document.createElement('canvas'); layC.width = IW; layC.height = IH; layG = layC.getContext('2d'); layG.imageSmoothingEnabled = false; return true;
+            }
+            // мешканці острова: x — у пікселях острова (32px на блок)
+            const HERO = { x: 420, dir: 1, vx: 1, wait: 0, a: 340, b: 590 }, COW = { t: 'cow', x: 190, y: SURF - 32, w: 42, h: 32, dir: 1, ph: 0, hurt: 0, idle: 0, walk: 1, cluck: 0, a: 170, b: 222, wait: 2 }, PIG = { t: 'pig', x: 130, y: SURF - 22, w: 32, h: 22, dir: -1, ph: 1, hurt: 0, idle: 0, walk: 1, cluck: 0, a: 104, b: 160, wait: 0 };
+            const SMK = [], DRP = [], BIRDS = [{ x: -0.2, y: 0.2, v: 0.021, n: 6, s: 1 }, { x: 1.3, y: 0.3, v: -0.015, n: 4, s: 0.7 }], STAR = { t: 4, x: 0, y: 0, l: 0 };
+            function roam(o, dt, sp) { if (o.wait > 0) { o.wait -= dt; o.walk = 0; o.idle = 1; return 0; } o.walk = 1; o.idle = 0; o.x += o.dir * sp * dt; o.ph += dt * 7; if (o.x > o.b) { o.x = o.b; o.dir = -1; o.wait = 1 + Math.random() * 3; } else if (o.x < o.a) { o.x = o.a; o.dir = 1; o.wait = 1 + Math.random() * 3; } else if (Math.random() < dt * 0.12) o.wait = 0.8 + Math.random() * 2; return o.dir; }
+            function actors(t, dt) { // малюємо героя й тварин грою на її ж (вільному в меню) полотні та переносимо на шар острова
+                if (typeof drawHumanoid !== 'function' || typeof ctx === 'undefined' || typeof canvas === 'undefined' || canvas.width < 200 || canvas.height < 100) return;
+                if (!RM) { HERO.vx = roam(HERO, dt, 26); roam(COW, dt, 9); roam(PIG, dt, 13); }
+                const draw = (fn, x) => { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none'; ctx.clearRect(0, 0, 128, 96); try { fn(); } catch (e) { } ctx.restore(); layG.drawImage(canvas, 0, 0, 128, 96, Math.round(x) - 64, SURF - 80, 128, 96); };
+                draw(() => drawAnimal(Object.assign({}, COW, { x: 64 - COW.w / 2, y: 80 - COW.h }), t), COW.x);
+                draw(() => drawAnimal(Object.assign({}, PIG, { x: 64 - PIG.w / 2, y: 80 - PIG.h }), t), PIG.x);
+                draw(() => drawHumanoid({ x: 64, y: 58, facing: HERO.dir, vx: HERO.vx, seed: 0.4, shirt: '#3d7bd9', shirtDark: '#2a5aa8', pants: '#2c3e50', skin: '#f5cba7', head: h => { h.fillStyle = '#6b3f1d'; h.fillRect(-7, -31, 14, 5); h.fillRect(-7, -31, 3, 9); } }), HERO.x);
+            }
+            function island(t, dt, kd, dusk, camF) {
+                if (!islC) { if (islOk < 0 || (islOk = buildIsland() ? 1 : (S.t > 6 ? -1 : 0)) !== 1) return; }
+                const night = 1 - kd, k = Math.max(1, Math.round(Math.min(32 * H / 720, W * 0.5 / 20) * 4) / 4) / 32, iw = IW * k, ih = IH * k;
+                const bob = RM ? 0 : Math.sin(t * 0.55) * 7 * (H / 720), ix = Math.round(W * 0.705 - camF * 1.05 - iw * 0.5), iy = Math.round(H * 0.5 - ih * 0.42 + bob), P = (x, y) => [ix + x * k, iy + y * k];
+                if (ix > W + 40 || ix + iw < -40) return;
+                sprites(); c.save(); c.imageSmoothingEnabled = false;
+                // дрібні уламки під островом — гойдаються в протифазі
+                const st = sprOf('stone'); if (st) for (const [fx, fy, fs, fp] of [[0.2, 1.04, 0.5, 1.3], [0.62, 1.1, 0.36, 2.6], [0.8, 0.96, 0.44, 4.1]]) { const b2 = RM ? 0 : Math.sin(t * 0.7 + fp) * 6; c.globalAlpha = 0.9; c.drawImage(st, ix + iw * fx, iy + ih * fy + b2, 32 * k * fs, 32 * k * fs); c.fillStyle = 'rgba(8,12,26,.35)'; c.fillRect(ix + iw * fx, iy + ih * fy + b2, 32 * k * fs, 32 * k * fs); }
+                c.globalAlpha = 1;
+                // водоспад з краю ставка: смуги води, що біжать униз і тануть у тумані
+                { const [wx, wy] = P(32 - 6, SURF + 6), ww = 30 * k, wh = ih * 0.95, g = c.createLinearGradient(0, wy, 0, wy + wh); g.addColorStop(0, 'rgba(120,190,255,.85)'); g.addColorStop(0.6, 'rgba(150,205,255,.4)'); g.addColorStop(1, 'rgba(190,225,255,0)'); c.fillStyle = g; c.fillRect(wx, wy, ww, wh);
+                  c.fillStyle = 'rgba(255,255,255,.55)'; for (let i2 = 0; i2 < 9; i2++) { const u = ((t * (0.55 + (i2 % 3) * 0.12) + i2 * 0.37) % 1 + 1) % 1, sx = wx + ((i2 * 37) % 26 + 2) * k * 0.95, sy = wy + u * wh, sl = (18 + (i2 % 4) * 9) * k; c.globalAlpha = (1 - u) * 0.75; c.fillRect(sx, sy, 2 * k, sl); }
+                  c.globalAlpha = 1; if (!RM && DRP.length < 22 && Math.random() < dt * 16) DRP.push({ x: wx + Math.random() * ww, y: wy + wh * (0.55 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 30, vy: 20 + Math.random() * 40, l: 1 });
+                  c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.22 + 0.1 * kd; c.drawImage(tint([200, 225, 255]), wx - 60 * k, wy + wh * 0.55, ww + 120 * k, wh * 0.6); c.globalCompositeOperation = 'source-over';
+                  for (let i2 = DRP.length - 1; i2 >= 0; i2--) { const d = DRP[i2]; d.l -= dt * 0.9; if (d.l <= 0) { DRP.splice(i2, 1); continue; } d.x += d.vx * dt; d.y += d.vy * dt; c.globalAlpha = d.l * 0.6; c.fillStyle = '#e6f3ff'; c.fillRect(d.x, d.y, 2 * k, 2 * k); } c.globalAlpha = 1; }
+                // шар острова: блоки + мешканці, потім загальний відтінок часу доби
+                layG.setTransform(1, 0, 0, 1, 0, 0); layG.globalCompositeOperation = 'source-over'; layG.globalAlpha = 1; layG.clearRect(0, 0, IW, IH); layG.drawImage(islC, 0, 0);
+                // рябь на ставку
+                layG.fillStyle = 'rgba(255,255,255,.35)'; for (let i2 = 0; i2 < 5; i2++) { const u = ((t * 0.25 + i2 * 0.21) % 1 + 1) % 1; layG.globalAlpha = Math.sin(u * Math.PI) * 0.8; layG.fillRect(34 + u * 50, SURF + 4 + (i2 % 3) * 7, 10, 1.5); } layG.globalAlpha = 1;
+                { const Z = window.__zTree2; if (Z && typeof worldMap !== 'undefined') { const fw = []; for (let y = 0; y < 9; y++) fw[y] = []; const LV = [[1, 4, 6], [2, 3, 7], [3, 3, 7]], TR = [3, 4, 5, 6]; for (const [r, a, b2] of LV) for (let q = a; q <= b2; q++) fw[r + 1][q] = 5; for (const r of TR) fw[r + 1][5] = 4; const sv = worldMap; worldMap = fw;
+                    try { for (const r of TR) Z.log(layG, 5 * 32, r * 32, 5, r + 1, t, 'n', false); for (const [r, a, b2] of LV) for (let q = a; q <= b2; q++) if (!(fw[r + 1][q] === 4)) Z.leaf(layG, q * 32, r * 32, q, r + 1, t, 'n', false); } catch (e) {   } finally { worldMap = sv; } } }
+                { const lit = night > 0.25, fx = (n2, cx, cy, o) => { if (typeof FDRAW === 'undefined' || !FDRAW[n2]) return; layG.save(); layG.translate(cx * 32, cy * 32); try { FDRAW[n2](layG, Object.assign({ f: 1, open: false, lit, t, hr: 10 }, o || {})); } catch (e) { } layG.restore(); };
+                  fx('painting', 11, 3); fx('bed', 10, 5); fx('lamp', 14, 5); fx('chair', 15, 5); fx('table', 16, 5); fx('door', 19, 5); }
+                try { actors(t, dt); } catch (e) { }
+                layG.globalCompositeOperation = 'source-atop'; if (night > 0.02) { layG.fillStyle = 'rgba(14,22,58,' + (0.62 * night) + ')'; layG.fillRect(0, 0, IW, IH); } if (dusk > 0.02) { layG.fillStyle = 'rgba(255,130,60,' + (0.2 * dusk) + ')'; layG.fillRect(0, 0, IW, IH); } layG.globalCompositeOperation = 'source-over';
+                c.drawImage(layC, 0, 0, IW, IH, ix, iy, iw, ih);
+                // світло: вікно, смолоскип, кристал, блиск руд
+                c.globalCompositeOperation = 'lighter'; const fl = RM ? 1 : 0.85 + 0.15 * Math.sin(t * 11) + 0.08 * Math.sin(t * 17.3), warm = tint([255, 170, 80]);
+                { const [x, y] = P(17 * 32, 4 * 32), r = (26 + 70 * night) * k; c.globalAlpha = (0.12 + 0.75 * night) * fl; c.drawImage(warm, x - r, y - r, r * 2, r * 2); if (night > 0.15) { c.globalAlpha = night * 0.9; c.fillStyle = '#ffcf7a'; c.globalAlpha = night * 0.6; for (const [dx, dy] of [[-26, -26], [4, -26], [-26, 4], [4, 4]]) c.fillRect(x + dx * k, y + dy * k, 22 * k, 22 * k); } }
+                { const [x, y] = P(14 * 32 + 16, 5 * 32 + 14), r = (20 + 50 * night) * k * fl; c.globalAlpha = (0.05 + 0.5 * night) * fl; c.drawImage(warm, x - r, y - r, r * 2, r * 2); }
+                { const [x, y] = P(8 * 32 + 16, 6 * 32 + 10), r = (34 + 60 * night) * k * fl; c.globalAlpha = 0.3 + 0.55 * night; c.drawImage(warm, x - r, y - r, r * 2, r * 2); }
+                { const [x, y] = P(7 * 32 + 16, 11 * 32 + 16), r = 44 * k * (0.9 + 0.1 * Math.sin(t * 2.3)); c.globalAlpha = 0.25 + 0.4 * night; c.drawImage(tint([120, 220, 255]), x - r, y - r, r * 2, r * 2); }
+                if (!RM) for (const [q, r2, ph] of [[10, 10, 0], [5, 10, 2.1], [8, 9, 4.4], [7, 12, 1.2]]) { const a = Math.max(0, Math.sin(t * 1.7 + ph * 3)); if (a < 0.86) continue; const [x, y] = P(q * 32 + 10 + ph * 3, r2 * 32 + 12), sz = (a - 0.86) * 60 * k; c.globalAlpha = 0.9; c.fillStyle = '#fff'; c.fillRect(x - sz / 2, y - 0.6 * k, sz, 1.2 * k); c.fillRect(x - 0.6 * k, y - sz / 2, 1.2 * k, sz); }
+                c.globalCompositeOperation = 'source-over';
+                // дим із комина
+                { const [x0, y0] = P(16 * 32 + 16, 2); if (!RM && SMK.length < 14 && Math.random() < dt * 2.4) SMK.push({ x: 0, y: 0, l: 1, r: 5 + Math.random() * 4, w: Math.random() * TAU });
+                  for (let i2 = SMK.length - 1; i2 >= 0; i2--) { const p2 = SMK[i2]; p2.l -= dt * 0.24; if (p2.l <= 0) { SMK.splice(i2, 1); continue; } p2.y -= dt * 26; p2.x += dt * (9 + Math.sin(t + p2.w) * 7); const r = (p2.r + (1 - p2.l) * 16) * k; c.globalAlpha = p2.l * 0.4; c.drawImage(tint(mix([70, 76, 96], [226, 230, 238], kd)), x0 + p2.x * k - r, y0 + p2.y * k - r, r * 2, r * 2); } c.globalAlpha = 1; }
+                // пасмо хмари проходить повз низ острова — відчуття висоти
+                { const u = RM ? 0.4 : ((t * 0.012) % 1.4) - 0.2, cw = iw * 0.9; c.globalAlpha = 0.2 + 0.14 * kd; const tc = tint(mix([130, 150, 200], [255, 255, 255], kd)); c.drawImage(tc, ix - cw * 0.6 + u * iw * 1.4, iy + ih * 0.66, cw, ih * 0.34); c.drawImage(tc, ix + iw * 0.5 - u * iw * 0.6, iy + ih * 0.82, cw * 0.8, ih * 0.3); c.globalAlpha = 1; }
+                c.restore();
+            }
+            function skyLife(t, dt, kd, camF) { // зграї птахів удень, падаючі зорі вночі
+                c.save();
+                if (kd > 0.25 && !RM) { c.strokeStyle = 'rgba(30,40,60,' + (0.55 * kd) + ')'; c.lineCap = 'round';
+                    for (const f of BIRDS) { f.x += f.v * dt; if (f.v > 0 && f.x > 1.25) { f.x = -0.25; f.y = 0.1 + Math.random() * 0.3; } if (f.v < 0 && f.x < -0.25) { f.x = 1.25; f.y = 0.1 + Math.random() * 0.3; }
+                        for (let i2 = 0; i2 < f.n; i2++) { const row = Math.ceil(i2 / 2), side = i2 % 2 ? 1 : -1, bx = f.x * W - Math.sign(f.v) * row * 26 * f.s - camF * 0.15, by = f.y * H + row * 13 * f.s * side + Math.sin(t * 1.3 + i2) * 3, wg = Math.sin(t * 7.5 + i2 * 1.7), sp = 9 * f.s * (W / 1280 + 0.3); c.lineWidth = 2 * f.s; c.beginPath(); c.moveTo(bx - sp, by - wg * sp * 0.7); c.quadraticCurveTo(bx - sp * 0.4, by - sp * 0.15, bx, by); c.quadraticCurveTo(bx + sp * 0.4, by - sp * 0.15, bx + sp, by - wg * sp * 0.7); c.stroke(); } } }
+                if (kd < 0.3 && !RM) { STAR.t -= dt; if (STAR.t <= 0 && STAR.l <= 0) { STAR.x = (0.25 + Math.random() * 0.7) * W; STAR.y = (0.04 + Math.random() * 0.25) * H; STAR.l = 1; STAR.t = 5 + Math.random() * 8; }
+                    if (STAR.l > 0) { STAR.l -= dt * 1.5; const u = 1 - STAR.l, x = STAR.x - u * 260, y = STAR.y + u * 120, g = c.createLinearGradient(x, y, x + 110, y - 51); g.addColorStop(0, 'rgba(255,255,255,' + Math.max(0, STAR.l) + ')'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.strokeStyle = g; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 110, y - 51); c.stroke(); } }
                 c.restore();
             }
             function particles(t, dt, kd, camF) {
@@ -47467,10 +47533,10 @@ html.zmn .input-group input:focus,html.zmn .input-group select:focus{border-colo
                     const mxo = RM ? 0 : (S.smx - 0.5) * 150, myo = RM ? 0 : (S.smy - 0.5) * 16, camX = 4000 + S.cam * 2.2 + mxo * 2.2 + (RM ? 0 : t * 5);
                     const h = hourNow(), dp = Math.sin((h - 6) / 24 * TAU), kd = clamp(dp * 3 + 0.5, 0, 1), dusk = Math.max(0, 1 - Math.abs(dp) / 0.3);
                     c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
-                    U.scene({ ctx: c, W, H, cam: { x: camX, y: 0 }, base: H * 0.66 - myo, dp, bw: { f: 1, s: 0, w: 0, d: 0 }, sun });
+                    U.scene({ ctx: c, W, H, cam: { x: camX, y: 0 }, base: H * 0.8 - myo, dp, bw: { f: 1, s: 0, w: 0, d: 0 }, sun });
                     c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
                     const camF = S.cam * 0.95 + mxo * 0.95;
-                    foreground(t, dt, kd, dusk, camF, 1); particles(t, dt, kd, camF);
+                    skyLife(t, dt, kd, camF); island(t, dt, kd, dusk, camF); particles(t, dt, kd, camF);
                     // затемнення під текст: ліворуч на головному екрані, рівномірне на інших; знизу — завжди
                     const left = c.createLinearGradient(0, 0, W * 0.62, 0), la = 0.62 * (1 - S.scrim) * (0.75 + 0.25 * kd); left.addColorStop(0, 'rgba(5,9,18,' + la + ')'); left.addColorStop(1, 'rgba(5,9,18,0)'); c.fillStyle = left; c.fillRect(0, 0, W, H);
                     if (S.scrim > 0.01) { c.fillStyle = 'rgba(5,9,18,' + (0.46 * S.scrim) + ')'; c.fillRect(0, 0, W, H); }
@@ -47617,12 +47683,15 @@ html.zmn .input-group input:focus,html.zmn .input-group select:focus{border-colo
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.49', 'Табір біля вогню', 'new'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.50', 'Летючий острів', 'new'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.50': [
+                ['#7dffb0', '🏝 Летючий острів у меню', 'Новий фон головного меню: острів зі справжніх блоків гри, що ширяє над лісом. На ньому ходить герой, пасуться корова й свиня, з комина йде дим, зі ставка падає водоспад, блищать руди й світиться кристал. Удень пролітають птахи, вночі горить вікно хатини й падають зорі.']
+            ],
             '46.49': [
                 ['#ffd27a', '🏕 Нове головне меню', 'Замість сірої картки — жива сцена: мальований ліс, багаття з іскрами, намет і кайло. Час доби в меню такий самий, як у тебе за вікном: удень летять пелюстки, вночі світяться світляки й місяць. Кнопки виїжджають по черзі, а між екранами камера плавно їде вбік.'],
                 ['#9ad1ff', '🔊 Живий звук', 'Усі ефекти гри перезібрано: замість «піскання» — м’які тембри, шум із матеріалом і трохи простору навколо кожного звуку. Наново зроблено копання, удари, стрибок, падіння, вибух, сплеск і дзвіночки нового рівня.']
