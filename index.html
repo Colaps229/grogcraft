@@ -11392,7 +11392,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.62', GAME_VER_NAME = 'Диск у меню';
+        const GAME_VER = '46.63', GAME_VER_NAME = 'Характер, Фото, Моди';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -36173,25 +36173,6 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
             window.__zdbg = { D, stats, report, setOn };
         })();
 
-// ===== v46.57: діагностичні перемикачі F6–F10 (для пошуку причини просідання FPS у вікнах) =====
-(function () {
-    'use strict';
-    try {
-        const R = {
-            F6: '*{animation:none!important;transition:none!important}',
-            F7: '#gameCanvas{visibility:hidden!important}',
-            F8: 'body>*:not(#inventory-modal):not(#gameCanvas):not(#zd-box){display:none!important}',
-            F9: '#inventory-modal img{image-rendering:auto!important}',
-            F10: '#inventory-modal .crafting-section{display:none!important}'
-        }, S = {};
-        addEventListener('keydown', e => {
-            const r = R[e.code]; if (!r) return; e.preventDefault();
-            if (S[e.code]) { S[e.code].remove(); delete S[e.code]; } else { const s = document.createElement('style'); s.textContent = r; document.head.appendChild(s); S[e.code] = s; }
-            try { const t = document.getElementById('zd-box'); if (t) t.dataset.flags = Object.keys(S).join(','); document.title = 'GrogCraft [' + Object.keys(S).join(',') + ']'; } catch (x) { }
-        }, true);
-    } catch (e) { }
-})();
-
 // ===== v46.58: лічильник змін DOM (хто перемальовує інтерфейс) — лише поки ввімкнена панель F3 =====
 (function () {
     'use strict';
@@ -37220,6 +37201,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 for (let i = 40; i < free.length; i++) drop.push(free[i].id); await delPhotos(drop);
             }
             function grab() {
+                if (window.__zGrabOv) { const v = window.__zGrabOv; window.__zGrabOv = null; return v; }
                 try { const W = 640, H = Math.round(W * canvas.height / canvas.width), c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(canvas, 0, 0, W, H); return c.toDataURL('image/jpeg', .72); } catch (e) { return null; }
             }
             // ---------- щоденник ----------
@@ -47873,16 +47855,504 @@ window.__zDiscData = { audio: 'data:audio/ogg;base64,T2dnUwACAAAAAAAAAACkwyaUAAA
         label();
     } catch (e) { console.error('zdisc', e); }
 })();
+// ===== v46.63: ХАРАКТЕР ФАМІЛЬЯРІВ — риса характеру, настрій, репліки в бульбашках =====
+// Риса виводиться з id/імені фамільяра (не змінюється). Настрій 0–100 росте від спільних подій і повільно падає без тебе.
+// Баланс: настрій ≥ 75 дає лише +5% досвіду фамільяру; штрафів немає. Репліки рідкі (не частіше ~раз на 25 с), їх можна вимкнути (💬 у HUD).
+(function () {
+    'use strict';
+    try {
+        if (typeof V21 === 'undefined' || typeof famAct !== 'function') return;
+        const Z = window.__zr; if (!Z || !Z.DRAW) return;
+        const KEY = 'zfc_off';
+        let talk = 1; try { talk = localStorage.getItem(KEY) === '1' ? 0 : 1; } catch (e) { }
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const hash = s => { let h = 7; for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0; return h; };
+
+        // ---------- риси та репліки ----------
+        const TR = [
+            { id: 'cur', n: 'Допитливий', ico: '🔍', col: '#7fd6ff', L: {
+                sum: ['О, де це ми?', 'Що сьогодні знайдемо?'], lvl: ['Я став розумнішим!', 'Цікаво, що далі?'], low: ['Тобі боляче? Обережно!', 'Тримайся, друже!'],
+                boss: ['Яка величезна істота!', 'Цікаво, чим вона харчується…'], night: ['Скільки зірок…', 'Ніч — час таємниць.'], dawn: ['Світанок! Нові відкриття.', 'Ранок, ходімо!'],
+                rain: ['Дощ… чому він падає?', 'Крапельки! Цікаво.'], snow: ['Сніг! Він холодний?', 'Яка білосніжна тиша.'], cave: ['Темно, але цікаво.', 'Що там, у глибині?'],
+                idle: ['Ми тут надовго?', 'Може, розвідаємо ще?'], kill: ['Записав у нотатки.', 'Гарний удар!'], feed: ['Смачно! Дякую!', 'Ммм, нова на смак.'], love: ['З тобою цікаво.', 'Ти найкращий напарник.'], sad: ['Давай щось знайдемо?', 'Мені трохи нудно…'] } },
+            { id: 'brv', n: 'Хоробрий', ico: '🦁', col: '#ff9a6a', L: {
+                sum: ['Я готовий до бою!', 'Веди, я прикрию!'], lvl: ['Я сильнішаю!', 'Ще міцніший удар!'], low: ['Тримайся, я поруч!', 'Ніхто тебе не зачепить!'],
+                boss: ['Нарешті гідний ворог!', 'Разом ми його здолаємо!'], night: ['Нехай нападають.', 'Ніч мене не лякає.'], dawn: ['Нова битва, новий день!', 'Ранок! Вперед!'],
+                rain: ['Дощ нас не зупинить.', 'Трохи води — дрібниця.'], snow: ['Холод? Не страшно!', 'Сніг для мене — тренування.'], cave: ['Темряви я не боюсь!', 'Йду першим!'],
+                idle: ['Чому ми стоїмо?', 'Мені не сидиться!'], kill: ['Ще один!', 'Так їм і треба!'], feed: ['Сили додалось!', 'Відмінно, до бою!'], love: ['Іти з тобою — честь.', 'Я за тебе горою.'], sad: ['Подай мені ворога…', 'Без бою якось сумно.'] } },
+            { id: 'coz', n: 'Соня', ico: '😴', col: '#b8a6ff', L: {
+                sum: ['Ах… вже ранок?', 'Я ще не розплющив очі…'], lvl: ['О, я виріс? Приємно…', 'Мм, рівень. Можна подрімати?'], low: ['Ой, ти поранений!', 'Не засинай, друже!'],
+                boss: ['Не буди мене заради цього…', 'Гучний який. Ну гаразд…'], night: ['Нарешті ніч… спатки.', 'Так затишно у темряві.'], dawn: ['Вже світає? Ще п’ять хвилин…', 'Хррр… ой, ранок.'],
+                rain: ['Дощ — найкраща колискова.', 'Кап-кап… я засинаю.'], snow: ['Сніжна ковдра. Мрія.', 'Тепло б зараз…'], cave: ['Тут так затишно.', 'Печера — готова спальня.'],
+                idle: ['Зззз…', 'Дай прилягти хвилинку.'], kill: ['Ой, вже? Ну добре.', 'Це було швидко.'], feed: ['Ммм, і спатки…', 'Смачно. Тепер солодко спати.'], love: ['З тобою навіть спати затишно.', 'Лишайся поруч…'], sad: ['Мені самотньо без тебе…', 'Я тихенько посплю тут.'] } },
+            { id: 'swt', n: 'Ласкавий', ico: '💗', col: '#ff9ac8', L: {
+                sum: ['Я так скучив!', 'Привіт, мій друже!'], lvl: ['Це все завдяки тобі!', 'Я стараюсь для тебе!'], low: ['Ні! Тобі боляче?!', 'Я тебе захищу!'],
+                boss: ['Страшно… але я з тобою!', 'Ти найсміливіший!'], night: ['Не бійся, я з тобою.', 'Зорі такі гарні…'], dawn: ['Добрий ранок, друже!', 'Нове сонечко для нас!'],
+                rain: ['Не змокни, друже!', 'Дощик… тримайся ближче.'], snow: ['Ти не змерз?', 'Сніжинки як малі зорі.'], cave: ['Тримайся за мене!', 'Я свічу тобі дорогу.'],
+                idle: ['Погладиш мене?', 'Ходімо кудись разом?'], kill: ['Ти був чудовий!', 'Мій герой!'], feed: ['Ти найдобріший!', 'Дякую-дякую!'], love: ['Ти мій найкращий друг.', 'Я тебе дуже люблю!'], sad: ['Ти мене забув?', 'Побудь зі мною трохи…'] } },
+            { id: 'jst', n: 'Жартівник', ico: '🎭', col: '#ffd86b', L: {
+                sum: ['А ось і я! Оплески!', 'Скучили за мною?'], lvl: ['Новий рівень, ті ж жарти!', 'Я виріс. Жартую… ні.'], low: ['Це не смішно! Ну… трохи.', 'Тримайся, герою!'],
+                boss: ['Це він такий грізний? Ха!', 'Здається, йому треба спа.'], night: ['Ніч — кращий час для жартів.', 'Темно, як у печері у шахтаря!'], dawn: ['Сонце встало раніше за мене.', 'Ранок! Ну, майже.'],
+                rain: ['Дощ платить по рахунках!', 'Хмара вирішила поплакати.'], snow: ['Сніг: зима повертає борги.', 'Снігова бабця вийшла в люди!'], cave: ['Гей, тут лунає мій сміх!', 'Темно — не видно мого шарму.'],
+                idle: ['Ми працюємо чи позуємо?', 'Хтось знає анекдот?'], kill: ['Шоу тривало недовго.', 'Він не оцінив мій гумор.'], feed: ['Дякую, шефе, дуже смачно!', 'Хап! Де моя тарілка?'], love: ['Ти — моя найкраща публіка.', 'З тобою кожен день — жарт.'], sad: ['Ніхто не сміється…', 'Може, розповісти тобі жарт?'] } },
+            { id: 'gru', n: 'Буркотун', ico: '😤', col: '#a8c0a0', L: {
+                sum: ['Знову я? Ну ходімо.', 'Гм. Покликав — прийшов.'], lvl: ['Ну… непогано.', 'Не те щоб я пишався.'], low: ['Кажу ж, обережно!', 'Ех, тебе й залишити не можна.'],
+                boss: ['Бачив і гірших. Нібито.', 'Тільки не лізь першим!'], night: ['Ніч. Ще й холодно.', 'Знову темно. Чудово.'], dawn: ['Ранок. Могло бути гірше.', 'Ну, світає. Мовчу.'],
+                rain: ['Мокро. Як завжди.', 'Дощ. Звісно, дощ.'], snow: ['Холодно. І нащо мені це?', 'Сніг. Просто чудово.'], cave: ['Темно. Сподіваюсь, не заблукаємо.', 'Ну й нора…'],
+                idle: ['Ми йдемо чи ні?', 'Я не люблю чекати.'], kill: ['Ну й нехай.', 'Мало було.'], feed: ['Непогано. Дякую.', 'Їжа гідна. Ну майже.'], love: ['Ти… гаразд, ти непоганий.', 'Лишайся. Не дякуй.'], sad: ['Ти пропав. Не питаю чому.', 'Я не сумую. Просто кажу.'] } }
+        ];
+        const trait = f => TR[hash(String(f.id) + '|' + f.nm + '|' + f.a + '|' + f.b) % TR.length];
+        const MOODS = [[75, '😊', 'Щасливий'], [50, '🙂', 'Задоволений'], [25, '😐', 'Спокійний'], [0, '😟', 'Сумує']];
+        const mood = f => { const m = f.md == null ? 55 : f.md; for (const q of MOODS) if (m >= q[0]) return q; return MOODS[3]; };
+        const getMd = f => { if (f.md == null) f.md = 55; return f.md; };
+        const addMd = (f, d) => { if (f) f.md = clamp(getMd(f) + d, 0, 100); };
+
+        // ---------- бульбашка ----------
+        const B = { txt: '', ico: '', t: 0, life: 0, col: '#fff', w: 0, last: -1e9, lastEv: -1e9, fid: -1 };
+        const now = () => performance.now();
+        function say(f, ev, force) {
+            if (!talk || !f || !V21.ent || V21.mounted && ev !== 'lvl') return;
+            const tn = now(), gap = force ? 2500 : 24000 + (hash(String(B.n = (B.n || 0) + 1)) % 16000);
+            if (tn - B.last < (force ? 2500 : gap)) return;
+            const T = trait(f), pool = T.L[ev]; if (!pool) return;
+            B.txt = pool[Math.floor(Math.random() * pool.length)]; B.ico = ev === 'love' ? '💗' : ev === 'sad' ? '💧' : ev === 'idle' && T.id === 'coz' ? '💤' : T.ico; B.col = T.col;
+            B.t = 0; B.life = 3600 + B.txt.length * 38; B.w = 0; B.last = tn; B.fid = f.id; B.t0 = tn;
+        }
+        // ---------- малювання ----------
+        const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+        const eob = t => { const s = 1.70158; t -= 1; return t * t * ((s + 1) * t + s) + 1; };
+        Z.DRAW.push(function () {
+            if (!B.txt) return; const f = famAct(), E = V21.ent; if (!f || !E || f.id !== B.fid) { B.txt = ''; return; }
+            const age = now() - B.t0; if (age > B.life) { B.txt = ''; return; }
+            const pop = clamp(age / 260, 0, 1), fade = clamp((B.life - age) / 420, 0, 1), sc = pop < 1 ? eob(pop) : 1;
+            const c = ctx; c.font = '700 12px "Segoe UI",system-ui,sans-serif'; if (!B.w) B.w = c.measureText(B.txt).width;
+            const w = B.w + 38, h = 28, stg = (typeof famStage === 'function' ? FAM_STAGE_S[famStage(f.lv)] : 1), bob = Math.sin(age / 340) * 2;
+            const x = E.x, y = E.y - 52 * stg * 1.1 - 34 + bob;
+            c.save(); c.globalAlpha = fade; c.translate(x, y); c.scale(sc, sc);
+            c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 10; c.shadowOffsetY = 3;
+            rr(c, -w / 2, -h, w, h, 11); c.fillStyle = 'rgba(14,22,34,.92)'; c.fill(); c.shadowColor = 'transparent';
+            c.lineWidth = 1.6; c.strokeStyle = B.col; c.stroke();
+            c.beginPath(); c.moveTo(-6, -1); c.lineTo(0, 8); c.lineTo(6, -1); c.closePath(); c.fillStyle = 'rgba(14,22,34,.92)'; c.fill();
+            c.beginPath(); c.moveTo(-6, -0.5); c.lineTo(0, 8); c.lineTo(6, -0.5); c.strokeStyle = B.col; c.stroke();
+            c.fillStyle = '#fff6dc'; c.textBaseline = 'middle'; c.textAlign = 'left'; c.fillText(B.txt, -w / 2 + 29, -h / 2 + 1);
+            c.font = '15px "Segoe UI Emoji","Apple Color Emoji",sans-serif'; c.fillText(B.ico, -w / 2 + 8, -h / 2 + 1);
+            c.restore();
+        });
+
+        // ---------- події ----------
+        const ST = { f: 0, night: null, rain: null, cave: null, low: false, boss: false, idleT: 0, px: 0, py: 0, kills: 0, mount: false, sec: 0, ev: -1e9 };
+        const weatherNow = () => { try { const S = window.__zlive && window.__zlive.S; return S && S.I > 0.35 ? S.kind : null; } catch (e) { return null; } };
+        const isNight = () => { try { return Math.sin(gameTime) <= 0; } catch (e) { return false; } };
+        const inCave = () => { try { const col = Math.floor((player.x + 12) / 32), sf = surfaceHeights && surfaceHeights[col] != null ? surfaceHeights[col] : 30; return player.y / 32 > sf + 14; } catch (e) { return false; } };
+        function sayIf(f, ev, force) { try { say(f, ev, force); } catch (e) { } }
+        Z.TICK.push(() => {
+            if (++ST.f % 20) return; const f = famAct(), E = V21.ent;
+            if (!f || !E) { // у кишені: настрій повільно вертається до спокою
+                if (ST.f % 120 === 0) for (const q of V21.fam) { const m = getMd(q); if (m > 45) q.md = Math.max(45, m - 0.25); else if (m < 45) q.md = Math.min(45, m + 0.1); }
+                return;
+            }
+            ST.sec += 20 / 60; const m = getMd(f);
+            // раз на секунду: мирна компанія тішить; бій і їзда — трохи більше
+            if (ST.sec >= 1) { const n = Math.floor(ST.sec); ST.sec -= n; addMd(f, (m < 80 ? 0.07 : 0.01) * n + (V21.mounted ? 0.05 : 0) * n); }
+            const nt = isNight(), wx = weatherNow(), cv = inCave(), low = player.health > 0 && player.health / player.maxHealth < 0.3, bs = (typeof rpgBosses !== 'undefined' && rpgBosses.length > 0) || (typeof boss !== 'undefined' && !!boss);
+            if (ST.night !== null && nt !== ST.night) sayIf(f, nt ? 'night' : 'dawn');
+            if (ST.rain !== null && wx !== ST.rain && wx) sayIf(f, wx === 'snow' ? 'snow' : 'rain');
+            if (ST.cave !== null && cv && !ST.cave) sayIf(f, 'cave');
+            if (low && !ST.low) { sayIf(f, 'low', true); addMd(f, -2); }
+            if (bs && !ST.boss) sayIf(f, 'boss', true); if (!bs && ST.boss) addMd(f, 4);
+            if (V21.mounted && !ST.mount) addMd(f, 1);
+            ST.night = nt; ST.rain = wx; ST.cave = cv; ST.low = low; ST.boss = bs; ST.mount = V21.mounted;
+            // простій: гравець стоїть, фамільяр теж
+            const moved = Math.abs(player.x - ST.px) + Math.abs(player.y - ST.py) > 6; ST.px = player.x; ST.py = player.y;
+            if (moved) ST.idleT = 0; else ST.idleT += 20 / 60;
+            if (ST.idleT > 22) { ST.idleT = 0; sayIf(f, getMd(f) < 25 ? 'sad' : 'idle'); }
+            // настрій як причина для рідкої репліки
+            if (ST.f % 1200 === 0) { const mm = getMd(f); if (mm >= 85) { sayIf(f, 'love'); try { createParticles(E.x, E.y - 40, '#ff9ac8', 8, 1.6, 3, 40); } catch (e) { } } else if (mm < 22) sayIf(f, 'sad'); }
+        });
+        // ---------- хуки ----------
+        famSummon = (function (o) { return function (i) { const r = o.apply(this, arguments); try { const f = V21.fam[i]; if (f && V21.act === i) { ST.idleT = 0; ST.night = isNight(); ST.rain = weatherNow(); ST.cave = inCave(); ST.boss = false; ST.low = false; if (getMd(f) < 25) { B.last = -1e9; sayIf(f, 'sad', true); } else sayIf(f, 'sum', true); addMd(f, 0.5); } } catch (e) { } return r; }; })(famSummon);
+        famLevelUp = (function (o) { return function (f) { const r = o.apply(this, arguments); try { addMd(f, 6); if (famAct() === f) sayIf(f, 'lvl', true); } catch (e) { } return r; }; })(famLevelUp);
+        famXp = (function (o) { return function (f, n) {
+            try { if (f && n > 0) { if (getMd(f) >= 75) n *= 1.05; if (n >= 100) { addMd(f, 8); if (famAct() === f) sayIf(f, 'feed', true); } else if (n >= 2 && famAct() === f) { addMd(f, 0.35); if (++ST.kills % 9 === 0) sayIf(f, 'kill'); } } } catch (e) { }
+            return o.call(this, f, n); }; })(famXp);
+        // ---------- збереження настрою ----------
+        rpgSave = (function (o) { return function () { const d = o.apply(this, arguments); try { if (d && d.fam && d.fam.list) for (const x of d.fam.list) { const f = V21.fam.find(q => q.id === x.id); if (f && f.md != null) x.md = Math.round(f.md); } } catch (e) { } return d; }; })(rpgSave);
+        rpgLoad = (function (o) { return function (d) { const r = o.apply(this, arguments); try { const z = d && d.fam; if (z && z.list) for (const x of z.list) { const f = V21.fam.find(q => q.id === x.id); if (f && typeof x.md === 'number') f.md = clamp(x.md, 0, 100); } B.txt = ''; } catch (e) { } return r; }; })(rpgLoad);
+        // ---------- HUD: настрій + перемикач реплік ----------
+        const st = document.createElement('style'); st.textContent = '#v21-hud .zfc{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:10px;color:#bfeee0}#v21-hud .zfc button{pointer-events:auto;cursor:pointer;border:1px solid #2a7a6a;background:rgba(10,30,34,.8);color:#cfeee4;border-radius:7px;padding:0 5px;font-size:10px;line-height:15px;transition:transform .15s,background .15s}#v21-hud .zfc button:hover{transform:scale(1.12);background:#143a3a}#v21-hud .zfc button.off{opacity:.45;text-decoration:line-through}'
+            + '.zfc-card{margin:8px 0;padding:9px 11px;border-radius:11px;background:linear-gradient(160deg,rgba(14,40,44,.85),rgba(8,22,26,.85));border:1.5px solid var(--c,#2a7a6a);font-size:12px;line-height:1.5;color:#d6f3ea;animation:zfcIn .35s ease both}.zfc-card b{color:var(--c,#7fd6ff)}.zfc-bar{height:7px;border-radius:4px;background:#03090c;margin-top:5px;overflow:hidden}.zfc-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#ff9ac8,#ffd86b);transition:width .5s}@keyframes zfcIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}';
+        document.head.appendChild(st);
+        let lastH = '';
+        v21Hud = (function (o) { return function () {
+            const r = o.apply(this, arguments);
+            try {
+                const h = document.getElementById('v21-hud'), f = famAct(); if (!h || !f || !V21.ent) return r;
+                let z = h.querySelector('.zfc');
+                if (!z) {
+                    z = document.createElement('div'); z.className = 'zfc'; z.innerHTML = '<span></span><button title="Репліки фамільяра (вкл/викл)">💬</button>'; h.querySelector('div') && h.querySelector('div').appendChild(z) || h.appendChild(z);
+                    z.querySelector('button').addEventListener('click', e => { e.stopPropagation(); talk = talk ? 0 : 1; try { localStorage.setItem(KEY, talk ? '0' : '1'); } catch (x) { } if (!talk) B.txt = ''; z.querySelector('button').classList.toggle('off', !talk); });
+                    z.querySelector('button').classList.toggle('off', !talk);
+                }
+                const T = trait(f), M = mood(f), tx = T.ico + ' ' + T.n + ' · ' + M[1] + ' ' + M[2]; if (tx !== lastH) { lastH = tx; z.firstChild.textContent = tx; }
+            } catch (e) { }
+            return r; }; })(v21Hud);
+        // ---------- вкладка «Фамільяри»: картка характеру ----------
+        famUi = (function (o) { return function () {
+            const r = o.apply(this, arguments);
+            try {
+                const rt = document.getElementById('fm-right'), f = V21.fam[V21.sel]; if (!rt || !f || V21.tab !== 'fam' || rt.querySelector('.zfc-card')) return r;
+                const T = trait(f), M = mood(f), md = Math.round(getMd(f)), h = rt.querySelector('h3'), small = h && h.nextElementSibling;
+                const d = document.createElement('div'); d.className = 'zfc-card'; d.style.setProperty('--c', T.col);
+                d.innerHTML = '<b>' + T.ico + ' ' + T.n + '</b> · ' + M[1] + ' ' + M[2] + ' (' + md + ')<div class="zfc-bar"><i style="width:' + md + '%"></i></div><span style="opacity:.75;font-size:10.5px">' + (md >= 75 ? 'Щасливий фамільяр здобуває на 5% більше досвіду.' : 'Спільні походи, рівні й гостинці підіймають настрій. Штрафів немає.') + '</span>';
+                (small || h || rt.firstChild).after(d);
+            } catch (e) { }
+            return r; }; })(famUi);
+        window.__zfc = { trait, mood, B, say: (ev) => { const f = famAct(); if (f) say(f, ev, true); } };
+    } catch (e) { console.error('zfamchar', e); }
+})();
+// ===== v46.63: РЕЖИМ ФОТОГРАФІЇ (F8) — ховає інтерфейс, фільтри, віньєтка, рамки, знімок у високій якості =====
+// Усе малюється лише поки режим увімкнено; жодної роботи в кадрі. Знімок потрапляє в альбом (F4) і його можна зберегти файлом.
+(function () {
+    'use strict';
+    try {
+        const cv = document.getElementById('gameCanvas'); if (!cv) return;
+        const FIL = [
+            ['none', 'Звичайний', '', 'linear-gradient(135deg,#6ac,#9d6)'],
+            ['warm', 'Теплий', 'sepia(.25) saturate(1.2) hue-rotate(-8deg) brightness(1.04)', 'linear-gradient(135deg,#fb7,#fd9)'],
+            ['cold', 'Холодний', 'saturate(1.1) hue-rotate(14deg) brightness(.98) contrast(1.05)', 'linear-gradient(135deg,#7bd,#9cf)'],
+            ['cine', 'Кіно', 'contrast(1.2) saturate(.85) brightness(.95) sepia(.12)', 'linear-gradient(135deg,#376,#c85)'],
+            ['retro', 'Ретро', 'sepia(.55) contrast(1.1) saturate(.8)', 'linear-gradient(135deg,#a86,#dc9)'],
+            ['noir', 'Нуар', 'grayscale(1) contrast(1.25) brightness(.95)', 'linear-gradient(135deg,#222,#bbb)'],
+            ['dream', 'Мрія', 'saturate(1.35) brightness(1.1) contrast(.92) blur(.5px)', 'linear-gradient(135deg,#f9c,#9cf)'],
+            ['vivid', 'Яскравий', 'saturate(1.6) contrast(1.1)', 'linear-gradient(135deg,#f55,#5f8)']
+        ];
+        const FR = [['none', 'Без рамки'], ['pol', 'Полароїд'], ['cin', 'Кіно'], ['gold', 'Золота']];
+        let CF = { f: 'none', v: 35, r: 'none' }; try { const j = JSON.parse(localStorage.getItem('zph_cfg') || 'null'); if (j) { if (FIL.some(a => a[0] === j.f)) CF.f = j.f; if (j.v >= 0 && j.v <= 100) CF.v = j.v; if (FR.some(a => a[0] === j.r)) CF.r = j.r; } } catch (e) { }
+        const S = { on: false, last: 0, busy: 0 };
+        const fOf = id => (FIL.find(a => a[0] === id) || FIL[0])[2];
+        const playing = () => { try { return gameState === 'PLAYING'; } catch (e) { return false; } };
+
+        const st = document.createElement('style'); st.textContent = `
+html.zph body>*:not(#gameCanvas):not([id^=zph-]):not(script):not(style){opacity:0!important;pointer-events:none!important;transition:opacity .35s ease}
+body>*{transition:opacity .35s ease}
+#zph-ov,#zph-vg,#zph-fr{position:fixed;inset:0;pointer-events:none;z-index:8800;display:none}
+html.zph #zph-ov,html.zph #zph-vg,html.zph #zph-fr{display:block}
+#zph-vg{background:radial-gradient(ellipse at center,transparent calc(80% - var(--v,35)*.55%),rgba(0,0,0,calc(var(--v,35)/100*.85)) 125%);transition:opacity .4s;animation:zphF .5s ease both}
+#zph-fr{transition:all .35s cubic-bezier(.2,.9,.3,1.2);box-sizing:border-box}
+#zph-fr.pol{border:3.5vmin solid #f6f1e4;border-bottom-width:11vmin;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+#zph-fr.cin{border:0 solid #000;border-top-width:11vh;border-bottom-width:11vh}
+#zph-fr.gold{border:7px double #e8c26a;box-shadow:inset 0 0 0 3px rgba(80,50,10,.5),inset 0 0 24px rgba(232,194,106,.35)}
+#zph-fr.none{border-width:0}
+#zph-ov::before,#zph-ov::after{content:"";position:absolute;left:0;right:0;height:0;background:#000;transition:height .45s cubic-bezier(.2,.8,.2,1)}
+#zph-ov::before{top:0}#zph-ov::after{bottom:0}
+html.zph #zph-ov::before,html.zph #zph-ov::after{height:5vh}
+@keyframes zphF{from{opacity:0}to{opacity:1}}
+#zph-ui{position:fixed;left:50%;bottom:calc(5vh + 12px);transform:translate(-50%,140%);z-index:8900;display:flex;gap:14px;align-items:flex-end;padding:11px 14px 12px;border-radius:16px;background:rgba(10,16,24,.86);border:1.5px solid #3d6a9a;box-shadow:0 10px 36px rgba(0,0,0,.55),0 0 20px rgba(110,170,255,.18);color:#dbe8ff;font:600 11px "Segoe UI",system-ui,sans-serif;transition:transform .5s cubic-bezier(.2,.9,.25,1.15),opacity .3s;opacity:0;pointer-events:none;max-width:96vw;user-select:none}
+html.zph #zph-ui{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+#zph-ui .g{display:flex;flex-direction:column;gap:5px}#zph-ui .gt{opacity:.65;font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+#zph-ui .row{display:flex;gap:6px;flex-wrap:wrap;max-width:430px}
+#zph-ui .chip{display:flex;align-items:center;gap:5px;padding:3px 8px 3px 3px;border-radius:14px;border:1.5px solid #2d4a6a;background:#0e1826;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+#zph-ui .chip i{width:16px;height:16px;border-radius:50%;display:block}
+#zph-ui .chip:hover{transform:translateY(-2px);border-color:#6aa8ff}#zph-ui .chip.on{border-color:#ffd86b;background:#1c2a44;box-shadow:0 0 10px rgba(255,216,107,.3)}
+#zph-ui .fr{padding:3px 9px;border-radius:12px;border:1.5px solid #2d4a6a;background:#0e1826;cursor:pointer;transition:transform .15s,border-color .15s}#zph-ui .fr:hover{transform:translateY(-2px)}#zph-ui .fr.on{border-color:#ffd86b;background:#1c2a44}
+#zph-ui input[type=range]{width:120px;accent-color:#ffd86b}
+#zph-ui .shot{width:58px;height:58px;border-radius:50%;border:4px solid #fff;background:radial-gradient(circle at 35% 30%,#ff7a6a,#c02820);cursor:pointer;box-shadow:0 0 0 3px rgba(255,255,255,.25),0 4px 14px rgba(0,0,0,.5);transition:transform .12s;font-size:22px}
+#zph-ui .shot:hover{transform:scale(1.07)}#zph-ui .shot:active{transform:scale(.92)}
+#zph-ui .sm{padding:4px 9px;border-radius:10px;border:1.5px solid #2d4a6a;background:#0e1826;color:#cfe0ff;cursor:pointer;font:600 11px inherit}#zph-ui .sm:hover{border-color:#6aa8ff}
+#zph-hint{position:fixed;top:calc(5vh + 10px);left:50%;transform:translate(-50%,-30px);z-index:8900;padding:4px 12px;border-radius:12px;background:rgba(10,16,24,.8);color:#cfe0ff;font:600 11px "Segoe UI",system-ui,sans-serif;opacity:0;transition:all .5s;pointer-events:none}
+html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
+#zph-th{position:fixed;right:18px;bottom:18px;width:170px;z-index:9000;border:6px solid #f6f1e4;border-bottom-width:20px;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.6);transform:translate(0,140%) rotate(8deg);transition:transform .6s cubic-bezier(.2,.9,.3,1.1);pointer-events:none;background:#000}
+#zph-th.show{transform:translate(0,0) rotate(-3deg)}#zph-th img{display:block;width:100%}
+#zph-fl{position:fixed;inset:0;z-index:9400;background:#fff;opacity:0;pointer-events:none;transition:opacity .4s ease-out}`;
+        document.head.appendChild(st);
+        const mk = (id, tag) => { const e = document.createElement(tag || 'div'); e.id = id; document.body.appendChild(e); return e; };
+        const ov = mk('zph-ov'), vg = mk('zph-vg'), fr = mk('zph-fr'), ui = mk('zph-ui'), hint = mk('zph-hint'), th = mk('zph-th'), fl = mk('zph-fl');
+        hint.textContent = 'РЕЖИМ ФОТОГРАФІЇ · Enter — знімок · F8 / Esc — вихід · рухайся, щоб скласти кадр';
+        th.innerHTML = '<img alt="">';
+        ui.innerHTML = '<div class="g"><div class="gt">Фільтр</div><div class="row" id="zph-fil"></div></div>'
+            + '<div class="g"><div class="gt">Віньєтка</div><input type="range" id="zph-v" min="0" max="100"><div class="gt" style="margin-top:4px">Рамка</div><div class="row" id="zph-fr2" style="max-width:240px"></div></div>'
+            + '<div class="g" style="align-items:center;gap:6px"><button class="shot" id="zph-shot" title="Зробити знімок (Enter)">📸</button><button class="sm" id="zph-dl" title="Зберегти останній знімок файлом">⬇ Файл</button></div>';
+        const fil = ui.querySelector('#zph-fil'), fr2 = ui.querySelector('#zph-fr2'), rng = ui.querySelector('#zph-v');
+        FIL.forEach(a => { const b = document.createElement('div'); b.className = 'chip'; b.dataset.k = a[0]; b.innerHTML = '<i style="background:' + a[3] + '"></i>' + a[1]; fil.appendChild(b); });
+        FR.forEach(a => { const b = document.createElement('div'); b.className = 'fr'; b.dataset.k = a[0]; b.textContent = a[1]; fr2.appendChild(b); });
+        function apply() {
+            fil.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.k === CF.f)); fr2.querySelectorAll('.fr').forEach(c => c.classList.toggle('on', c.dataset.k === CF.r));
+            rng.value = CF.v; vg.style.setProperty('--v', CF.v); fr.className = CF.r; cv.style.filter = S.on ? (fOf(CF.f) || '') : '';
+            try { localStorage.setItem('zph_cfg', JSON.stringify(CF)); } catch (e) { }
+        }
+        fil.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) { CF.f = c.dataset.k; apply(); } });
+        fr2.addEventListener('click', e => { const c = e.target.closest('.fr'); if (c) { CF.r = c.dataset.k; apply(); } });
+        rng.addEventListener('input', () => { CF.v = +rng.value; apply(); });
+        ['mousedown', 'mouseup', 'click', 'wheel', 'keydown', 'keyup'].forEach(t => ui.addEventListener(t, e => e.stopPropagation()));
+
+        function open() { if (S.on || !playing()) return; try { if (inventoryOpen) return; } catch (e) { } S.on = true; document.documentElement.classList.add('zph'); apply(); }
+        function close() { if (!S.on) return; S.on = false; document.documentElement.classList.remove('zph'); cv.style.filter = ''; th.classList.remove('show'); }
+        // ---------- знімок ----------
+        function compose() {
+            const W = Math.min(cv.width, 1280), H = Math.round(W * cv.height / cv.width), c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+            try { g.filter = fOf(CF.f) || 'none'; } catch (e) { } g.drawImage(cv, 0, 0, W, H); g.filter = 'none';
+            if (CF.v > 0) { const gr = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (.45 - CF.v / 100 * .15), W / 2, H / 2, Math.max(W, H) * .72); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,' + (CF.v / 100 * .85).toFixed(2) + ')'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+            let out = c;
+            if (CF.r === 'pol') { const m = Math.round(Math.min(W, H) * .035), bt = Math.round(Math.min(W, H) * .11), o = document.createElement('canvas'); o.width = W; o.height = H; const q = o.getContext('2d'); q.fillStyle = '#f6f1e4'; q.fillRect(0, 0, W, H); q.drawImage(c, 0, 0, W, H, m, m, W - 2 * m, H - m - bt); q.fillStyle = '#6b5f4a'; q.font = 'italic ' + Math.round(bt * .34) + 'px Georgia,serif'; q.textAlign = 'center'; q.fillText('GrogCraft · ' + new Date().toLocaleDateString('uk-UA'), W / 2, H - bt * .35); out = o; }
+            else if (CF.r === 'cin') { g.fillStyle = '#000'; const b = Math.round(H * .11); g.fillRect(0, 0, W, b); g.fillRect(0, H - b, W, b); }
+            else if (CF.r === 'gold') { g.strokeStyle = '#e8c26a'; g.lineWidth = 7; g.strokeRect(4, 4, W - 8, H - 8); g.lineWidth = 2; g.strokeRect(13, 13, W - 26, H - 26); }
+            return out;
+        }
+        async function shoot() {
+            const t = performance.now(); if (!S.on || t - S.last < 1200 || S.busy) return; S.last = t; S.busy = 1;
+            try {
+                fl.style.transition = 'none'; fl.style.opacity = .85; void fl.offsetWidth; fl.style.transition = 'opacity .45s ease-out'; fl.style.opacity = 0;
+                try { if (audioCtx) { noiseHit(.05, .25, 'highpass', 4000, 3000, .6); tone('square', 1800, 900, .06, .05); } } catch (e) { }
+                const out = compose(), url = out.toDataURL('image/jpeg', .88); S.url = url;
+                th.querySelector('img').src = url; th.classList.remove('show'); void th.offsetWidth; th.classList.add('show'); clearTimeout(S.tt); S.tt = setTimeout(() => th.classList.remove('show'), 3200);
+                if (window.__zmem) { window.__zGrabOv = url; const e = await window.__zmem.note('📸', 'Фото (режим фотографії)', '#9fd6ff', true, true); window.__zGrabOv = null; if (!e || !e.p) window.__zr && window.__zr.toast && window.__zr.toast('⚠ Не вдалося зберегти в альбом'); else window.__zr && window.__zr.toast && window.__zr.toast('📸 Знімок збережено в щоденнику (F4)'); }
+            } catch (e) { console.error('zphoto', e); } finally { S.busy = 0; }
+        }
+        ui.querySelector('#zph-shot').addEventListener('click', shoot);
+        ui.querySelector('#zph-dl').addEventListener('click', () => { if (!S.url) { shoot(); return; } try { const a = document.createElement('a'); a.href = S.url; a.download = 'GrogCraft_' + Date.now() + '.jpg'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { } });
+        addEventListener('keydown', e => {
+            if (e.code === 'F8') { e.preventDefault(); S.on ? close() : open(); }
+            else if (S.on && e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+            else if (S.on && (e.code === 'Enter' || e.code === 'NumpadEnter')) { e.preventDefault(); shoot(); }
+        }, true);
+        setInterval(() => { if (S.on && (!playing() || (typeof inventoryOpen !== 'undefined' && inventoryOpen))) close(); }, 400);
+        window.__zph = { open, close, shoot, compose, CF, S };
+    } catch (e) { console.error('zphoto', e); }
+})();
+// ===== v46.63: НАВЧАННЯ для нових гравців — «Перші кроки» (7 кроків, самі відмічаються, малі нагороди) =====
+// Баланс: сумарна нагорода скромна (факели, хліб, трохи дерева). Можна пропустити (✕) і повернути з меню паузи. Перевірка — раз на 10 кадрів.
+(function () {
+    'use strict';
+    try {
+        const Z = window.__zr; if (!Z || !Z.TICK) return;
+        const LS = 'znew_v1';
+        let P = { d: 0, s: [0, 0, 0, 0, 0, 0, 0], hide: 0, sk: 0 }; try { const j = JSON.parse(localStorage.getItem(LS) || 'null'); if (j && Array.isArray(j.s)) P = Object.assign(P, j); } catch (e) { }
+        const save = () => { try { localStorage.setItem(LS, JSON.stringify(P)); } catch (e) { } };
+        const STEPS = [
+            { i: '🚶', t: 'Пройдись', k: 'A / D', h: 'Рухайся вліво і вправо', r: ['wood', 3] },
+            { i: '🦘', t: 'Стрибни', k: 'W / Пробіл', h: 'Перестрибни через перешкоду', r: ['torch', 2] },
+            { i: '⛏', t: 'Добудь блок', k: 'ЛКМ', h: 'Утримуй кнопку на блоці', r: ['bread', 1] },
+            { i: '🧱', t: 'Постав блок', k: 'ПКМ', h: 'Обери блок на панелі 1–9 і постав', r: ['torch', 2] },
+            { i: '🎒', t: 'Відкрий інвентар', k: 'E', h: 'Тут навики, фамільяри і крафт', r: ['bread', 1] },
+            { i: '🔨', t: 'Створи предмет', k: 'Рецепт', h: 'У вікні інвентарю натисни на рецепт', r: ['torch', 3] },
+            { i: '📸', t: 'Зроби фото', k: 'F2 / F8', h: 'F8 — режим фотографії з фільтрами', r: ['bread', 2] }
+        ];
+        const playing = () => { try { return gameState === 'PLAYING'; } catch (e) { return false; } };
+        const sum = () => { let n = 0; try { for (const s of inventory) if (s) n += s.count; } catch (e) { } return n; };
+        const st = document.createElement('style'); st.textContent = `
+#znw{position:fixed;right:14px;bottom:104px;width:262px;z-index:7;color:#e8f3ff;font:600 12px "Segoe UI",system-ui,sans-serif;background:linear-gradient(160deg,rgba(14,26,44,.93),rgba(8,16,28,.93));border:2px solid #4a86c8;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(100,170,255,.2);padding:9px 10px 10px;transform:translateX(120%);opacity:0;transition:transform .55s cubic-bezier(.2,.9,.25,1.12),opacity .3s;pointer-events:auto;display:none}
+#znw.on{display:block}#znw.in{transform:none;opacity:1}
+#znw .hd{display:flex;align-items:center;gap:6px;font-size:13px}#znw .hd b{flex:1;color:#ffd86b}#znw .hd span{cursor:pointer;opacity:.6;padding:0 4px;transition:opacity .15s,transform .15s}#znw .hd span:hover{opacity:1;transform:scale(1.2)}
+#znw .pb{height:6px;border-radius:3px;background:#06101c;margin:6px 0 7px;overflow:hidden}#znw .pb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5fd0ff,#ffd86b);border-radius:3px;transition:width .6s cubic-bezier(.2,.9,.3,1)}
+#znw .st{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:9px;margin:2px 0;opacity:.55;transition:all .35s}
+#znw .st.cur{opacity:1;background:rgba(80,140,220,.2);box-shadow:inset 0 0 0 1px #4a86c8;animation:znwP 1.8s ease-in-out infinite}
+#znw .st.ok{opacity:.8;color:#9be8a8}#znw .st.ok .ck{background:#2a9a54;border-color:#2a9a54;transform:scale(1)}
+#znw .ck{width:16px;height:16px;border-radius:50%;border:2px solid #4a6a8a;flex:none;font-size:10px;line-height:12px;text-align:center;color:#fff;transition:all .35s cubic-bezier(.2,1.6,.4,1)}
+#znw .st small{display:block;white-space:normal;font-weight:500;opacity:.75;font-size:10px;margin-top:1px}#znw kbd{background:#0e2038;border:1px solid #3d6a9a;border-radius:4px;padding:0 4px;font:700 10px inherit;color:#bfe0ff;margin-left:4px}
+@keyframes znwP{0%,100%{box-shadow:inset 0 0 0 1px #4a86c8}50%{box-shadow:inset 0 0 0 1px #8fd0ff,0 0 10px rgba(110,180,255,.35)}}
+#znw-done{position:fixed;left:50%;top:22%;transform:translate(-50%,-40px) scale(.7);opacity:0;z-index:9100;padding:14px 26px;border-radius:16px;background:linear-gradient(160deg,#1c3a66,#0c1a30);border:2px solid #ffd86b;color:#fff;font:700 18px "Segoe UI",system-ui,sans-serif;text-align:center;box-shadow:0 0 40px rgba(255,216,107,.45);transition:all .6s cubic-bezier(.2,1.4,.35,1);pointer-events:none}
+#znw-done.on{opacity:1;transform:translate(-50%,0) scale(1)}#znw-done small{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:4px}`;
+        document.head.appendChild(st);
+        const box = document.createElement('div'); box.id = 'znw'; document.body.appendChild(box);
+        const dn = document.createElement('div'); dn.id = 'znw-done'; document.body.appendChild(dn);
+        const nm = { wood: 'дерево', torch: 'факели', bread: 'хліб' };
+        let built = 0, shown = '', min = 0;
+        function render() {
+            const n = P.s.filter(Boolean).length, cur = P.s.indexOf(0), sig = P.s.join('') + min + P.hide;
+            if (sig === shown) return; shown = sig;
+            box.innerHTML = '<div class="hd"><span>🎓</span><b>Перші кроки · ' + n + '/' + STEPS.length + '</b><span id="znw-m" title="Згорнути">' + (min ? '▢' : '–') + '</span><span id="znw-x" title="Пропустити навчання">✕</span></div><div class="pb"><i style="width:' + n / STEPS.length * 100 + '%"></i></div>'
+                + (min ? '' : STEPS.map((s, i) => '<div class="st ' + (P.s[i] ? 'ok' : i === cur ? 'cur' : '') + '"><div class="ck">' + (P.s[i] ? '✓' : '') + '</div><div style="flex:1">' + s.i + ' ' + s.t + '<kbd>' + s.k + '</kbd>' + (i === cur ? '<small>' + s.h + ' · 🎁 ' + s.r[1] + ' ' + nm[s.r[0]] + '</small>' : '') + '</div></div>').join(''));
+            box.querySelector('#znw-m').onclick = () => { min = min ? 0 : 1; render(); }; box.querySelector('#znw-x').onclick = () => { P.hide = 1; P.sk = 1; save(); hide(); };
+        }
+        function show() { if (P.hide) return; box.classList.add('on'); shown = ''; render(); requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add('in'))); }
+        function hide() { box.classList.remove('in'); setTimeout(() => { if (!box.classList.contains('in')) box.classList.remove('on'); }, 600); }
+        function complete(i) {
+            if (P.s[i]) return; P.s[i] = 1; const s = STEPS[i]; save();
+            try { giveItem(s.r[0], s.r[1]); } catch (e) { } D.inv = sum();
+            try { Z.toast('🎓 ' + s.t + ' ✓  +' + s.r[1] + ' ' + nm[s.r[0]]); } catch (e) { }
+            try { createParticles(player.x + 12, player.y, '#ffd86b', 14, 2.2, 3, 40); } catch (e) { }
+            try { if (audioCtx) tone('triangle', 660, 990, .16, .07); } catch (e) { }
+            shown = ''; render();
+            if (P.s.every(Boolean)) { P.d = 1; save(); dn.innerHTML = '🎓 Навчання пройдено!<small>Тепер ти справжній мандрівник. Далі — самостійно!</small>'; dn.classList.add('on'); try { giveItem('bread', 3); } catch (e) { } try { createParticles(player.x + 12, player.y - 20, '#9be8ff', 30, 3.2, 3, 60); } catch (e) { } setTimeout(() => { dn.classList.remove('on'); hide(); }, 4200); }
+        }
+        // ---------- детектори ----------
+        var D = { f: 0, x0: null, inv: -1, grown: 0, craft: 0, key: 0, invOpen: 0 };
+        addEventListener('keydown', e => { if (e.code === 'F2' || e.code === 'F8') D.key = 1; }, true);
+        try { craftItem = (function (o) { return function () { const b = sum(); const r = o.apply(this, arguments); D.craft = 1; return r; }; })(craftItem); } catch (e) { }
+        Z.TICK.push(() => {
+            if (P.d || P.hide) { if (box.classList.contains('in') && P.d === 1 && !dn.classList.contains('on')) hide(); return; }
+            if (++D.f % 10) return; if (!playing()) { if (box.classList.contains('in')) hide(); D.x0 = null; return; }
+            if (!box.classList.contains('in')) { show(); }
+            if (D.x0 == null) { D.x0 = player.x; D.inv = sum(); }
+            const cur = P.s.indexOf(0); if (cur < 0) return;
+            const s = sum();
+            switch (cur) {
+                case 0: if (Math.abs(player.x - D.x0) > 90) complete(0); break;
+                case 1: if (player.vy < -4 || (!player.onGround && player.vy < -1)) complete(1); break;
+                case 2: if (s > D.inv) complete(2); break;
+                case 3: if (s < D.inv) complete(3); break;
+                case 4: if (typeof inventoryOpen !== 'undefined' && inventoryOpen) complete(4); break;
+                case 5: if (D.craft) complete(5); break;
+                case 6: if (D.key) complete(6); break;
+            }
+            D.inv = sum();
+        });
+        // ---------- кнопка в меню паузи ----------
+        try {
+            const pm = document.getElementById('pause-menu'), ex = pm && pm.querySelector('.danger-btn');
+            if (pm && ex) { const b = document.createElement('button'); b.className = 'menu-btn'; b.textContent = '🎓 Навчання — перші кроки'; b.onclick = () => { P = { d: 0, s: [0, 0, 0, 0, 0, 0, 0], hide: 0, sk: 0 }; save(); D.x0 = null; D.craft = 0; D.key = 0; D.grown = 0; try { resumeGame && resumeGame(); } catch (e) { } show(); }; ex.parentNode.insertBefore(b, ex); }
+        } catch (e) { }
+        window.__znew = { P, complete, show, STEPS };
+    } catch (e) { console.error('znew', e); }
+})();
+// ===== v46.63: МОДИ З ПЕРЕВІРКОЮ ПІДПИСУ (.zgmod) =====
+// Формат файлу: {"fmt":1,"body":"<JSON-рядок>","pub":"<SPKI base64>","sig":"<ECDSA P-256 SHA-256, P1363, base64>"}
+// Підпис перевіряється при додаванні ТА при кожному запуску. Автору довіряють за відбитком ключа (SHA-256). Дані-моди (рецепти, привітання) безпечні;
+// скриптові моди мають повний доступ до гри — вмикаються тільки після окремого попередження. Бюджет часу: мод, що з'їдає >2 мс/кадр, вимикається.
+(function () {
+    'use strict';
+    try {
+        const sub = window.crypto && crypto.subtle; if (!sub || !window.indexedDB) return;
+        const TK = 'zmod_trust', MAXB = 262144;
+        const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+        const hex = u => Array.from(new Uint8Array(u)).map(x => x.toString(16).padStart(2, '0')).join('');
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fpOf = async pub => hex(await sub.digest('SHA-256', b64(pub))).slice(0, 16).replace(/(.{4})/g, '$1-').slice(0, 19);
+        let trust = []; try { trust = JSON.parse(localStorage.getItem(TK) || '[]'); } catch (e) { }
+        const saveTrust = () => { try { localStorage.setItem(TK, JSON.stringify(trust)); } catch (e) { } };
+        // ---------- сховище ----------
+        let db = null;
+        const open = () => db ? Promise.resolve(db) : new Promise(res => { try { const r = indexedDB.open('grogcraft_mods', 1); r.onupgradeneeded = () => r.result.createObjectStore('m', { keyPath: 'id' }); r.onsuccess = () => { db = r.result; res(db); }; r.onerror = () => res(null); } catch (e) { res(null); } });
+        const all = async () => { const d = await open(); if (!d) return []; return new Promise(res => { const q = d.transaction('m').objectStore('m').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); };
+        const put = async m => { const d = await open(); if (!d) return; return new Promise(res => { const t = d.transaction('m', 'readwrite'); t.objectStore('m').put(m); t.oncomplete = () => res(); t.onerror = () => res(); }); };
+        const del = async id => { const d = await open(); if (!d) return; return new Promise(res => { const t = d.transaction('m', 'readwrite'); t.objectStore('m').delete(id); t.oncomplete = () => res(); t.onerror = () => res(); }); };
+        // ---------- перевірка ----------
+        async function verify(file) {
+            if (!file || file.fmt !== 1 || typeof file.body !== 'string' || typeof file.pub !== 'string' || typeof file.sig !== 'string') throw new Error('Невірний формат файлу');
+            if (file.body.length > MAXB) throw new Error('Файл завеликий (>256 КБ)');
+            const key = await sub.importKey('spki', b64(file.pub), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+            const ok = await sub.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, b64(file.sig), new TextEncoder().encode(file.body));
+            if (!ok) throw new Error('Підпис НЕ збігається — файл змінено або підроблено');
+            let b; try { b = JSON.parse(file.body); } catch (e) { throw new Error('Тіло моду — не JSON'); }
+            if (!b || typeof b.id !== 'string' || !/^[a-z0-9_.-]{3,40}$/.test(b.id)) throw new Error('Поле id: 3–40 символів a-z 0-9 _ . -');
+            if (typeof b.name !== 'string' || b.name.length > 40) throw new Error('Поле name відсутнє або задовге');
+            if (b.type !== 'data' && b.type !== 'script') throw new Error('type має бути data або script');
+            return { b, fp: await fpOf(file.pub) };
+        }
+        // ---------- застосування ----------
+        const A = { rec: {}, tick: [], on: {} }; // A.rec[id] = кількість доданих рецептів
+        const itemOk = id => { try { return typeof id === 'string' && id.length < 40 && (typeof itemSprites !== 'undefined') && itemSprites[id] !== undefined; } catch (e) { return false; } };
+        function applyData(b) {
+            const d = b.data || {}; let n = 0;
+            if (Array.isArray(d.recipes)) for (const r of d.recipes.slice(0, 30)) {
+                if (!r || !itemOk(r.result) || !r.req || typeof r.req !== 'object') continue; const cnt = Math.max(1, Math.min(64, r.count | 0 || 1)), req = {}; let ok = 1, tot = 0;
+                for (const k of Object.keys(r.req).slice(0, 6)) { const q = r.req[k] | 0; if (!itemOk(k) || q < 1 || q > 99) { ok = 0; break; } req[k] = q; tot += q; }
+                if (!ok || !Object.keys(req).length || tot > 200) continue; // баланс: дешевий «безкоштовний» крафт неможливий через ліміти
+                if (recipes.some(x => x.result === r.result && JSON.stringify(x.req) === JSON.stringify(req))) continue;
+                recipes.push({ result: r.result, count: cnt, req, mod: b.id }); n++;
+            }
+            A.rec[b.id] = n; if (typeof d.motd === 'string' && d.motd.length <= 120) A.motd = (A.motd || []).concat([[b.name, d.motd]]);
+            if (n) { try { if (typeof updateCraftingUI === 'function') updateCraftingUI(); } catch (e) { } }
+        }
+        function applyScript(b, rec) {
+            const TIME = { n: 0, t: 0 }, api = {
+                toast: t => { try { window.__zr.toast(String(t).slice(0, 120)); } catch (e) { } },
+                onTick: fn => { if (typeof fn === 'function' && A.tick.length < 40) A.tick.push({ id: b.id, fn, T: TIME }); },
+                version: '46.63'
+            };
+            try { new Function('api', '"use strict";' + String(b.code || '').slice(0, 60000))(api); } catch (e) { console.error('mod', b.id, e); api.toast('⚠ Мод «' + b.name + '»: помилка запуску'); }
+        }
+        window.__zr && window.__zr.TICK.push(() => { // бюджет часу
+            if (!A.tick.length) return; const t0 = performance.now();
+            for (let i = A.tick.length - 1; i >= 0; i--) { const q = A.tick[i], s = performance.now(); try { q.fn(); } catch (e) { A.tick.splice(i, 1); continue; } const dt = performance.now() - s; q.T.n++; q.T.t += dt; if (q.T.n >= 120) { if (q.T.t / q.T.n > 2) { A.tick.splice(i, 1); try { window.__zr.toast('⚠ Мод «' + q.id + '» вимкнено: надто повільний'); } catch (e) { } } q.T.n = 0; q.T.t = 0; } }
+        });
+        async function activate(m) {
+            if (A.on[m.id]) return; try { const v = await verify(m.file); if (!trust.includes(v.fp)) return; A.on[m.id] = 1; if (v.b.type === 'data') applyData(v.b); else applyScript(v.b, m); } catch (e) { console.warn('mod skip', m.id, e.message); }
+        }
+        // ---------- додавання з діалогом довіри ----------
+        const st = document.createElement('style'); st.textContent = `
+#zmd-w{position:fixed;inset:0;z-index:9600;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.0);backdrop-filter:none;transition:background .3s;font:500 13px "Segoe UI",system-ui,sans-serif;color:#e4eefc}
+#zmd-w.on{display:flex;background:rgba(4,8,14,.72)}
+#zmd{width:min(640px,94vw);max-height:84vh;overflow:auto;background:linear-gradient(160deg,#14233b,#0a1424);border:2px solid #4a86c8;border-radius:16px;padding:16px 18px;box-shadow:0 16px 50px rgba(0,0,0,.6);transform:translateY(24px) scale(.96);opacity:0;transition:transform .4s cubic-bezier(.2,1.2,.3,1),opacity .3s}
+#zmd-w.on #zmd{transform:none;opacity:1}
+#zmd h2{margin:0 0 4px;font-size:20px;color:#ffd86b}#zmd p.s{margin:0 0 10px;opacity:.7;font-size:12px}
+.zmd-i{display:flex;gap:10px;align-items:center;padding:9px 10px;margin:6px 0;border-radius:11px;background:rgba(20,36,60,.8);border:1.5px solid #2d4a6a;animation:zmdIn .35s ease both}
+.zmd-i b{font-size:14px}.zmd-i small{display:block;opacity:.7;font-size:11px}.zmd-i .tag{font-size:10px;padding:1px 6px;border-radius:8px;margin-left:5px;vertical-align:1px}
+.zmd-i .ok{background:#1e6a3a}.zmd-i .sc{background:#8a5a14}
+.zmd-b{padding:5px 11px;border-radius:9px;border:1.5px solid #3d6a9a;background:#10203a;color:#d6e6ff;cursor:pointer;font:600 12px inherit;transition:transform .15s,border-color .15s}.zmd-b:hover{transform:translateY(-2px);border-color:#8fd0ff}
+.zmd-b.pr{background:#1e5a9a;border-color:#6aa8ff}.zmd-b.dg{border-color:#a04040}
+.zmd-sw{width:38px;height:20px;border-radius:10px;background:#2a3a4a;position:relative;cursor:pointer;flex:none;transition:background .25s}.zmd-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.2,1.4,.4,1)}.zmd-sw.on{background:#2a9a54}.zmd-sw.on::after{transform:translateX(18px)}
+.zmd-drop{margin-top:10px;padding:14px;border:2px dashed #3d6a9a;border-radius:12px;text-align:center;opacity:.85;transition:all .2s;cursor:pointer}.zmd-drop.h{background:rgba(70,130,220,.2);border-color:#8fd0ff;transform:scale(1.01)}
+.zmd-warn{margin:8px 0;padding:8px 10px;border-radius:9px;background:rgba(160,70,30,.25);border:1.5px solid #c8742a;font-size:12px;line-height:1.5}
+.zmd-fp{font:700 13px Consolas,monospace;color:#9fe0ff;letter-spacing:1px}
+@keyframes zmdIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}`;
+        document.head.appendChild(st);
+        const W = document.createElement('div'); W.id = 'zmd-w'; W.innerHTML = '<div id="zmd"></div>'; document.body.appendChild(W); const P = W.firstChild;
+        const hide = () => W.classList.remove('on'), showW = () => W.classList.add('on');
+        W.addEventListener('mousedown', e => { if (e.target === W) hide(); }); ['keydown', 'keyup'].forEach(t => W.addEventListener(t, e => e.stopPropagation()));
+        const toast = t => { try { window.__zr.toast(t); } catch (e) { } };
+        async function list() {
+            const L = await all(); let h = '<h2>🧩 Моди</h2><p class="s">Кожен мод підписаний автором. Підпис перевіряється при додаванні й при кожному запуску гри.</p>';
+            if (!L.length) h += '<div style="opacity:.6;padding:14px;text-align:center">Модів поки немає.</div>';
+            for (const m of L) h += '<div class="zmd-i" data-id="' + esc(m.id) + '"><div style="flex:1"><b>' + esc(m.name) + '</b> <small style="display:inline">v' + esc(m.ver || '1') + '</small><span class="tag ' + (m.kind === 'script' ? 'sc' : 'ok') + '">' + (m.kind === 'script' ? '⚠ скрипт' : '✔ дані') + '</span><small>' + esc(m.author || '—') + ' · ключ <span class="zmd-fp">' + esc(m.fp) + '</span></small><small>' + esc(m.desc || '') + '</small></div><div class="zmd-sw ' + (m.on ? 'on' : '') + '" data-a="t"></div><button class="zmd-b dg" data-a="d">🗑</button></div>';
+            h += '<div class="zmd-drop" id="zmd-dr">➕ Перетягни .zgmod сюди або натисни, щоб обрати файл<input type="file" id="zmd-f" accept=".zgmod,.json" style="display:none"></div><div style="text-align:right;margin-top:10px"><button class="zmd-b" data-a="x">Закрити</button></div>';
+            P.innerHTML = h; showW();
+            const dr = P.querySelector('#zmd-dr'), fi = P.querySelector('#zmd-f');
+            dr.onclick = () => fi.click(); fi.onchange = () => { if (fi.files[0]) addFile(fi.files[0]); };
+            dr.ondragover = e => { e.preventDefault(); dr.classList.add('h'); }; dr.ondragleave = () => dr.classList.remove('h'); dr.ondrop = e => { e.preventDefault(); dr.classList.remove('h'); if (e.dataTransfer.files[0]) addFile(e.dataTransfer.files[0]); };
+        }
+        P.addEventListener('click', async e => {
+            const a = e.target.closest('[data-a]'); if (!a) return; const row = e.target.closest('.zmd-i'), id = row && row.dataset.id;
+            if (a.dataset.a === 'x') return hide();
+            const L = await all(), m = L.find(x => x.id === id); if (!m) return;
+            if (a.dataset.a === 'd') { await del(id); toast('🧩 Мод видалено. Зміни зникнуть після перезапуску гри.'); return list(); }
+            if (a.dataset.a === 't') { if (!m.on && m.kind === 'script' && !(await confirmScript(m))) return; m.on = m.on ? 0 : 1; await put(m); if (m.on) await activate(m); else toast('🧩 Мод вимкнено — повністю після перезапуску гри.'); list(); }
+        });
+        const ask = (title, html, yes, no) => new Promise(res => {
+            P.innerHTML = '<h2>' + title + '</h2>' + html + '<div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button class="zmd-b" id="zmd-n">' + no + '</button><button class="zmd-b pr" id="zmd-y">' + yes + '</button></div>';
+            showW(); P.querySelector('#zmd-y').onclick = () => res(true); P.querySelector('#zmd-n').onclick = () => res(false);
+        });
+        const confirmScript = m => ask('⚠ Скриптовий мод', '<div class="zmd-warn">Скрипт виконується всередині гри з повним доступом (як частина самої гри). Це <b>не</b> пісочниця. Вмикай такі моди лише від авторів, яким довіряєш.</div><p>«' + esc(m.name) + '» · ' + esc(m.author || '—') + '</p>', 'Розумію, увімкнути', 'Скасувати').then(r => { if (!r) list(); return r; });
+        async function addFile(f) {
+            try {
+                if (f.size > MAXB * 1.5) throw new Error('Файл завеликий'); let file; try { file = JSON.parse(await f.text()); } catch (e) { throw new Error('Це не файл .zgmod'); }
+                const v = await verify(file), b = v.b, known = trust.includes(v.fp);
+                const html = '<p><b style="font-size:15px">' + esc(b.name) + '</b> v' + esc(b.ver || '1') + '<br><span style="opacity:.75">' + esc(b.desc || '') + '</span></p><p>Автор: <b>' + esc(b.author || '—') + '</b><br>Відбиток ключа: <span class="zmd-fp">' + v.fp + '</span></p>'
+                    + '<div class="zmd-warn" style="background:rgba(30,120,60,.2);border-color:#2a9a54">✔ Підпис дійсний — файл не змінено після підписання.</div>'
+                    + (known ? '<p style="opacity:.8">Цей автор у твоєму списку довірених.</p>' : '<div class="zmd-warn">Автор тобі ще невідомий. Підпис доводить лише <i>що файл від власника цього ключа</i>, а не те, що власник — добра людина. Звір відбиток із джерелом моду.</div>')
+                    + (b.type === 'script' ? '<div class="zmd-warn">⚠ Це скриптовий мод: матиме повний доступ до гри.</div>' : '<p style="opacity:.8">Це безпечний мод даних (рецепти / привітання): коду не виконує.</p>');
+                if (!(await ask('🧩 Додати мод?', html, known ? 'Додати' : 'Довіряти і додати', 'Скасувати'))) return list();
+                if (!known) { trust.push(v.fp); saveTrust(); }
+                const m = { id: b.id, name: b.name, ver: b.ver, author: b.author, desc: (b.desc || '').slice(0, 200), kind: b.type, fp: v.fp, file, on: b.type === 'script' ? 0 : 1, ts: Date.now() };
+                await put(m); if (m.on) await activate(m); toast(b.type === 'script' ? '🧩 Мод додано (вимкнено — увімкни вручну)' : '🧩 Мод «' + b.name + '» додано'); list();
+            } catch (e) { P.innerHTML = '<h2>⛔ Мод відхилено</h2><div class="zmd-warn">' + esc(e.message) + '</div><div style="text-align:right;margin-top:10px"><button class="zmd-b" data-a="x">Закрити</button></div>'; showW(); }
+        }
+        // ---------- кнопки меню та автозапуск ----------
+        const addBtn = (host, ref) => { if (!host || host.querySelector('.zmd-btn')) return; const b = document.createElement('button'); b.className = 'menu-btn zmd-btn'; b.innerHTML = '<span>🧩 Моди</span>'; b.onclick = e => { e.stopPropagation(); list(); }; ref && ref.parentNode === host ? host.insertBefore(b, ref.nextSibling) : host.appendChild(b); };
+        try { const mm = document.querySelector('#main-menu .menu-card'); if (mm) addBtn(mm, [...mm.children].find(x => /Налаштування/.test(x.textContent))); } catch (e) { }
+        try { const pm = document.querySelector('#pause-menu .danger-btn'); if (pm) addBtn(pm.parentNode, pm.previousElementSibling); } catch (e) { }
+        let motdDone = 0;
+        window.__zr.TICK.push(() => { if (!motdDone && A.motd && A.motd.length && typeof gameState !== 'undefined' && gameState === 'PLAYING') { motdDone = 1; A.motd.slice(0, 3).forEach((q, i) => setTimeout(() => toast('🧩 ' + q[0] + ': ' + q[1]), 1500 + i * 2600)); } });
+        (async () => { for (const m of await all()) if (m.on) await activate(m); })();
+        window.__zmod = { verify, all, activate, trust: () => trust.slice(), A, list, addFile };
+    } catch (e) { console.error('zmod', e); }
+})();
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.62', 'Диск у меню', 'new'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.63', 'Характер, Фото, Моди', 'new'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.63': [
+                ['#ff9ac8', '💗 Характер фамільярів', 'Кожен фамільяр має рису (Допитливий, Хоробрий, Соня, Ласкавий, Жартівник, Буркотун) і настрій. Він коментує ніч, дощ, печери, босів і твоє здоров’я в бульбашці над головою. Щасливий (настрій від 75) отримує на 5% більше досвіду. Штрафів немає; репліки вимикаються кнопкою 💬 біля фамільяра.'],
+                ['#9fd6ff', '📸 Режим фотографії (F8)', 'Ховає інтерфейс, додає кіносмуги, 8 фільтрів, віньєтку та рамки (полароїд, кіно, золота). Enter — знімок, він летить у щоденник (F4) і його можна зберегти файлом.'],
+                ['#ffd86b', '🎓 Навчання', 'Для нових гравців: картка «Перші кроки» з 7 завдань, що відмічаються самі, і малі нагороди. Можна пропустити (✕) і повернути з меню паузи.'],
+                ['#9be8a8', '🧩 Моди з підписом', 'Меню → 🧩 Моди. Файли .zgmod підписані ключем автора; підпис перевіряється при додаванні й при кожному запуску, а автору потрібно довіряти за відбитком. Дані-моди безпечні, скриптові — з попередженням і лімітом часу. Інструмент для авторів: tools/zgmod.js.']
+            ],
             '46.62': [
                 ['#ffd36b', '💿 Диск у головному меню', 'У куті головного меню крутиться диск з обкладинкою: грає «Don’t Ask Me Why» — BASS TRAP GANG. Клік по диску ставить пісню на паузу (тоді вмикається стандартна музика гри) або відновлює її. Гучність — повзунок музики в налаштуваннях.'],
             ],
