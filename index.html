@@ -52117,7 +52117,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             const pr = a.pr / sp.cyc; c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(ax - 8, hy + 2, 16, 2); c.fillStyle = sp.c; c.fillRect(ax - 8, hy + 2, 16 * pr, 2);
             if (a.love > 20) { c.globalAlpha = .75; c.fillStyle = '#ff7aa0'; c.fillRect(ax - 8, hy + 5, 16 * Math.min(1, a.love / sp.love), 1.3); c.globalAlpha = 1; }
         } else { const u = fr(t * 0.2 + i * .5); if (u < .25) { c.globalAlpha = 1 - u / .25; c.font = '8px ' + EMO; c.textAlign = 'center'; c.fillText('✨', ax, hy - u * 24); c.globalAlpha = 1; } }
-        if (a.pop && now - a.pop < 1200) { const k = (now - a.pop) / 1200; c.fillStyle = 'rgba(255,240,170,' + (1 - k).toFixed(2) + ')'; c.font = 'bold 10px ' + EMO; c.textAlign = 'center'; c.fillText('+1 ' + sp.pe, ax, hy - 6 - k * 16); }
+        if (a.pop && now - a.pop < 1200) { const k = (now - a.pop) / 1200; c.fillStyle = 'rgba(255,240,170,' + (1 - k).toFixed(2) + ')'; c.font = 'bold 10px sans-serif'; c.textAlign = 'right'; c.fillText('+1', ax - 1, hy - 6 - k * 16); c.font = '10px ' + EMO; c.textAlign = 'left'; c.fillText(sp.pe, ax + 1, hy - 6 - k * 16); }
     }
     function furnFx(c, f, t, now, near) {
         const bx = f.x * 32, by = f.y * 32;
@@ -52140,11 +52140,12 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             if (pu && pu > now) { const k = 1 - (pu - now) / 900; if (k > .8) { const kk = (k - .8) / .2; c.strokeStyle = 'rgba(255,226,122,' + (1 - kk).toFixed(2) + ')'; c.lineWidth = 1.4; c.beginPath(); c.ellipse(bx + 16, by + 24, 8 + kk * 12, 3 + kk * 4, 0, 0, TAU); c.stroke(); } }
             // значок затишку
             if (near) {
-                const ok = pen.closed, lbl = ok ? '🏡 ' + pen.cozy + '%' : '⚠ відкритий', col = ok ? (pen.cozy >= 60 ? '#aaf5c8' : '#ffe9a8') : '#ffb8b8';
-                c.font = 'bold 9px ' + EMO; const w = c.measureText(lbl).width + 10, x = bx + 16 - w / 2, y = by - 8 + Math.sin(t * 2 + f.x) * 1.2;
-                c.fillStyle = 'rgba(10,8,24,.8)'; c.beginPath(); if (c.roundRect) c.roundRect(x, y - 8, w, 13, 6); else c.rect(x, y - 8, w, 13); c.fill(); c.strokeStyle = col; c.globalAlpha = .7; c.lineWidth = 1; c.stroke(); c.globalAlpha = 1; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(lbl, bx + 16, y - 1);
+                const ok = pen.closed, ico = ok ? '🏡' : '⚠️', lbl = ok ? pen.cozy + '%' : 'відкритий', col = ok ? (pen.cozy >= 60 ? '#aaf5c8' : '#ffe9a8') : '#ffb8b8';
+                c.font = 'bold 9px sans-serif'; const tw = c.measureText(lbl).width, w = tw + 22, x = bx + 16 - w / 2, y = by - 8 + Math.sin(t * 2 + f.x) * 1.2;
+                c.fillStyle = 'rgba(10,8,24,.82)'; c.beginPath(); if (c.roundRect) c.roundRect(x, y - 8, w, 13, 6); else c.rect(x, y - 8, w, 13); c.fill(); c.strokeStyle = col; c.globalAlpha = .7; c.lineWidth = 1; c.stroke(); c.globalAlpha = 1;
+                c.textBaseline = 'middle'; c.textAlign = 'left'; c.font = '9px ' + EMO; c.fillStyle = '#fff'; c.fillText(ico, x + 4, y - 1); c.font = 'bold 9px sans-serif'; c.fillStyle = col; c.fillText(lbl, x + 17, y - 1);
             }
-            if (tot > 0) { let k2 = 0; for (const p of Object.keys(st)) { if (!st[p]) continue; const x = bx + 33 + k2 * 25, y = by + 28 + Math.sin(t * 2 + k2) * 1.2; c.fillStyle = 'rgba(10,8,24,.78)'; c.beginPath(); if (c.roundRect) c.roundRect(x, y, 24, 13, 6); else c.rect(x, y, 24, 13); c.fill(); c.strokeStyle = st[p] >= BAR_CAP ? '#ff9a7a' : 'rgba(255,210,122,.7)'; c.lineWidth = 1; c.stroke(); c.font = '9px ' + EMO; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText((p === 'an_egg' ? '🥚' : p === 'an_milk' ? '🥛' : '🧀') + st[p], x + 3, y + 7); k2++; } }
+            if (tot > 0) { let k2 = 0; for (const p of Object.keys(st)) { if (!st[p]) continue; const x = bx + 33 + k2 * 25, y = by + 28 + Math.sin(t * 2 + k2) * 1.2; c.fillStyle = 'rgba(10,8,24,.78)'; c.beginPath(); if (c.roundRect) c.roundRect(x, y, 24, 13, 6); else c.rect(x, y, 24, 13); c.fill(); c.strokeStyle = st[p] >= BAR_CAP ? '#ff9a7a' : 'rgba(255,210,122,.7)'; c.lineWidth = 1; c.stroke(); c.font = '9px ' + EMO; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText(p === 'an_egg' ? '🥚' : p === 'an_milk' ? '🥛' : '🧀', x + 3, y + 7); c.font = 'bold 9px sans-serif'; c.fillText(st[p], x + 14, y + 7); k2++; } }
             if (pen.closed && pen.cozy >= 80 && pen.animals.length) for (let k = 0; k < 5; k++) { const u = fr(t * .22 + k * .2 + f.x * .1), x = (pen.l + (pen.r - pen.l + 1) * fr(k * .37 + f.x * .13)) * 32; c.fillStyle = 'rgba(255,226,140,' + (.8 * Math.sin(u * Math.PI)).toFixed(2) + ')'; c.fillRect(x, (pen.s + 1) * 32 - 8 - u * 34, 1.6, 1.6); }
         }
     }
