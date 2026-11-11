@@ -11392,7 +11392,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.65', GAME_VER_NAME = 'Вознесіння';
+        const GAME_VER = '46.66', GAME_VER_NAME = 'Спадщина Вартових';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -36280,6 +36280,7 @@ canvas.v25-mini{width:64px;height:80px;background:radial-gradient(ellipse at 50%
                 try { if (boss && boss.hp > 0) a.push({ key: 'c', o: boss, name: 'Хронос', ico: '⏳', col: '#00e5ff', w: boss.width, h: boss.height }); } catch (e) { }
                 try { if (libBoss && libBoss.hp > 0) a.push({ key: 'l', o: libBoss, name: 'Охоронець Фоліантів', ico: '📜', col: '#b388ff', w: libBoss.w, h: libBoss.h }); } catch (e) { }
                 try { for (const b of rpgBosses) { const D = XBOSS[b.k]; if (D && b.hp > 0) a.push({ key: 'x' + b.id, o: b, name: strip(D.name), ico: iconOf(D.name), col: D.color, w: b.w, h: b.h, kind: b.k }); } } catch (e) { }
+                try { for (const m of mobs) if (m.mod && m.boss && m.hp > 0) { const BC = (window.__zbcol || {})[m.type] || { c: '#ff3b5c', i: '☠' }; m.maxHp = m.maxHp || m.hp; a.push({ key: 'm' + m.type, o: m, name: m._nm || (BC.n || m.type), ico: BC.i, col: BC.c, w: m.width, h: m.height }); } } catch (e) { }
                 return a;
             }
             const cx = b => b.o.x + (b.w || 60) / 2, cy = b => b.o.y + (b.h || 60) / 2;
@@ -48321,11 +48322,15 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
                 if (p.x > player.x - 4 && p.x < player.x + 28 && p.y > player.y && p.y < player.y + 46) { hurt(p.dmg * rpgMobDmg(), p.who); P.splice(i, 1); } }
         }
         function bossBar(m) {
-            if (!M.bar) { const b = document.createElement('div'); b.id = 'zmb-bar'; b.innerHTML = '<b></b><div><i></i><u></u></div>'; document.body.appendChild(b); const s = document.createElement('style'); s.textContent = '#zmb-bar{position:fixed;left:50%;top:74px;width:min(520px,70vw);transform:translate(-50%,-70px);opacity:0;z-index:30;text-align:center;font:800 14px "Segoe UI",system-ui,sans-serif;color:#fff;text-shadow:0 2px 6px #000;transition:transform .6s cubic-bezier(.2,1.2,.3,1),opacity .4s;pointer-events:none}#zmb-bar.on{transform:translate(-50%,0);opacity:1}#zmb-bar div{height:16px;margin-top:4px;background:#12060a;border:3px solid #6a1a28;border-radius:4px;position:relative;overflow:hidden;box-shadow:0 0 18px rgba(255,60,80,.35)}#zmb-bar i{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,#ff3b5c 0 12px,#c0203c 12px 14px);transition:width .25s}#zmb-bar u{position:absolute;inset:0 auto 0 0;background:#fff7;transition:width 1s .35s}'; document.head.appendChild(s); M.bar = b; }
-            const b = M.bar; if (m) { b.firstChild.textContent = defOf(m.type).name; const w = Math.max(0, m.hp / m.maxHp * 100) + '%'; b.querySelector('i').style.width = w; b.querySelector('u').style.width = w; b.classList.add('on'); } else b.classList.remove('on');
+            const bar = document.getElementById('xboss-bar'); if (!bar) return;
+            if (m) { const D = defOf(m.type); m._nm = D.name; const BC = (window.__zbcol || {})[m.type] || { c: '#ff3b5c', i: '☠' }; M.barOn = 1;
+                const nm = document.getElementById('xboss-name'), fl = document.getElementById('xboss-fill'); const t = BC.i + ' ' + D.name; if (nm.textContent !== t) nm.textContent = t;
+                bar.style.setProperty('--bc', BC.c); fl.style.background = 'linear-gradient(90deg,' + BC.c + '55,' + BC.c + ',#fff8)'; fl.style.width = Math.max(0, m.hp / m.maxHp * 100) + '%'; bar.classList.remove('hidden');
+                try { mxHpNum('xboss-fill', m); } catch (e) { } }
+            else if (M.barOn) { M.barOn = 0; if (!rpgBosses.length) bar.classList.add('hidden'); }
         }
         function bossAI(m, D, dx, dist) {
-            m.t++; const hpf = m.hp / m.maxHp; while (m.ph < D.phases.length && hpf <= D.phases[m.ph].at) { const p = D.phases[m.ph++]; if (p.say) toast(D.name + ': ' + p.say); try { createParticles(m.x + m.width / 2, m.y + m.height / 2, '#ff5a5a', 24, 4, 4, 40); shake = Math.max(shake, 8); } catch (e) { } }
+            m.t++; const hpf = m.hp / m.maxHp; while (m.ph < D.phases.length && hpf <= D.phases[m.ph].at) { const p = D.phases[m.ph++]; m.phase = m.ph + 1; if (p.say) toast(D.name + ': ' + p.say); try { createParticles(m.x + m.width / 2, m.y + m.height / 2, '#ff5a5a', 24, 4, 4, 40); shake = Math.max(shake, 8); } catch (e) { } }
             const sp = D.spd * (m.ph ? D.phases[m.ph - 1].spd : 1); D.atk.forEach((a, i) => { if (--m.at[i] > 0) return; m.at[i] = Math.round(a.cd * 60 / (m.ph ? 1 + 0.15 * m.ph : 1)) + 20; const cx = m.x + m.width / 2, cy = m.y + m.height / 2, tx = player.x + 12, ty = player.y + 22;
                 if (a.k === 'shots') { const base = Math.atan2(ty - cy, tx - cx); for (let k = 0; k < a.n; k++) { const an = base + (k - (a.n - 1) / 2) * 0.22; P.push({ x: cx, y: cy, vx: Math.cos(an) * 5, vy: Math.sin(an) * 5, g: 0, dmg: a.dmg, life: 150, col: a.col, who: D.name }); } }
                 else if (a.k === 'rain') { for (let k = 0; k < a.n + 2; k++) P.push({ x: tx + (k - (a.n + 2) / 2) * 46, y: cy - 260, vx: 0, vy: 3, g: 0.12, dmg: a.dmg, life: 120, col: a.col, who: D.name }); }
@@ -49192,7 +49197,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         return o;
     }
     const CACHE = {}, MAKE = { d1, d2, d3, m1, m2 };
-    window.__zdgmap = { build: id => CACHE[id] || (CACHE[id] = MAKE[id]()), IDS: ['d1', 'd2', 'd3', 'm1', 'm2'] };
+    window.__zdgmap = { build: id => CACHE[id] || (CACHE[id] = MAKE[id]()), IDS: ['d1', 'd2', 'd3', 'm1', 'm2'], B, rng, reg: (id, fn) => { MAKE[id] = fn; delete CACHE[id]; } };
 })();
 // ===== v46.65 «Вартові Світанку»: 3 сюжетні данжі + 2 шахтні, боси, реліквії, компас, легендарна зброя як нагорода =====
 // Сюжет: Серце Світанку розкололося. Вартові розсіяли клинки по світу й заснули в склепах. Компас Світанку веде до їхніх спокоїв.
@@ -49297,7 +49302,8 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
     // ---------- блоки ----------
     const STRUCT = new Set([43, 44, 45, 46, 47, 52, 53, 55, 56, 62, 63, 15, 9, 22]);
     function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-    function mat(ch, R) { if (ch === '=') return R() < 0.12 ? 44 : 43; if (ch === 'D') return 53; if (ch === '.') return 0; if (ch === '~') return 13; const v = V26_LG[ch]; return v == null ? 43 : v; }
+    const EXT = {}, CH = {};
+    function mat(ch, R) { if (CH[ch] != null) return CH[ch]; if (ch === '=') return R() < 0.12 ? 44 : 43; if (ch === 'D') return 53; if (ch === '.') return 0; if (ch === '~') return 13; const v = V26_LG[ch]; return v == null ? 43 : v; }
     const wset = (x, y, v) => { if (x >= 0 && y >= 0 && x < currentWorld.width && y < currentWorld.height) worldMap[y][x] = v; };
     function clearSpot(k, x0, y0) {
         const T = MAP.build(k), w = currentWorld.width, h = currentWorld.height;
@@ -49325,6 +49331,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         return null;
     }
     function sideLoot(I, rich) {
+        if (EXT[I.k] && EXT[I.k].loot) return EXT[I.k].loot(I, rich);
         const th = { d1: 'crypt', d2: 'water', d3: 'tomb', m1: 'mine', m2: 'mine' }[I.k];
         let s; try { s = v26Loot(th, !!rich); } catch (e) { s = new Array(16).fill(null); }
         const free = () => { const f = s.map((q, i) => q ? -1 : i).filter(i => i >= 0); return f.length ? f[Math.random() * f.length | 0] : -1; };
@@ -49373,6 +49380,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
     const dropItem = (id, x, y, vx) => floatingItems.push({ x, y, vx: vx || 0, vy: -5, itemId: id, count: 1 });
     function giveWeapon(id, x, y) { const z = ZD(); z.got[id] = 1; const L = LG(); if (L && L.reveal) L.reveal(id, x, y); else dropItem(id, x, y); }
     function reward(I, m) {
+        if (EXT[I.k] && EXT[I.k].reward) { I.boss = 1; ZD().done[I.k + I.x] = 1; return EXT[I.k].reward(I, m); }
         const z = ZD(), cx = m.x + m.width / 2, cy = m.y + m.height / 2, first = !z.done[I.k + I.x];
         z.done[I.k + I.x] = 1; I.boss = 1;
         const big = !isMine(I); if (big || Math.random() < 0.6) dropPage(cx, cy - 10);
@@ -49456,7 +49464,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
     }
     // рідкісний унікальний мешканець данжу (максимум один, довга перерва після появи)
     function uniqueTick(I) {
-        const R = rt(I), id = UNI[I.k], T = MAP.build(I.k); if (R.uq && (R.uq.hp <= 0 || !mobs.includes(R.uq))) { R.uq = null; R.uqCd = 2400; }
+        const R = rt(I), id = UNI[I.k], T = MAP.build(I.k); if (!id) return; if (R.uq && (R.uq.hp <= 0 || !mobs.includes(R.uq))) { R.uq = null; R.uqCd = 2400; }
         if (R.uq || R.uqCd > 0) { if (R.uqCd > 0) R.uqCd -= 120; return; } if (Math.random() > 0.16) return;
         const rooms = T.rooms.filter(r => !r.boss); for (let i = 0; i < 6; i++) { const r = rooms[Math.random() * rooms.length | 0]; const m = spawnIn(I, r, id, 1)[0]; const d = Math.hypot(m.x - player.x, m.y - player.y); if (d < 380 || d > 1500) { m.hp = 0; const k = mobs.indexOf(m); if (k >= 0) mobs.splice(k, 1); continue; } R.uq = m; R.uqCd = 0; toast('⚠ ' + DEF[id].name + ' виходить із темряви…'); FXb(m.x + m.width / 2, m.y + m.height / 2, COL[I.k], 22, 3.4, { up: 1 }); break; }
     }
@@ -49567,7 +49575,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         for (const p of PIL) { if (p.x < x0 - 40 || p.x > x1 + 40) continue; const k = p.t / p.delay; c.save(); c.globalCompositeOperation = 'lighter'; if (p.t < p.delay) { c.strokeStyle = X.rgba(p.col, 0.25 + 0.5 * k); c.lineWidth = 1 + 2 * k; c.setLineDash([6, 8]); c.beginPath(); c.moveTo(p.x, p.y0); c.lineTo(p.x, p.y1 + 40); c.stroke(); c.setLineDash([]); c.fillStyle = X.rgba(p.col, 0.15 + 0.3 * k); c.beginPath(); c.ellipse(p.x, p.y1 + 40, 14 + 10 * k, 4, 0, 0, 7); c.fill(); } else { const a = 1 - (p.t - p.delay) / 16; const g = c.createLinearGradient(p.x - 22, 0, p.x + 22, 0); g.addColorStop(0, X.rgba(p.col, 0)); g.addColorStop(0.5, X.rgba('#ffffff', a)); g.addColorStop(1, X.rgba(p.col, 0)); c.fillStyle = g; c.fillRect(p.x - 22, p.y0, 44, p.y1 + 40 - p.y0); } c.restore(); }
         for (const q of RING) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = X.rgba(q.col, 0.8 * (1 - q.r / 540)); c.lineWidth = 7; c.beginPath(); c.ellipse(q.x, q.y, q.r, q.r * 0.16, 0, 0, 7); c.stroke(); c.restore(); }
     });
-    window.__zdung = { rt, ZD, SET, REL, POOL, WORLD, DEF, create, stamp, unlock, reward, onWorldBoss, placeMines, storyTick, roomTick, target, PIL, RING, NAME };
+    window.__zdung = { COL, EXT, CH, floorY, spawnIn, wset, hurt, rt, ZD, SET, REL, POOL, WORLD, DEF, create, stamp, unlock, reward, onWorldBoss, placeMines, storyTick, roomTick, target, PIL, RING, NAME };
 })();
 // ===== v46.65: атмосфера данжів Світанку — колір, промені, туман, зорі, руни, частинки, титульна картка =====
 // Усе малюється лише біля данжу (±6 блоків), тож поза ним нуль витрат.
@@ -49581,6 +49589,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         m1: { tint: '#ffcc98', col: '#ffb04a', col2: '#fff1b8', vig: '#140a02', sub: 'Лампи горять, хоч їх давно ніхто не запалював' },
         m2: { tint: '#a8f4ff', col: '#8ff0ff', col2: '#d8ffff', vig: '#021218', sub: 'Земля тут співає' }
     };
+    const EXT = {};
     const K = {}, SEEN = {}, CACHE = new WeakMap(), TAU = Math.PI * 2;
     const hash = n => { let a = (n * 2654435761) >>> 0; a ^= a >>> 15; a = Math.imul(a, 2246822519) >>> 0; a ^= a >>> 13; return (a >>> 0) / 4294967296; };
     const info = I => { let c = CACHE.get(I); if (c) return c; const T = MAP.build(I.k), pts = []; for (let y = 0; y < T.H; y++) for (let x = 0; x < T.W; x++) { const ch = T.g[y][x]; if ('LTFMcR'.includes(ch)) pts.push({ x: I.x + x, y: I.y + y, ch }); } const water = []; for (let y = 1; y < T.H; y++) for (let x = 0; x < T.W; x++) if (T.g[y][x] === '~' && T.g[y - 1][x] !== '~' && T.g[y - 1][x] !== '=') water.push({ x: I.x + x, y: I.y + y }); c = { T, pts, water }; CACHE.set(I, c); return c; };
@@ -49606,7 +49615,8 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         add(c, () => {
             let g = c.createLinearGradient(0, y0, 0, bot); g.addColorStop(0, X.rgba(th.col, 0.02 * k)); g.addColorStop(1, X.rgba(th.col, 0.13 * k)); c.fillStyle = g; c.fillRect(x0, y0, w, h);
             c.lineCap = 'round';
-            if (I.k === 'd1') { const n = Math.max(2, Math.round(r.w / 7)); for (let i = 0; i <= n; i++) { const x = x0 + i * w / n; c.fillStyle = X.rgba(th.col2, 0.06 * k); c.fillRect(x - 9, y0, 18, h); c.fillStyle = X.rgba(th.col2, 0.12 * k); c.fillRect(x - 9, y0, 2, h); c.fillRect(x + 7, y0, 2, h); if (i < n) { c.strokeStyle = X.rgba(th.col, 0.18 * k); c.lineWidth = 3; c.beginPath(); c.arc(x + w / n / 2, y0 + 90, w / n / 2 - 8, Math.PI, 0); c.stroke(); } } }
+            if (EXT[I.k] && EXT[I.k].backdrop) EXT[I.k].backdrop(c, I, r, th, t, k, { x0, y0, w, h, bot, cx });
+            else if (I.k === 'd1') { const n = Math.max(2, Math.round(r.w / 7)); for (let i = 0; i <= n; i++) { const x = x0 + i * w / n; c.fillStyle = X.rgba(th.col2, 0.06 * k); c.fillRect(x - 9, y0, 18, h); c.fillStyle = X.rgba(th.col2, 0.12 * k); c.fillRect(x - 9, y0, 2, h); c.fillRect(x + 7, y0, 2, h); if (i < n) { c.strokeStyle = X.rgba(th.col, 0.18 * k); c.lineWidth = 3; c.beginPath(); c.arc(x + w / n / 2, y0 + 90, w / n / 2 - 8, Math.PI, 0); c.stroke(); } } }
             else if (I.k === 'd2') { const R0 = Math.min(w, h) * 0.34; c.save(); c.translate(cx, y0 + h * 0.42); for (const [f, sp, dash] of [[1, 0.06, 14], [0.72, -0.1, 8], [0.45, 0.16, 5]]) { c.save(); c.rotate(t * sp); c.strokeStyle = X.rgba(th.col, 0.2 * k); c.lineWidth = 2; c.setLineDash([dash, dash * 1.6]); c.beginPath(); c.arc(0, 0, R0 * f, 0, TAU); c.stroke(); c.restore(); } c.setLineDash([]); c.rotate(t * 0.04); c.strokeStyle = X.rgba(th.col2, 0.14 * k); c.lineWidth = 1.5; for (let i = 0; i < 12; i++) { c.rotate(TAU / 12); c.beginPath(); c.moveTo(R0 * 0.45, 0); c.lineTo(R0 * 1.05, 0); c.stroke(); X.spark(R0 * 1.08, 0, 3, th.col2, 0.5 * k, 0); } c.restore(); }
             else if (I.k === 'd3') { const R0 = Math.min(w, h) * 0.38; c.save(); c.translate(cx, y0 + h * 0.45); c.rotate(t * 0.05); c.strokeStyle = X.rgba(th.col, 0.22 * k); c.lineWidth = 2.5; c.beginPath(); c.arc(0, 0, R0, 0, TAU); c.stroke(); c.beginPath(); c.arc(0, 0, R0 * 0.8, 0, TAU); c.stroke(); for (let q = 0; q < 2; q++) { c.beginPath(); for (let i = 0; i < 3; i++) { const a = q * Math.PI / 3 + i * TAU / 3 - Math.PI / 2; c[i ? 'lineTo' : 'moveTo'](Math.cos(a) * R0 * 0.8, Math.sin(a) * R0 * 0.8); } c.closePath(); c.stroke(); } for (let i = 0; i < 24; i++) { const a = i / 24 * TAU; c.fillStyle = X.rgba(th.col2, (0.12 + 0.12 * Math.sin(t * 2 + i)) * k); c.fillRect(Math.cos(a) * R0 * 0.9 - 2, Math.sin(a) * R0 * 0.9 - 6, 4, 12); } c.restore(); }
             else if (I.k === 'm1') { const n = Math.max(2, Math.round(r.w / 5)); c.strokeStyle = X.rgba('#c8884a', 0.2 * k); c.lineWidth = 6; for (let i = 0; i <= n; i++) { const x = x0 + i * w / n; c.beginPath(); c.moveTo(x, y0 + 6); c.lineTo(x, bot); c.stroke(); } c.beginPath(); c.moveTo(x0, y0 + 14); c.lineTo(x0 + w, y0 + 14); c.stroke(); c.lineWidth = 3; for (let i = 0; i < n; i++) { const x = x0 + i * w / n; c.beginPath(); c.moveTo(x + 4, y0 + 18); c.lineTo(x + w / n - 4, y0 + 90); c.stroke(); } }
@@ -49626,7 +49636,8 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             c.save(); const px = player.x + 12, py = player.y + 22, R = Math.max(vw, vh) * 0.62, g = c.createRadialGradient(px, py, R * 0.32, px, py, R); g.addColorStop(0, X.rgba(th.vig, 0)); g.addColorStop(1, X.rgba(th.vig, 0.38 * k)); c.fillStyle = g; c.fillRect(vx0 - 100, cy - 200, vw + 400, vh + 400); c.restore();
             // промені, фон і туман по кімнатах
             for (const r of T.rooms) { const rx0 = (I.x + r.x) * 32, rx1 = (I.x + r.x + r.w) * 32; if (rx1 < vx0 || rx0 > vx1) continue; if (r.id !== 'r0' || I.k[0] === 'm') backdrop(c, I, r, th, t, k);
-                if (I.k === 'd1') { rays(c, I, r, th, t, k, Math.max(2, r.w / 5 | 0), 0.2, 50); mist(c, I, r, th, t, k); }
+                if (EXT[I.k]) { if (EXT[I.k].room) EXT[I.k].room(c, I, r, th, t, k, add); }
+                else if (I.k === 'd1') { rays(c, I, r, th, t, k, Math.max(2, r.w / 5 | 0), 0.2, 50); mist(c, I, r, th, t, k); }
                 else if (I.k === 'd2') { rays(c, I, r, th, t, k, Math.max(2, r.w / 6 | 0), 0.14, -30); mist(c, I, r, th, t, k * 0.8); }
                 else if (I.k === 'd3') { rays(c, I, r, th, t, k, Math.max(2, r.w / 7 | 0), 0.1, 0); mist(c, I, r, th, t, k); }
                 else if (I.k === 'm1') mist(c, I, r, th, t, k * 0.7);
@@ -49643,6 +49654,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             // вода (Д2)
             if (inf.water.length) { c.save(); c.globalCompositeOperation = 'lighter'; c.lineWidth = 1.5; for (const w of inf.water) { const wx = w.x * 32; if (wx < vx0 || wx > vx1 || w.y < ty0 || w.y > ty1) continue; if (worldMap[w.y][w.x] !== 13) continue; const o = Math.sin(t * 2 + w.x * 0.9) * 3; c.strokeStyle = X.rgba('#cfe0ff', 0.3 * k); c.beginPath(); c.moveTo(wx + 2, w.y * 32 + 5 + o * 0.4); c.quadraticCurveTo(wx + 16, w.y * 32 + 2 + o, wx + 30, w.y * 32 + 5 - o * 0.4); c.stroke(); } c.restore(); }
             // особливі сцени
+            if (EXT[I.k] && EXT[I.k].scene) EXT[I.k].scene(c, I, T, th, t, k, add, { x0: vx0, x1: vx1, y0: ty0, y1: ty1 });
             if (I.k === 'd1') { const r = T.rooms.find(q => q.boss); if (r) { const bx = (I.x + r.bx) * 32, by = (I.y + r.y + 5) * 32; add(c, () => { X.glow(bx, by, 300, '#ffcf5a', 0.22 * k); c.translate(bx, by); c.rotate(t * 0.08); for (let i = 0; i < 14; i++) { c.rotate(TAU / 14); const g = c.createLinearGradient(0, 0, 0, 260); g.addColorStop(0, X.rgba('#fff1b8', 0.2 * k)); g.addColorStop(1, X.rgba('#ffcf5a', 0)); c.fillStyle = g; c.beginPath(); c.moveTo(-6, 20); c.lineTo(6, 20); c.lineTo(22, 260); c.lineTo(-22, 260); c.fill(); } }); } }
             if (I.k === 'd2') { const r = T.rooms.find(q => q.boss); if (r) { const cx = (I.x + r.x + r.w / 2) * 32, cyy = (I.y + r.y + r.h * 0.42) * 32, rx = r.w * 15, ry = r.h * 13.5; add(c, () => { for (let i = 0; i < 70; i++) { const a = hash(i) * TAU + t * 0.015, d = Math.sqrt(hash(i + 99)), x = cx + Math.cos(a) * rx * d, y = cyy - Math.abs(Math.sin(a)) * ry * d * 0.95 + ry * 0.2; if (x < vx0 || x > vx1) continue; const tw = 0.5 + 0.5 * Math.sin(t * (1 + hash(i + 5) * 2) + i); X.spark(x, y, 2 + hash(i + 3) * 4 * tw, hash(i) > 0.7 ? '#ffe9a8' : '#cfe0ff', (0.3 + 0.7 * tw) * k, t * 0.5 + i); }
                 c.strokeStyle = X.rgba('#a8c8ff', 0.16 * k); c.lineWidth = 1; c.beginPath(); for (let i = 0; i < 9; i++) { const a = hash(i * 3) * TAU + t * 0.015, d = Math.sqrt(hash(i * 3 + 99)), x = cx + Math.cos(a) * rx * d, y = cyy - Math.abs(Math.sin(a)) * ry * d * 0.95 + ry * 0.2; i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }); } }
@@ -49651,7 +49663,8 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             // частинки навколо гравця
             if (inside && Math.random() < 0.55) { const ex = px + (Math.random() - 0.5) * vw * 0.9, ey = py + (Math.random() - 0.5) * vh * 0.8, gx = Math.floor(ex / 32) - I.x, gy = Math.floor(ey / 32) - I.y;
                 if (gx >= 0 && gy >= 0 && gx < T.W && gy < T.H && T.g[gy][gx] === '.') {
-                    if (I.k === 'd1') X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.2, vy: -0.15 - Math.random() * 0.3, life: 4, s: 1.8, c: th.col2, a: 0.7 });
+                    if (EXT[I.k] && EXT[I.k].particle) EXT[I.k].particle(ex, ey, t, th);
+                    else if (I.k === 'd1') X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.2, vy: -0.15 - Math.random() * 0.3, life: 4, s: 1.8, c: th.col2, a: 0.7 });
                     else if (I.k === 'd2') X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.3, vy: -0.1 - Math.random() * 0.25, life: 4.5, s: 2, c: Math.random() < 0.5 ? '#a8c8ff' : '#ffffff', a: 0.7, shape: Math.random() < 0.25 ? 1 : 0 });
                     else if (I.k === 'd3') X.emit(ex, ey, { vx: Math.sin(t + ex) * 0.4, vy: -0.4 - Math.random() * 0.6, life: 3.4, s: 2.2, c: Math.random() < 0.5 ? th.col : th.col2, a: 0.8 });
                     else if (I.k === 'm1') X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8, drag: 0.97, life: 3, s: 2, c: '#ffcf6a', a: 0.85 });
@@ -49661,7 +49674,1059 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
     }
     const rt2 = I => { try { const b = D.rt(I).boss; return b && b.hp > 0; } catch (e) { return false; } };
     Z.DRAW.push(draw);
-    window.__zdvis = { TH, title, info };
+    window.__zdvis = { TH, EXT, title, info };
+})();
+// ===== v46.66 «Спадщина Вартових»: спільна основа післясюжетного змісту — Щоденник, Печаті, нові споруди, стрілки напрямку =====
+// Після Глибинної Брами (Д3) у світі з'являються: Пекельна Кузня, Дзеркальний Лабіринт і Двері Печаті з Архівом Вартового.
+// Усе інше (археологія, грибна ферма, страви, мисливці) живить ці споруди матеріалами. Модулі реєструються через window.__zend.
+(function () {
+    'use strict';
+    const Z = window.__zr, MAP = window.__zdgmap, DG = window.__zdung, VIS = window.__zdvis, X = window.__zpfx, MX = window.__zmx;
+    if (!Z || !MAP || !DG || !VIS || !X || !MX) return;
+    const T = i => RPG_TIERS[i], clamp = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a), TAU = Math.PI * 2;
+    const playing = () => { try { return gameState === 'PLAYING'; } catch (e) { return false; } };
+    const guest = () => { try { return !!(MP && MP.sh && !MP.host); } catch (e) { return false; } };
+    const toast = (t, ms) => { try { Z.toast(t, ms); } catch (e) { } };
+    const banner = (a, b) => { try { v26Banner(a, b); } catch (e) { } };
+    const tn = (type, a, b, d, v, o) => { try { if (audioCtx && audioVolume > 0) tone(type, a, b, d, v || 0.1, o || { rev: 1 }); } catch (e) { } };
+    const lv40 = () => (RPG.level | 0) >= 40;
+    const cnt = id => { let n = 0; for (const s of inventory) if (s && s.id === id) n += s.count || 1; return n; };
+    const take = (id, n) => { let r = n; for (let i = 0; i < inventory.length && r > 0; i++) { const s = inventory[i]; if (s && s.id === id) { const k = Math.min(r, s.count || 1); s.count = (s.count || 1) - k; r -= k; if (s.count <= 0) inventory[i] = null; } } try { updateInventoryUI(); } catch (e) { } return r === 0; };
+    const drop = (id, x, y, n, vx) => { try { floatingItems.push({ x, y, vx: vx == null ? (Math.random() - 0.5) * 3 : vx, vy: -4, itemId: id, count: n || 1 }); } catch (e) { } };
+    const give = (id, n) => { drop(id, player.x + 12, player.y, n || 1, 0); };
+    const S = () => { const w = currentWorld; if (!w) return null; return w.zend || (w.zend = { v: 1, sg: {}, lore: {}, made: {}, ev: 0 }); };
+
+    // ---------- предмети ----------
+    function item(id, name, ti, type, stat, desc, draw) {
+        ITEM_METADATA[id] = { name, rarity: T(ti).r, color: T(ti).c, type, stat: stat || undefined, desc };
+        if (draw) { try { itemSprites[id] = generateSprite(draw); } catch (e) { console.error('zend sprite', id, e); } }
+    }
+    const P = (c, pts, f, s) => { try { zfPoly(c, pts, f, s); } catch (e) { } }, C = (c, x, y, r, f, s, lw) => { try { zfC(c, x, y, r, f, s, lw); } catch (e) { } }, F = (c, f, l) => { try { zfFr(c, f, l); } catch (e) { } };
+    const gl = (c, x, y, r, col, a) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col + Math.round(a * 255).toString(16).padStart(2, '0')); g.addColorStop(1, col + '00'); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
+    // Печаті Вартових (5): ключі до Дверей Архіву
+    const SEALS = {
+        ray: ['seal_ray', 'Печать Променя', '#ffcf5a', 'Золота печать першого Вартового. Її віддає Склеп Першого Променя.'],
+        star: ['seal_star', 'Печать Зір', '#7ab0ff', 'Синя печать астролога. Її віддає Затоплена Обсерваторія.'],
+        abyss: ['seal_abyss', 'Печать Безодні', '#b070ff', 'Фіолетова печать Брами. Її віддає Глибинний вартовий.'],
+        forge: ['seal_forge', 'Печать Горнила', '#ff7a3a', 'Розжарена печать. Її віддає Хазяїн Пекельної Кузні.'],
+        mirror: ['seal_mirror', 'Печать Відображення', '#8ff0ff', 'Печать, що показує те, чого не було. Її віддає Двійник з Дзеркального Лабіринту.']
+    };
+    for (const k in SEALS) { const [id, nm, col, d] = SEALS[k]; item(id, nm, 4, '🔱 Печать Вартових', null, d + ' П’ять печатей відчиняють Двері Архіву (ПКМ на п’єдесталі).', c => { gl(c, 16, 16, 15, col, 0.55); C(c, 16, 16, 11.5, '#1a1424', '#05030a', 1.4); C(c, 16, 16, 9.4, col, null); C(c, 16, 16, 7, '#1a1424', null); c.strokeStyle = col; c.lineWidth = 1.6; c.beginPath(); c.arc(16, 16, 4.4, 0, TAU); c.moveTo(16, 8.5); c.lineTo(16, 23.5); c.moveTo(8.5, 16); c.lineTo(23.5, 16); c.stroke(); F(c, '#ffffff', [[15, 15, 2, 2]]); }); }
+    const hasSeal = k => cnt(SEALS[k][0]) > 0 || (S() && S().sg['u' + k]);
+    function seal(k) { const z = S(); if (!z || z.sg[k]) return; z.sg[k] = 1; give(SEALS[k][0], 1); toast('🔱 ' + SEALS[k][1] + ' — нагорода Вартових.'); }
+
+    // ---------- реєстр споруд ----------
+    const KIND = {};
+    function kind(k, d) {
+        KIND[k] = d; DG.NAME[k] = d.name; DG.COL[k] = d.col;
+        MAP.reg(k, () => d.build(MAP.B));
+        VIS.TH[k] = { tint: d.tint || '#ffffff', col: d.col, col2: d.col2 || '#ffffff', vig: d.vig || '#05030a', sub: d.sub || '' };
+        VIS.EXT[k] = d.vis || {};
+        DG.EXT[k] = { loot: d.loot, reward: d.reward };
+        for (const ch in (d.ch || {})) DG.CH[ch] = d.ch[ch];
+    }
+    const inst = k => { const z = DG.ZD(); return z ? z.dg.find(I => I.k === k) : null; };
+    const deepY = (h, T0, pad) => { const zd = currentWorld.zd, pk = currentWorld.zf && currentWorld.zf.sky && currentWorld.zf.sky.pk, lim = pk && pk.y0 ? pk.y0 - 6 : h - 5, lo = Math.max((zd && zd.y0 ? zd.y0 : Math.round(h * 0.5)) + (pad || 8), 60), hi = lim - T0.H - 4; return hi > lo ? lo + Math.floor(Math.random() * (hi - lo)) : Math.max(lo, hi); };
+    const underY = (sf, a, b) => sf + a + Math.floor(Math.random() * (b - a));
+    // ---------- спавн споруд після Д3 ----------
+    let ft = 0;
+    function ensure() {
+        const z = S(), zd = DG.ZD(); if (!z || !zd || !zd.d3done || guest()) return;
+        for (const k in KIND) { const d = KIND[k]; if (inst(k) || (d.need && !d.need())) continue; if (z.tries && z.tries[k] > 25) continue; z.tries = z.tries || {}; z.tries[k] = (z.tries[k] || 0) + 1;
+            const I = DG.create(k, { y0: d.y0, minP: d.minP || 40, fr: d.fr }); if (I) { z.made[k] = 1; banner('✨ ' + d.name, d.rumor || 'У світі з’явилось нове місце.'); toast('📖 Щоденник Вартових: «' + d.name + '» відмічено у списку місць.', 5200); } }
+    }
+    // ретро: печаті за вже пройдені данжі
+    function seals() {
+        const z = S(), zd = DG.ZD(); if (!z || !zd) return;
+        if (zd.d1done && !z.sg.ray) seal('ray'); if (zd.d2done && !z.sg.star) seal('star'); if (zd.d3done && !z.sg.abyss) seal('abyss');
+    }
+    // ---------- стрілки напрямку (нові місця) ----------
+    const LOC = document.createElement('div'); LOC.id = 'zend-loc'; document.body.appendChild(LOC);
+    const st = document.createElement('style'); st.textContent = '#zend-loc{position:fixed;left:14px;top:506px;z-index:40;display:none;flex-direction:column;gap:5px;pointer-events:none;font:600 12px "Segoe UI",sans-serif}#zend-loc .r{display:flex;align-items:center;gap:7px;padding:3px 10px 3px 5px;border-radius:14px;background:linear-gradient(#150f20dd,#0b0710dd);border:1px solid var(--c);color:#f4ead8;box-shadow:0 0 10px -2px var(--c);animation:zlin .5s both}#zend-loc svg{flex:none}#zend-loc small{opacity:.75}@keyframes zlin{from{opacity:0;transform:translateX(-14px)}}' +
+        '#zend-jb{position:fixed;left:64px;top:352px;z-index:60;width:46px;height:46px;border-radius:50%;border:2px solid #e0b060;background:radial-gradient(circle at 35% 30%,#4a3a20,#160f06);color:#ffe9b8;font-size:21px;cursor:pointer;box-shadow:0 0 12px #e0b06077,inset 0 0 10px #e0b06033;display:none}#zend-jb:hover{transform:scale(1.08)}#zend-jb .b{position:absolute;right:-3px;top:-3px;width:16px;height:16px;border-radius:50%;background:#7dffa0;color:#052a10;font:700 11px/16px sans-serif;text-align:center;display:none}';
+    document.head.appendChild(st);
+    function locTick() {
+        const zd = DG.ZD(); if (!zd || !zd.d3done || !playing()) { LOC.style.display = 'none'; return; }
+        let h = '', n = 0; const px = player.x / 32, py = player.y / 32;
+        for (const k in KIND) { const I = inst(k), d = KIND[k]; if (!I || I.boss) continue; const T0 = MAP.build(k), cx = I.x + T0.W / 2, cy = I.y + T0.H / 2, dd = Math.hypot(cx - px, cy - py); if (dd < 14) continue; const an = Math.atan2(cy - py, cx - px) * 180 / Math.PI + 90;
+            h += '<div class="r" style="--c:' + d.col + '"><svg viewBox="-12 -12 24 24" width="20" height="20"><g transform="rotate(' + an.toFixed(0) + ')"><path d="M0-10 L6 6 L0 3 L-6 6 Z" fill="' + d.col + '"/></g></svg><span>' + (d.hud || d.name) + '</span><small>' + Math.round(dd) + ' бл.</small></div>'; n++; }
+        if (h !== LOC._h) { LOC._h = h; LOC.innerHTML = h; } LOC.style.display = n ? 'flex' : 'none';
+    }
+    // ---------- Щоденник Вартових ----------
+    const TABS = [], PROG = [], LORE = {};
+    let tab = 'ov';
+    const JB = document.createElement('button'); JB.id = 'zend-jb'; JB.title = 'Щоденник Вартових'; JB.innerHTML = '📖<span class="b">!</span>'; document.body.appendChild(JB);
+    const chip = (ok, t) => '<span class="chip ' + (ok ? 'ok' : 'no') + '">' + (ok ? '✔ ' : '✖ ') + t + '</span>';
+    let lastTab = null;
+    function renderJ() {
+        let sum = 0, n = 0; for (const p of PROG) { try { sum += clamp(p.get().p, 0, 1); n++; } catch (e) { } } const pct = n ? Math.round(sum / n * 100) : 0;
+        const z = S() || {}, nl = Object.keys(z.lore || {}).length, ns = Object.keys(SEALS).filter(k => hasSeal(k)).length;
+        const flip = lastTab !== tab; lastTab = tab;
+        let h = '<div class="zj"><div class="zj-hero"><div class="zj-ring" style="--p:' + pct + '"><span>' + pct + '%</span></div><div class="zj-tt"><b>Спадок Вартових</b><small>📜 ' + nl + '/' + Object.keys(LORE).length + ' сторінок · 🔱 ' + ns + '/' + Object.keys(SEALS).length + ' печатей</small></div>' + '<i class="m m1"></i><i class="m m2"></i><i class="m m3"></i><i class="m m4"></i><i class="m m5"></i></div>';
+        h += '<div class="zj-tabs">' + TABS.map(t => '<button data-z="tab:' + t.id + '" class="' + (tab === t.id ? 'on' : '') + '"><em>' + t.ic + '</em>' + t.name + '</button>').join('') + '</div>';
+        const t = TABS.find(q => q.id === tab) || TABS[0]; h += '<div class="zj-page' + (flip ? ' flip' : '') + '">' + t.render() + '</div></div>'; return h;
+    }
+    const jst = document.createElement('style'); jst.textContent = `
+#zr-ov .zrb:has(.zj){background:linear-gradient(160deg,#1d150a,#120d07 55%,#1a1208);border:2px solid #c99a4a;box-shadow:0 0 40px -6px #e0b060,inset 0 0 60px -20px #e0b060;max-width:min(680px,94vw)}
+#zr-ov .zrb:has(.zj) .hd b{letter-spacing:2px}
+.zj-hero{position:relative;display:flex;gap:14px;align-items:center;padding:10px 12px;margin-bottom:10px;border-radius:12px;background:linear-gradient(100deg,rgba(224,176,96,.18),rgba(224,176,96,.04));border:1px solid rgba(224,176,96,.4);overflow:hidden}
+.zj-ring{--p:0;width:62px;height:62px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(#ffe29a calc(var(--p)*1%),rgba(255,255,255,.1) 0);animation:zjRing 1.1s cubic-bezier(.2,.9,.3,1) both;box-shadow:0 0 18px -2px #e0b060}
+.zj-ring span{width:48px;height:48px;border-radius:50%;background:#1a1208;display:grid;place-items:center;font-weight:800;font-size:15px;color:#ffe29a}
+@keyframes zjRing{from{transform:rotate(-120deg) scale(.5);opacity:0}}
+.zj-tt b{display:block;font-size:20px;color:#ffe9b8;text-shadow:0 0 12px #e0b06088}.zj-tt small{opacity:.8}
+.zj-hero .m{position:absolute;bottom:-6px;width:5px;height:5px;border-radius:50%;background:#ffe29a;box-shadow:0 0 8px 2px #ffd36a;opacity:0;animation:zjMote 4.5s linear infinite}
+.zj-hero .m1{left:12%}.zj-hero .m2{left:34%;animation-delay:1.1s}.zj-hero .m3{left:58%;animation-delay:2.2s}.zj-hero .m4{left:76%;animation-delay:.6s}.zj-hero .m5{left:92%;animation-delay:3s}
+@keyframes zjMote{0%{transform:translateY(0);opacity:0}20%{opacity:.95}100%{transform:translateY(-80px) translateX(14px);opacity:0}}
+.zj-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid rgba(224,176,96,.35);flex-wrap:wrap}
+#zr-ov .zj-tabs button{background:transparent;border:0;border-bottom:3px solid transparent;border-radius:9px 9px 0 0;padding:7px 12px;color:#d8c8a0;font-weight:600;position:relative}
+#zr-ov .zj-tabs button em{font-style:normal;margin-right:5px;display:inline-block;transition:transform .25s}
+#zr-ov .zj-tabs button:hover em{transform:scale(1.3) rotate(-8deg)}
+#zr-ov .zj-tabs button.on{color:#fff;background:linear-gradient(rgba(224,176,96,.28),rgba(224,176,96,.04));border-bottom-color:#ffd36a;box-shadow:0 6px 14px -8px #ffd36a}
+.zj-page.flip{animation:zjFlip .45s cubic-bezier(.2,.8,.3,1) both;transform-origin:left center}
+@keyframes zjFlip{from{opacity:0;transform:perspective(900px) rotateY(-14deg) translateX(-12px)}to{opacity:1;transform:none}}
+.zj .card{border-color:rgba(224,176,96,.28);background:linear-gradient(100deg,rgba(224,176,96,.1),rgba(0,0,0,.15));position:relative;overflow:hidden}
+.zj .card::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,rgba(255,226,154,.14) 50%,transparent 60%);transform:translateX(-120%);transition:transform .7s}
+.zj .card:hover::after{transform:translateX(120%)}
+.zj .card b{color:#ffe9b8}
+.zj .msg{border-left-color:#e0b060;background:rgba(224,176,96,.08);font-style:italic}
+.zj .chip.ok{box-shadow:0 0 10px -3px #7ee08a}
+.zj .bar{height:11px;background:rgba(0,0,0,.45);border:1px solid rgba(224,176,96,.25)}
+.zj .bar i{background:linear-gradient(90deg,#8a5a1a,#e0b060,#ffe9b8);animation:zjFill 1.1s cubic-bezier(.2,.9,.3,1) both;transform-origin:left}
+@keyframes zjFill{from{transform:scaleX(0)}}
+@media(max-width:520px){.zj-hero{flex-wrap:wrap}.zj-tabs button{flex:1 1 auto}}`;
+    document.head.appendChild(jst);
+    function openJ() { if (!playing()) return; Z.open('📖 Щоденник Вартових', '#e0b060', renderJ, (z, d) => { if (z.startsWith('tab:')) { tab = z.slice(4); Z.render(); return; } const t = TABS.find(q => q.id === tab); if (t && t.click) t.click(z, d); }); tn('triangle', 330, 520, 0.2, 0.07); }
+    JB.onclick = openJ;
+    TABS.push({ id: 'ov', ic: '🧭', name: 'Огляд', render() {
+        const zd = DG.ZD() || {}; let h = '<div class="msg">Серце Світанку знову б’ється, та Вартові залишили після себе багато: споруди, спадок і борги. Збирай — і складай докупи.</div><div class="card" style="display:block"><b>Шлях</b><div class="chips">' + chip(zd.d1done, 'Склеп Променя') + chip(zd.d2done, 'Обсерваторія') + chip(zd.d3done, 'Глибинна Брама') + Object.keys(KIND).map(k => chip(inst(k) && inst(k).boss, KIND[k].name)).join('') + '</div></div>';
+        for (const p of PROG) { try { const r = p.get(); h += '<div class="card"><div><b>' + p.ic + ' ' + p.name + '</b><small>' + r.txt + '</small><div class="bar"><i style="width:' + Math.round(clamp(r.p, 0, 1) * 100) + '%"></i></div></div></div>'; } catch (e) { } }
+        const sg = Object.keys(SEALS).map(k => chip(hasSeal(k), SEALS[k][1])).join(''); h += '<div class="card" style="display:block"><b>🔱 Печаті Дверей Архіву</b><div class="chips">' + sg + '</div><small>П’ять печатей відчиняють Двері Архіву (ПКМ на п’єдесталі з печаттю в руці).</small></div>';
+        return h; } });
+    TABS.push({ id: 'lore', ic: '📜', name: 'Літопис', render() { const ids = Object.keys(LORE); if (!ids.length) return '<div class="msg">Порожньо. Літопис складається зі сторінок, знайдених у Музеї, Архіві й спорудах.</div>'; const z = S(); let h = ''; ids.forEach((id, i) => { const L = LORE[id], k = !!(z && z.lore[id]); h += '<div class="card" style="display:block;opacity:' + (k ? 1 : 0.45) + '"><b>' + (k ? '📜 ' + L[0] : '🔒 Сторінка ' + (i + 1)) + '</b><small>' + (k ? L[1] : 'Ще не знайдена.') + '</small></div>'; }); return h; } });
+    function lore(id) { const z = S(); if (!z || z.lore[id]) return false; z.lore[id] = 1; toast('📜 Нова сторінка літопису: «' + LORE[id][0] + '»', 5200); tn('sine', 440, 880, 0.9, 0.09); return true; }
+    function jbTick() { const ok = playing() && lv40(); JB.style.display = ok ? 'block' : 'none'; const z = S(); if (z) { const nw = Object.keys(z.lore).length; JB.querySelector('.b').style.display = (JB._n != null && nw > JB._n) ? 'block' : 'none'; if (Z.isOpen()) { JB._n = nw; } if (JB._n == null) JB._n = nw; } }
+    window.addEventListener('keydown', e => { if (e.code === 'KeyJ' && false) openJ(); });
+    // сторінки літопису за записами в споруді + захист стін споруд до перемоги над босом
+    function loreScan() { const z = DG.ZD(); if (!z) return; const tx = Math.floor((player.x + 12) / 32), ty = Math.floor((player.y + 22) / 32); for (const k in KIND) { const I = inst(k); if (!I) continue; const T = MAP.build(k); for (const l of T.lore) if (LORE[l.key] && Math.abs(tx - I.x - l.x) < 4 && Math.abs(ty - I.y - l.y) < 4) lore(l.key); } }
+    v37MineOk = (function (o) { return function (bx, by, bId) { try { for (const k in KIND) { const I = inst(k); if (I && !I.boss) { const T = MAP.build(k); if (bx >= I.x && bx < I.x + T.W && by >= I.y && by < I.y + T.H && bId !== 84 && bId !== 0) { if (!(Z.f % 90)) toast('Руни не дозволяють копати. Спершу здолай хазяїна.'); return false; } } } } catch (e) { } return o.apply(this, arguments); }; })(v37MineOk);
+    // ---------- цикл ----------
+    let f = 0;
+    Z.TICK.push(() => {
+        if (!playing() || !currentWorld) return; f++;
+        if (f % 10 === 0) { try { locTick(); jbTick(); loreScan(); } catch (e) { console.error('zend ui', e); } }
+        if (f % 300 === 60 && !guest()) { try { ensure(); seals(); } catch (e) { console.error('zend ensure', e); } }
+    });
+    // ---------- спільні дрібниці ----------
+    const FXb = (x, y, c, n, sp, o) => X.burst(x, y, c, n, sp, o), FXw = (x, y, c, r, o) => X.wave(x, y, c, r, o);
+    function finish(I, m, o) { // стандартна нагорода за боса споруди
+        const cx = m.x + m.width / 2, cy = m.y + m.height / 2, col = KIND[I.k].col;
+        FXb(cx, cy, col, 70, 7, { up: 1 }); FXb(cx, cy, '#ffffff', 30, 5); FXw(cx, cy, col, 260, { life: 1.6 }); FXw(cx, cy, '#ffffff', 160, { life: 1 });
+        try { Z.flash(col); shake = Math.max(shake, 14); } catch (e) { }
+        banner('🏆 ' + KIND[I.k].name, o.msg || 'Споруду очищено.'); if (o.seal) setTimeout(() => seal(o.seal), 900);
+        (o.items || []).forEach(([id, n, d], i) => setTimeout(() => drop(id, cx + (i - 1) * 24, cy - 20, n, (i - 1) * 1.2), 700 + i * 160));
+        const T0 = MAP.build(I.k); if (T0.fin && !I.fin) { const fx = I.x + T0.fin.x, fy = I.y + T0.fin.y; DG.wset(fx, fy, 15); chestsData[fx + ',' + fy] = KIND[I.k].loot ? KIND[I.k].loot(I, true) : new Array(16).fill(null); I.fin = 1; FXb(fx * 32 + 16, fy * 32, col, 40, 4, { up: 1.6 }); FXw(fx * 32 + 16, fy * 32, col, 150, { life: 1.2 }); }
+        if (o.after) setTimeout(o.after, 2400);
+    }
+    function lootBox(items, extra) { const s = new Array(16).fill(null); const free = () => { const f = s.map((q, i) => q ? -1 : i).filter(i => i >= 0); return f.length ? f[Math.random() * f.length | 0] : -1; }; for (const [id, a, b, ch] of items) { if (Math.random() > (ch == null ? 1 : ch)) continue; const i = free(); if (i >= 0) s[i] = { id, count: a + Math.floor(Math.random() * (b - a + 1)) }; } return s; }
+        window.__zbcol = Object.assign(window.__zbcol || {}, {
+        x_b_ray: { c: '#ffcf5a', i: '☀', n: 'Вартовий Першого Променя' }, x_b_astro: { c: '#a8c8ff', i: '✦', n: 'Астролог Затопленої Обсерваторії' }, x_b_gate: { c: '#b070ff', i: '🚪', n: 'Глибинний вартовий' }, x_b_foreman: { c: '#ffcf6a', i: '⛏', n: 'Штейгер-Привид' }, x_b_matron: { c: '#8ff0ff', i: '💎', n: 'Кристальна Матка' },
+        x_b_forge: { c: '#ff7a2a', i: '🔥', n: 'Хазяїн Горнила' }, x_b_double: { c: '#7fd8ff', i: '🪞', n: 'Двійник' }, x_b_echo: { c: '#d8a8ff', i: '📜', n: 'Відлуння Глибинного Вартового' } });
+    window.__zend = { S, item, kind, KIND, inst, deepY, underY, seal, hasSeal, SEALS, TABS, PROG, LORE, lore, lv40, cnt, take, drop, give, guest, toast, banner, tn, finish, lootBox, openJ, chip, P, C, F, gl, FXb, FXw, T, clamp, rnd, playing, ensure };
+})();// ===== v46.66 «Підземна ферма грибів»: грибна грядка, 4 види грибів, спори, ріст у темряві й вологі, живі грибні шапки =====
+// Гриби ростуть лише під землею (нижче 10 блоків від поверхні). Вода поряд пришвидшує ріст, світло — ні. Це інгредієнти для страв Вартових і пального для Кузні.
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx; if (!E || !Z || !X || typeof v378Furn !== 'function') return;
+    const { item, P, C, F, gl, drop, cnt, take } = E; const TAU = Math.PI * 2;
+    const SP = {
+        glow: { n: 'Світлогриб', sn: 'Спори Світлогриба', col: '#7affd0', col2: '#d8fff2', t: 480, y: [3, 4], back: 0.5, cap: '#2fb89a', stem: '#d8fff2', d: 'Теплий бірюзовий гриб. Світиться у темряві й додає мани у стравах.', sd: 'Крихітні сяючі спори. Висівай на грибній грядці під землею.' },
+        ember: { n: 'Жарогриб', sn: 'Спори Жарогриба', col: '#ff8a3a', col2: '#ffd8a0', t: 600, y: [3, 4], back: 0.45, cap: '#d8501a', stem: '#ffe0b0', d: 'Гарячий гриб із червоними плямами. Додає лютості стравам, а Кузні — жару.', sd: 'Тліючі спори. Дають жар навіть у холодній печері.' },
+        shade: { n: 'Тіньовик', sn: 'Спори Тіньовика', col: '#a070ff', col2: '#e0d0ff', t: 720, y: [2, 3], back: 0.4, cap: '#4a2a8a', stem: '#c8b8e8', d: 'Чорно-фіолетовий гриб, що ховається від світла. Для хитрих і швидких страв.', sd: 'Темні спори, що живляться тінню. Потребують Есенції тіні.' },
+        gold: { n: 'Золотий шапкогриб', sn: 'Давні спори', col: '#ffd84a', col2: '#fff6b0', t: 1080, y: [2, 2], back: 0.18, cap: '#e0a020', stem: '#fff1c0', d: 'Рідкісний золотий гриб із давніх часів. Ним пишаються найкращі кухарі.', sd: 'Спори, що пережили віки під землею. Їх знаходять лише на розкопках Вартових.' }
+    };
+    for (const k in SP) {
+        const D = SP[k];
+        item('mush_' + k, D.n, k === 'gold' ? 4 : 3, '🍄 Гриб · Інгредієнт', null, D.d + ' Росте на грибній грядці під землею.', c => { gl(c, 16, 16, 15, D.col, 0.45); F(c, D.stem, [[13, 17, 6, 10]]); F(c, '#00000033', [[17, 17, 2, 10]]); P(c, [[4, 18], [6, 10], [11, 6], [21, 6], [26, 10], [28, 18]], D.cap, '#1a0e1e'); P(c, [[7, 12], [12, 8], [20, 8], [24, 12]], D.col2 + 'aa', null); F(c, D.col2, [[10, 12, 2, 2], [18, 10, 3, 2], [22, 14, 2, 2]]); });
+        item('spore_' + k, D.sn, k === 'gold' ? 4 : 2, '🍄 Спори', null, D.sd, c => { gl(c, 16, 16, 14, D.col, 0.4); C(c, 16, 20, 8, '#3a2814', '#120a06', 1.2); F(c, '#5a3e22', [[10, 17, 12, 3]]); for (let i = 0; i < 7; i++) { const a = i * 2.4, r = 3 + (i % 3) * 2.6; C(c, 16 + Math.cos(a) * r, 15 - Math.abs(Math.sin(a)) * r * 1.4, 1.5, D.col, null); } F(c, '#ffffff', [[15, 10, 1, 1]]); });
+    }
+    // рецепти спор: прості з печерних рослин; тіньові — з есенції тіні; давні — лише з розкопок
+    recipes.push({ result: 'spore_glow', count: 2, req: { glow_lily: 3 }, lvl: 30 }, { result: 'spore_ember', count: 2, req: { fire_bloom: 3 }, lvl: 30 }, { result: 'spore_shade', count: 2, req: { shade_essence: 1, mush_glow: 2 }, lvl: 40 });
+    // ---------- грядка ----------
+    const R_ = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+    v378Furn('mush_bed', { n: 'Грибна грядка', w: 2, h: 1, st: 'floor', col: '#7affd0', type: '🍄 Підземний сад', stat: 'ПКМ зі спорами — посадити; ПКМ по дозрілих — зібрати', d: 'Волога кам’яна грядка з перегноєм і мохом. Гриби ростуть тільки під землею (глибше 10 блоків від поверхні); вода поблизу пришвидшує ріст. Для кожного виду потрібні свої спори.' },
+        function (c) {
+            c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(1, 30, 62, 2);
+            R_(c, 1, 16, 62, 14, '#120c14'); R_(c, 2, 17, 60, 12, '#4a4258');
+            for (let i = 0; i < 6; i++) { R_(c, 2 + i * 10, 17, 9, 6, i % 2 ? '#625a76' : '#6e6684'); R_(c, 2 + i * 10, 17, 9, 1.5, '#9a92b4'); R_(c, 2 + i * 10, 22, 9, 1, 'rgba(0,0,0,.3)'); }
+            R_(c, 2, 26, 60, 3, '#2a243c'); R_(c, 2, 28, 60, 1.5, '#120c14');
+            c.fillStyle = '#1a1208'; c.fillRect(5, 11, 54, 7); c.fillStyle = '#3a2814'; for (let i = 0; i < 16; i++) c.fillRect(6 + i * 3.4, 11 + (i * 5 % 3), 2.6, 2.2);
+            c.fillStyle = '#3f8a5a'; for (const [x, w] of [[3, 5], [24, 4], [40, 3], [57, 5]]) { c.fillRect(x, 15, w, 2); c.fillRect(x + 1, 14, w - 2, 1); }
+            c.fillStyle = '#7affd0'; for (const x of [9, 27, 45]) c.fillRect(x, 13, 1.4, 1.4);
+        }, { stone: 40, wood: 12, vines: 8 }, 30);
+    const need = f => SP[f.mb.sp].t;
+    const under = f => { try { const col = Math.floor(f.x + 1), sf = surfaceHeights[col]; return sf != null && f.y > sf + 10; } catch (e) { return false; } };
+    function wet(f) { try { const cx = Math.floor(f.x + 1), cy = Math.floor(f.y); for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) if (worldMap[cy + dy] && worldMap[cy + dy][cx + dx] === 13) return true; } catch (e) { } return false; }
+    const rate = f => !under(f) ? 0 : 1 + (wet(f) ? 0.5 : 0) + (E.cnt('mush_glow') >= 0 ? 0 : 0);
+    function useBed(f, held) {
+        const mb = f.mb;
+        if (mb && mb.p >= need(f)) { const D = SP[mb.sp], n = D.y[0] + Math.floor(Math.random() * (D.y[1] - D.y[0] + 1)), give = [['mush_' + mb.sp, n]]; if (Math.random() < D.back) give.push(['spore_' + mb.sp, 1]); if (mb.sp === 'gold' && Math.random() < 0.3) give.push(['old_spice', 1]); f.mb = null; return { msg: '🍄 Урожай: ' + D.n + ' ×' + n, give, fx: 'harv', sp: mb.sp, n }; }
+        if (mb) { const D = SP[mb.sp], p = Math.floor(mb.p / need(f) * 100), r = rate(f); return { msg: '🍄 ' + D.n + ': ' + p + '% · ' + (r ? (wet(f) ? 'волога пришвидшує ріст' : 'росте в темряві') : '⚠ потрібна темрява — спустись глибше 10 блоків'), fx: 'info', n: 0 }; }
+        const sp = held && String(held).startsWith('spore_') ? String(held).slice(6) : null;
+        if (!sp || !SP[sp]) return { msg: '🍄 Грядка порожня. Тримай у руці спори й клікни ПКМ.', fx: 'info' };
+        if (!under(f)) return { msg: '⚠ Тут надто світло: гриби ростуть лише під землею (глибше 10 блоків від поверхні).', fx: 'info' };
+        f.mb = { sp, p: 0 }; return { msg: '🍄 Посаджено: ' + SP[sp].n + '. Зачекай ' + Math.round(SP[sp].t / 60) + ' хв.', take: 'spore_' + sp, fx: 'plant', sp };
+    }
+    function applyFx(f, r) { try { const x = (f.x + 1) * 32, y = f.y * 32 + 10, D = SP[r.sp || 'glow'] || SP.glow; if (r.fx === 'plant') { X.burst(x, y, D.col, 16, 2.4, { up: 1 }); X.wave(x, y + 6, D.col2, 60, { life: 0.5 }); E.tn('sine', 500, 800, 0.2, 0.06); } else if (r.fx === 'harv') { X.burst(x, y - 6, D.col, 34, 4, { up: 1.4 }); X.burst(x, y - 6, '#ffffff', 10, 3); X.wave(x, y, D.col, 90, { life: 0.7 }); E.tn('triangle', 600, 1200, 0.3, 0.07); E.tn('sine', 900, 1500, 0.25, 0.04, { delay: 0.1 }); } } catch (e) { } }
+    function finish(f, r, pid) {
+        if (pid != null) { Z.send({ t: 'x_zsr', pid, r: { msg: r.msg, give: r.give, take: r.take, fx: r.fx, sp: r.sp }, fx_: f.x, fy_: f.y }); }
+        else { if (r.take) take(r.take, 1); if (r.give) r.give.forEach(([id, n], i) => drop(id, (f.x + 1) * 32 + (i - 1) * 14, f.y * 32 - 6, n)); E.toast(r.msg, 2600); try { if (r.fx === 'harv') profXp('farm', 10); } catch (e) { } }
+        applyFx(f, r); try { v378Sync(); } catch (e) { }
+    }
+    Z.RC.push((bx, by, pressed) => {
+        if (!pressed) return false; let f = null; try { f = furnAt(bx, by); } catch (e) { } if (!f || f.t !== 'mush_bed') return false;
+        if (Math.hypot(player.x + 12 - (f.x + 1) * 32, player.y + 22 - (f.y + 0.5) * 32) > 220) return false; mouse.rightDown = false; const h = Z.held();
+        if (!Z.host() && Z.mpOn()) { Z.send({ t: 'x_zs', x: f.x, y: f.y, pid: MP.id, held: h || '' }); return true; }
+        finish(f, useBed(f, h), null); return true;
+    });
+    Z.MSG.x_zs = m => { try { if (!Z.host()) return; const f = Object.values(currentWorld.furn || {}).find(q => q.x === m.x && q.y === m.y && q.t === 'mush_bed'); if (!f) return; const r = useBed(f, typeof m.held === 'string' ? m.held : ''); finish(f, r, m.pid); } catch (e) { console.error('zshroom host', e); } };
+    Z.MSG.x_zsr = m => { try { if (m.pid !== MP.id || !m.r) return; const r = m.r; if (r.take) take(r.take, 1); if (Array.isArray(r.give)) r.give.forEach(([id, n]) => { if (ITEM_METADATA[id]) drop(id, player.x, player.y, n | 0, 0); }); E.toast(String(r.msg || ''), 2600); applyFx({ x: m.fx_, y: m.fy_ }, r); } catch (e) { } };
+    // ріст (господар)
+    let tk = 0;
+    Z.TICK.push(() => {
+        if (!E.playing() || !Z.host() || !currentWorld || !currentWorld.furn || ++tk % 60 !== 11) return; let ch = false;
+        for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t !== 'mush_bed' || !f.mb || f.mb.p >= need(f)) continue; const r = rate(f); if (!r) continue; const o = f.mb.p / need(f); f.mb.p = Math.min(need(f), f.mb.p + r); if (Math.floor(o * 4) !== Math.floor(f.mb.p / need(f) * 4) || f.mb.p >= need(f)) ch = true; }
+        if (ch) try { v378Sync(); } catch (e) { }
+    });
+    // ---------- малювання: живі шапки, спори в повітрі ----------
+    function cap(c, x, y, s, D, t, ph, ready) {
+        const sw = Math.sin(t * 1.4 + ph) * 0.06; c.save(); c.translate(x, y); c.rotate(sw); c.scale(s, s);
+        c.fillStyle = D.stem; c.fillRect(-2, -10, 4, 10); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(0, -10, 2, 10);
+        c.fillStyle = D.cap; c.beginPath(); c.moveTo(-9, -9); c.quadraticCurveTo(-9, -22, 0, -22); c.quadraticCurveTo(9, -22, 9, -9); c.closePath(); c.fill(); c.strokeStyle = 'rgba(10,4,16,.7)'; c.lineWidth = 1; c.stroke();
+        c.fillStyle = D.col2; c.globalAlpha = 0.85; c.fillRect(-5, -18, 3, 2.4); c.fillRect(2, -16, 2.6, 2.4); c.fillRect(-1, -20, 2, 2); c.globalAlpha = 1;
+        if (ready) { c.globalCompositeOperation = 'lighter'; const q = 0.5 + 0.5 * Math.sin(t * 3 + ph); gl(c, 0, -14, 16 + q * 4, D.col, 0.3 + q * 0.2); }
+        c.restore();
+    }
+    function glg(c, x, y, r, col, a) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, X.rgba(col, a)); g.addColorStop(1, X.rgba(col, 0)); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); }
+    Z.DRAW.push((t, x0, x1) => {
+        if (!currentWorld || !currentWorld.furn) return; const c = ctx;
+        for (const k in currentWorld.furn) {
+            const f = currentWorld.furn[k]; if (f.t !== 'mush_bed' || !f.mb) continue; const bx = f.x * 32, by = f.y * 32; if (bx > x1 + 80 || bx < x0 - 140) continue;
+            const D = SP[f.mb.sp], q = Math.min(1, f.mb.p / D.t), ready = q >= 1, base = by + 15;
+            c.save();
+            const n = q < 0.25 ? 0 : q < 0.6 ? 3 : 5;
+            for (let i = 0; i < 5; i++) { const px = bx + 8 + i * 12 + (i % 2) * 2; if (q < 0.25) { c.fillStyle = D.col; c.globalAlpha = 0.5 + 0.3 * Math.sin(t * 2 + i); c.fillRect(px, base - 2 - (i % 2), 2, 2); c.globalAlpha = 1; continue; } if (i >= n) continue; const sc = (q < 0.6 ? 0.4 + (q - 0.25) / 0.35 * 0.35 : 0.75 + (q - 0.6) / 0.4 * 0.35) * (0.8 + (i % 3) * 0.12); cap(c, px, base, sc, D, t, i * 1.7, ready); }
+            c.restore();
+            if (ready) { c.save(); c.globalCompositeOperation = 'lighter'; glg(c, bx + 32, base - 18, 60, D.col, 0.2 + 0.08 * Math.sin(t * 2)); c.restore(); if (Math.random() < 0.18) X.emit(bx + 10 + Math.random() * 44, base - 18, { vx: (Math.random() - 0.5) * 0.3, vy: -0.4 - Math.random() * 0.5, g: -0.004, life: 2.4, s: 2, c: D.col2, a: 0.9, shape: Math.random() < 0.3 ? 1 : 0 }); if (Math.hypot(player.x + 12 - bx - 32, player.y + 22 - by) < 150) X.label(bx + 32, base - 46, 'ПКМ — зібрати', D.col2); }
+            else if (q > 0.25 && Math.random() < 0.04) X.emit(bx + 10 + Math.random() * 44, base - 10, { vx: (Math.random() - 0.5) * 0.2, vy: -0.25, life: 1.8, s: 1.6, c: D.col, a: 0.7 });
+        }
+    });
+    Z.LIGHT.push(L => { if (!currentWorld || !currentWorld.furn) return; for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t === 'mush_bed' && f.mb && f.mb.sp !== 'shade') { const q = f.mb.p / SP[f.mb.sp].t; if (q > 0.3) L((f.x + 1) * 32, f.y * 32, 44 + q * 50); } } });
+    E.PROG.push({ id: 'shroom', ic: '🍄', name: 'Грибна ферма', get() { let n = 0, r = 0; try { for (const k in currentWorld.furn) { const f = currentWorld.furn[k]; if (f.t === 'mush_bed') { n++; if (f.mb && f.mb.p >= need(f)) r++; } } } catch (e) { } return { txt: n ? 'Грядок: ' + n + ' · готово до збору: ' + r : 'Збудуй Грибну грядку (верстак, 30 рівень) і посади спори під землею.', p: n ? 0.3 + Math.min(0.7, r / Math.max(1, n) * 0.7) : 0 }; } });
+    window.__zshroom = { SP, useBed };
+})();
+// ===== v46.66 «Розкопки»: місця розкопок під землею, пензлик археолога, уламки реліквій Вартових, Музей у Щоденнику з постійними бонусами =====
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx, DG = window.__zdung; if (!E || !Z || !X || !DG) return;
+    const { item, P, C, F, gl, drop, cnt, take, S, toast, tn, banner, guest, playing, clamp } = E; const TAU = Math.PI * 2;
+    const REL = {
+        ray: { n: 'Лампа Променя', ic: '☀', col: '#ffcf5a', b: 'st3', t: '+3% шкоди', d: 'Золотий світильник першого Вартового.' },
+        star: { n: 'Астролябія Зір', ic: '✦', col: '#7ab0ff', b: 'mana', t: '+30 мани', d: 'Бронзове кільце, що вказує на зорі, яких немає.' },
+        abyss: { n: 'Серце Брами', ic: '◆', col: '#b070ff', b: 'hp', t: '+30 здоров’я', d: 'Фіолетовий камінь, що пам’ятає темряву.' },
+        lamp: { n: 'Шахтарський Ліхтар', ic: '✧', col: '#ffa040', b: 'crit', t: '+2% крит. шансу', d: 'Старий ліхтар шахти, що ще тліє.' },
+        song: { n: 'Пісенний Камінь', ic: '♪', col: '#7affd0', b: 'xp', t: '+4% досвіду', d: 'Гладкий камінь, у якому живе мелодія.' },
+        mirror: { n: 'Скалка Відображення', ic: '❖', col: '#8ff0ff', b: 'def', t: '+3 захисту', d: 'Скло, що показує щось інше.' }
+    };
+    const NEED = 4, STROKES = 8;
+    item('arch_brush', 'Пензлик археолога', 3, '🖌 Інструмент', null, 'Тримай у руці й клікай ПКМ по місцю розкопок під землею (вони блищать і мають значок 🔍). 8 клацань — і знахідка твоя.', c => { F(c, '#7a4a28', [[14, 10, 5, 18]]); F(c, '#a8703c', [[15, 10, 2, 18]]); F(c, '#c0c0d0', [[12, 8, 9, 4]]); F(c, '#fff3d0', [[11, 1, 11, 8]]); F(c, '#e0c890', [[12, 2, 9, 6]]); F(c, '#ffffff', [[13, 2, 2, 3]]); });
+    for (const k in REL) {
+        const R = REL[k]; item('frag_' + k, 'Уламок: ' + R.n, 3, '🏺 Уламок реліквії', null, 'Збери ' + NEED + ' уламки й склади реліквію в Музеї (📖 Щоденник → Музей).', c => { gl(c, 16, 16, 14, R.col, 0.35); P(c, [[6, 18], [11, 6], [20, 9], [26, 14], [22, 25], [10, 26]], '#4a3a52', '#120a16'); P(c, [[9, 17], [12, 9], [19, 11], [22, 15]], R.col + 'bb', null); F(c, '#ffffff', [[13, 11, 2, 2]]); F(c, R.col, [[17, 18, 6, 2], [10, 21, 5, 2]]); });
+    }
+    item('old_spice', 'Давня прянощі', 4, '🌿 Інгредієнт', null, 'Прянощі з часів Вартових. Вони не вивітрилися за століття. Для страв найвищого рівня.', c => { gl(c, 16, 16, 13, '#ffb060', 0.35); C(c, 16, 21, 8, '#6a3c20', '#1a0c06', 1.2); F(c, '#8a5a30', [[9, 17, 14, 4]]); for (let i = 0; i < 6; i++) C(c, 12 + i * 2.2, 14 - (i % 2) * 2, 1.6, '#ffb060', null); F(c, '#fff0c0', [[15, 10, 2, 2]]); });
+    item('relic_dust', 'Реліквійний пил', 3, '✨ Матеріал', null, 'Сяйний пил із розкопок. Годиться для кування і як подарунок Музею.', c => { gl(c, 16, 16, 14, '#e8d0ff', 0.4); for (let i = 0; i < 12; i++) { const a = i * 2.4, r = 3 + (i * 7 % 9); F(c, i % 3 ? '#e8d0ff' : '#fff8c0', [[16 + Math.cos(a) * r, 16 + Math.sin(a) * r, 2, 2]]); } });
+    recipes.push({ result: 'arch_brush', count: 1, req: { wood: 6, iron_ingot: 3, gold_ingot: 2 }, lvl: 40 });
+    // ---------- сторінки літопису ----------
+    const LP = { a1: ['Рукопис шахтаря', 'Ми копали вглиб, аж поки земля не заговорила. Вона сказала: «Нижче — не ваше». Ми не послухали.'], a2: ['Запис астролога', 'Зорі в Обсерваторії дивилися на нас. Один із нас ліг і більше не встав: вона відображала його, а не небо.'], a3: ['Лист із Брами', 'Брама не зачиняється: вона лише чекає. Хто тримає печаті — той тримає і ключ.'], a4: ['Пісня Вартових', 'Там, де гасне лампа, співає камінь. Там, де співає камінь, вартовий не спить.'], a5: ['Нотатки кухаря', 'Жарогриб — для відваги, Тіньовик — для швидкості, а Золотий — для тих, хто готовий чекати.'], a6: ['Останній запис', 'Ми склали реліквії докупи, і Двері вперше за століття здригнулись. Ми не ті, хто їх відчинить.'] };
+    for (const k in LP) E.LORE[k] = LP[k];
+    // ---------- місця розкопок ----------
+    const st = () => { const z = S(); if (!z) return null; return z.arch || (z.arch = { sites: [], got: {}, mus: {}, n: 0, cd: 0 }); };
+    const dgs = () => { try { return DG.ZD().dg || []; } catch (e) { return []; } };
+    const inDg = (x, y) => { try { return dgs().some(I => { const t = window.__zdgmap.build(I.k); return x >= I.x - 3 && x < I.x + t.W + 3 && y >= I.y - 3 && y < I.y + t.H + 3; }); } catch (e) { return false; } };
+    const cap = () => clamp(Math.round(currentWorld.width / 300), 4, 14);
+    function pickSite() {
+        const w = currentWorld.width, h = currentWorld.height, a = st();
+        for (let t = 0; t < 40; t++) {
+            const x = 20 + Math.floor(Math.random() * (w - 40)), sf = surfaceHeights[x]; if (sf == null) continue;
+            const lo = sf + 16, hi = Math.min(h - 8, (currentWorld.zf && currentWorld.zf.sky && currentWorld.zf.sky.pk && currentWorld.zf.sky.pk.y0 ? currentWorld.zf.sky.pk.y0 - 10 : h - 8), sf + 120); if (hi <= lo) continue;
+            const y0 = lo + Math.floor(Math.random() * (hi - lo));
+            for (let dy = 0; dy < 30; dy++) { const y = y0 + dy; if (y >= h - 4) break; const row = worldMap[y], below = worldMap[y + 1]; if (!row || !below) continue; if (BLOCKS[row[x]].solid || BLOCKS[row[x]].liquid) continue; if (!BLOCKS[below[x]].solid || BLOCKS[below[x]].liquid) continue; if (inDg(x, y)) break; if (a.sites.some(s => Math.hypot(s.x - x, s.y - y) < 40)) break; return { x, y, n: 0, f: Math.random() < 0.5 ? 1 : 0 }; }
+        }
+        return null;
+    }
+    function tickSites() {
+        const a = st(); if (!a || !E.lv40() || guest()) return; a.sites = a.sites.filter(s => { const ok = s.x != null && worldMap[s.y] && !BLOCKS[worldMap[s.y][s.x]].solid; return ok && s.n < STROKES; });
+        if (a.sites.length < cap() && (a.cd -= 1) <= 0) { a.cd = 20; const s = pickSite(); if (s) { a.sites.push(s); } else a.cd = 5; }
+    }
+    function roll() {
+        const a = st(), r = Math.random(), need = Object.keys(REL).filter(k => (a.got[k] | 0) < NEED && !a.mus[k]);
+        if (r < 0.62 && need.length) { const k = need[Math.random() * need.length | 0]; return ['frag_' + k, 1]; }
+        if (r < 0.80) return ['relic_dust', 1 + (Math.random() < 0.4 ? 1 : 0)];
+        if (r < 0.90) return ['old_spice', 1];
+        if (r < 0.95) return ['spore_gold', 1];
+        return need.length ? ['frag_' + need[Math.random() * need.length | 0], 1] : ['relic_dust', 2];
+    }
+    function brush(s, pid) {
+        const a = st(); s.n++; const x = s.x * 32 + 16, y = s.y * 32 + 24;
+        X.burst(x, y, '#c8a070', 8 + s.n, 2.6, { up: 1 }); X.burst(x, y, '#e8d0a0', 4, 1.4);
+        tn('triangle', 200 + s.n * 30, 120 + s.n * 20, 0.08, 0.05, { rev: 0 });
+        let res = null; if (s.n >= STROKES) { res = roll(); a.n++; }
+        return res;
+    }
+    function reveal(s, res, tgt) {
+        const x = s.x * 32 + 16, y = s.y * 32 + 10; const col = res[0].startsWith('frag_') ? REL[res[0].slice(5)].col : '#ffd890';
+        X.burst(x, y, col, 40, 4.5, { up: 1.2 }); X.wave(x, y, col, 100, { life: 0.9 }); X.wave(x, y, '#ffffff', 60, { life: 0.5 }); tn('sine', 500, 1200, 0.6, 0.09); tn('triangle', 800, 1800, 0.5, 0.05, { delay: 0.15 });
+        if (tgt) { const n = res[1]; if (res[0].startsWith('frag_')) { const k = res[0].slice(5); const a = st(); a.got[k] = (a.got[k] | 0) + n; } if (!guest()) drop(res[0], x, y - 6, res[1]); }
+    }
+    Z.RC.push((bx, by, pressed) => {
+        if (!pressed || !playing()) return false; if (Z.held() !== 'arch_brush') return false; const a = st(); if (!a) return false;
+        let s = a.sites.find(q => Math.abs(q.x - bx) <= 1 && Math.abs(q.y - by) <= 1); if (!s) return false;
+        if (Math.hypot(player.x + 12 - (s.x * 32 + 16), player.y + 22 - (s.y * 32 + 16)) > 120) { toast('Підійди ближче до місця розкопок.'); return true; } mouse.rightDown = false;
+        if (!Z.host() && Z.mpOn()) { Z.send({ t: 'x_za', x: s.x, y: s.y, pid: MP.id }); X.burst(s.x * 32 + 16, s.y * 32 + 24, '#c8a070', 8, 2.6, { up: 1 }); return true; }
+        if (E.arrive == null) { } const res = brush(s); if (res) { reveal(s, res, true); try { profXp('farm', 8); } catch (e) { } toast(res[0].startsWith('frag_') ? '🏺 Знайдено: ' + ITEM_METADATA[res[0]].name : '🔍 Знайдено: ' + ITEM_METADATA[res[0]].name + (res[1] > 1 ? ' ×' + res[1] : '')); } return true;
+    });
+    Z.MSG.x_za = m => { try { if (!Z.host()) return; const a = st(); const s = a.sites.find(q => q.x === m.x && q.y === m.y); if (!s) return; const res = brush(s); if (res) { Z.send({ t: 'x_zar', pid: m.pid, id: res[0], n: res[1], x: s.x, y: s.y }); reveal(s, res, false); } } catch (e) { console.error('zarch host', e); } };
+    Z.MSG.x_zar = m => { try { if (m.pid !== MP.id) return; reveal({ x: m.x, y: m.y }, [m.id, m.n], false); drop(m.id, player.x + 12, player.y, m.n | 0, 0); toast('🔍 Знайдено: ' + ITEM_METADATA[m.id].name); } catch (e) { } };
+    let tk = 0; Z.TICK.push(() => { if (!playing() || !currentWorld || ++tk % 60 !== 31) return; try { tickSites(); } catch (e) { console.error('zarch tick', e); } });
+    // ---------- вигляд місця розкопок ----------
+    function mound(c, x, y, t, k) {
+        c.save(); c.translate(x, y); c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(0, 1, 20, 4, 0, 0, TAU); c.fill();
+        const q = 1 - k / STROKES; c.fillStyle = '#6a4a2c'; c.beginPath(); c.moveTo(-18, 0); c.quadraticCurveTo(-12, -16 * q - 3, 0, -18 * q - 4); c.quadraticCurveTo(12, -16 * q - 3, 18, 0); c.closePath(); c.fill();
+        c.fillStyle = '#8a6438'; c.beginPath(); c.moveTo(-14, -1); c.quadraticCurveTo(-8, -12 * q - 3, 0, -14 * q - 4); c.quadraticCurveTo(6, -12 * q - 3, 8, -1); c.closePath(); c.fill();
+        c.fillStyle = '#4a3220'; for (let i = 0; i < 6; i++) c.fillRect(-12 + i * 4.5, -3 - (i * 3 % 5), 2.4, 2);
+        c.fillStyle = '#c8a070'; c.fillRect(8, -5, 4, 2); c.fillRect(-14, -3, 3, 2);
+        const s = 0.5 + 0.5 * Math.sin(t * 4 + x); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5 + s * 0.4; c.fillStyle = '#fff0b0'; c.fillRect(-2, -14 * q - 8, 3, 3); c.fillRect(-1, -14 * q - 11, 1, 9); c.fillRect(-4, -14 * q - 7, 7, 1); c.restore();
+    }
+    Z.DRAW.push((t, x0, x1) => {
+        const a = st(); if (!a || !a.sites.length) return; const c = ctx;
+        for (const s of a.sites) { const bx = s.x * 32 + 16, by = (s.y + 1) * 32; if (bx > x1 + 60 || bx < x0 - 60) continue; mound(c, bx, by - 2, t, s.n);
+            const d = Math.hypot(player.x + 12 - bx, player.y + 22 - by + 16); if (d < 260) { c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(bx, by - 14, 0, bx, by - 14, 50); g.addColorStop(0, 'rgba(255,230,160,.25)'); g.addColorStop(1, 'rgba(255,230,160,0)'); c.fillStyle = g; c.fillRect(bx - 50, by - 64, 100, 100); c.restore(); }
+            if (d < 130) X.label(bx, by - 52, Z.held() === 'arch_brush' ? '🔍 ПКМ — розкопувати (' + s.n + '/' + STROKES + ')' : '🔍 потрібен пензлик археолога', '#ffe4a0'); if (Math.random() < 0.03) X.emit(bx + (Math.random() - 0.5) * 20, by - 14, { vx: 0, vy: -0.3, life: 1.4, s: 1.6, c: '#fff0b0', a: 0.9 }); }
+    });
+    // ---------- музей ----------
+    const bonus = () => { const a = st(), o = { mult: 0, mana: 0, hp: 0, crit: 0, xp: 0, def: 0, all: 0, reg: 0 }; if (!a) return o; let n = 0; for (const k in REL) if (a.mus[k]) { n++; const b = REL[k].b; if (b === 'st3') o.mult += 0.03; else if (b === 'mana') o.mana += 30; else if (b === 'hp') o.hp += 30; else if (b === 'crit') o.crit += 0.02; else if (b === 'xp') o.xp += 0.04; else if (b === 'def') o.def += 3; } if (n >= 6) { o.mult += 0.04; o.reg += 1; o.all = 1; } o.n = n; return o; };
+    accApply = (function (o) { return function (s) { o.apply(this, arguments); try { const b = bonus(); if (!b.n) return; s.maxMana += b.mana; s.maxHp += b.hp; s.crit += b.crit; s.xpMult += b.xp; s.hpRegen += b.reg; if (b.mult) for (const t of ['melee', 'ranged', 'magic', 'summon']) s.mult[t] *= 1 + b.mult; } catch (e) { } }; })(accApply);
+    playerDefense = (function (o) { return function () { let d = o.apply(this, arguments); try { d += bonus().def || 0; } catch (e) { } return d; }; })(playerDefense);
+    function assemble(k) {
+        const a = st(), R = REL[k]; if (!a || a.mus[k] || cnt('frag_' + k) < NEED) return;
+        take('frag_' + k, NEED); a.mus[k] = 1; a.got[k] = 0; const x = player.x + 12, y = player.y;
+        for (let i = 0; i < 4; i++) setTimeout(() => { X.burst(x, y - 40, R.col, 24, 5, { up: 0.6 }); X.wave(x, y - 30, R.col, 60 + i * 40, { life: 0.8 }); tn('sine', 400 + i * 200, 700 + i * 250, 0.4, 0.07); }, i * 220);
+        setTimeout(() => { X.burst(x, y - 40, '#ffffff', 40, 6); X.wave(x, y - 30, '#ffffff', 220, { life: 1.2 }); try { Z.flash(R.col); shake = Math.max(shake, 8); } catch (e) { } banner('🏺 ' + R.n, 'Реліквію складено: ' + R.t + ' назавжди'); tn('triangle', 600, 1500, 1, 0.1); tn('sine', 300, 600, 1.2, 0.08, { delay: 0.1 }); try { recalcStats(); } catch (e) { } }, 950);
+        const li = 'a' + (Object.keys(REL).indexOf(k) + 1); setTimeout(() => E.lore(li), 2200); if (Object.keys(REL).every(q => a.mus[q])) setTimeout(() => { banner('🏛 Колекція повна', 'Усі шість реліквій складено: +4% шкоди, +1 регенерація'); X.wave(x, y - 30, '#ffe080', 360, { life: 1.8 }); }, 3200);
+        if (Z.isOpen()) setTimeout(() => Z.render(), 300);
+    }
+    E.TABS.push({ id: 'mus', ic: '🏺', name: 'Музей', render() {
+        const a = st(), b = bonus(); let h = '<div class="msg">Збирай уламки на розкопках (потрібен 🖌 пензлик археолога), складай реліквії — отримай постійні бонуси. Місць розкопок поки: <b>' + (a ? a.sites.length : 0) + '</b>. Знайдено усього: <b>' + (a ? a.n : 0) + '</b>.</div>';
+        if (!ITEM_METADATA.arch_brush) return h; h += '<div class="chips">'; for (const k in REL) { const R = REL[k], m = a && a.mus[k], q = cnt('frag_' + k); h += '<div class="card" style="display:block;border-color:' + (m ? R.col : '#443') + ';margin:4px 0"><b style="color:' + R.col + '">' + R.ic + ' ' + R.n + '</b> ' + (m ? '<span class="chip ok">✔ у Музеї</span>' : '<span class="chip ' + (q >= NEED ? 'ok' : 'no') + '">' + Math.min(q, NEED) + '/' + NEED + ' уламків</span>') + '<small>' + R.d + ' <b>' + R.t + '</b></small>' + (!m && q >= NEED ? '<button data-z="asm:' + k + '">🔨 Скласти</button>' : '') + '</div>'; } h += '</div>';
+        if (b.n >= 6) h += '<div class="msg">🏛 Колекція повна: +4% шкоди, +1 регенерація.</div>'; return h; },
+        click(z) { if (z.startsWith('asm:')) assemble(z.slice(4)); } });
+    E.PROG.push({ id: 'arch', ic: '🏺', name: 'Музей реліквій', get() { const a = st(), n = a ? Object.keys(REL).filter(k => a.mus[k]).length : 0; return { txt: n + ' з 6 реліквій у Музеї', p: n / 6 }; } });
+    window.__zarch = { REL, st, bonus, tickSites, pickSite, roll };
+})();
+// ===== v46.66 «Страви Вартових» — четвертий рівень кухні: гриби підземної ферми + давні прянощі з розкопок =====
+(function () {
+    'use strict';
+    if (typeof K_DISH === 'undefined' || !window.__zend) return;
+    const rect = kRect, blob = FD_BLOB;
+    // 4-й рівень: назва і колір
+    K_TC[4] = '#e070ff'; K_TN[4] = 'Страва Вартових'; if (K_RAR.length < 5) K_RAR[4] = 'Епічний';
+    const SP = {
+        glow_stew: cx => { kBowl(cx, '#1f6a5a', '#0e3a30', '#2fb89a'); for (const [x, y] of [[9, 13], [15, 12], [21, 14], [12, 16]]) { rect(cx, '#d8fff2', [[x, y, 3, 2]]); rect(cx, '#7affd0', [[x, y - 1, 3, 1]]); } cx.fillStyle = 'rgba(122,255,208,.55)'; cx.fillRect(14, 14, 3, 1); cx.fillStyle = '#fff'; cx.fillRect(18, 12, 1, 1); },
+        ember_chili: cx => { kBowl(cx, '#a8321f', '#5a1a10', '#e0501a'); for (const [x, y] of [[9, 13], [14, 12], [20, 14], [12, 16], [22, 12]]) { rect(cx, '#ffd8a0', [[x, y, 3, 2]]); rect(cx, '#ff8a3a', [[x, y, 3, 1]]); } rect(cx, '#ffe060', [[11, 14, 2, 1], [17, 12, 2, 1], [21, 15, 2, 1]]); },
+        shade_roll: cx => { kPlate(cx, '#e8eef4', '#c8d2dc'); blob(cx, '#2a1a4a', 11, 5.2, -.1, 16, 19.2); blob(cx, '#4a2a8a', 10, 4.4, -.1, 16, 18.6); blob(cx, '#7a50c8', 7, 2.4, -.1, 15, 17.6); cx.strokeStyle = '#c8b8e8'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(16, 18.4, 3.2, 0, 6.3); cx.stroke(); rect(cx, '#e0d0ff', [[22, 16, 2, 1], [9, 19, 2, 1]]); },
+        gold_pie: cx => { kPie(cx, '#e0a020', '#ffd84a', '#8a5a10'); rect(cx, '#fff6b0', [[13, 14, 6, 2], [15, 12, 2, 6]]); rect(cx, '#fffbe0', [[15, 14, 2, 2]]); cx.fillStyle = 'rgba(255,240,160,.6)'; cx.fillRect(10, 10, 1, 3); cx.fillRect(21, 9, 1, 3); },
+        guard_feast: cx => { blob(cx, '#6a727c', 15.4, 6.6, 0, 16, 24.4); blob(cx, '#d8dee6', 14.8, 6, 0, 16, 24); cx.strokeStyle = '#e070ff'; cx.lineWidth = 1.4; cx.beginPath(); cx.ellipse(16, 24, 13, 4.6, 0, 0, 7); cx.stroke(); blob(cx, '#5a2a10', 10.4, 7, -.1, 15, 17); blob(cx, '#b8641e', 9.6, 6.2, -.1, 15, 16.6); blob(cx, '#e0903a', 6.2, 3.2, -.1, 13.6, 14.6); rect(cx, '#2fb89a', [[22, 13, 3, 3]]); rect(cx, '#ff8a3a', [[24, 16, 3, 3]]); rect(cx, '#fff', [[11, 13, 2, 1]]); },
+        shroom_salad: cx => { kBowl(cx, '#4a8a5a', '#1f4a2e', '#6ac07a'); rect(cx, '#ff9a3a', [[9, 13, 3, 2], [19, 14, 3, 2]]); for (const [x, y, c] of [[12, 12, '#7affd0'], [16, 11, '#a070ff'], [20, 12, '#7affd0']]) { rect(cx, c, [[x - 2, y, 5, 2]]); rect(cx, '#e8f8f0', [[x, y + 2, 1, 2]]); } },
+        deep_soup: cx => { kBowl(cx, '#3a2a8a', '#1a1250', '#5a4ad8'); for (const [x, y] of [[9, 13], [14, 12], [20, 13], [12, 16], [22, 16]]) { rect(cx, '#f4f0ff', [[x - 1, y, 3, 1], [x, y - 1, 1, 3]]); } rect(cx, '#a070ff', [[14, 14, 4, 2]]); rect(cx, '#7affd0', [[19, 15, 3, 1], [10, 15, 3, 1]]); },
+        relic_tea: cx => { kBowl(cx, '#d8c0f0', '#8a6ab0', '#e8d0ff'); rect(cx, '#b08ae0', [[9, 13, 14, 2]]); cx.strokeStyle = '#8a6ab0'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(27, 19, 3.2, -1.4, 1.5); cx.stroke(); cx.globalAlpha = .5; cx.fillStyle = '#fff'; cx.fillRect(12, 6, 1, 6); cx.fillRect(16, 4, 1, 8); cx.fillRect(20, 6, 1, 6); cx.globalAlpha = 1; rect(cx, '#fff8c0', [[14, 14, 2, 1], [19, 14, 2, 1]]); }
+    };
+    // in: [[id або [id…], к-сть]…]
+    const NEW = [
+        { id: 'glow_stew', n: 'Рагу зі Світлогрибом', st: 'cauldron', tier: 4, in: [['mush_glow', 2], ['raw_beef', 2], ['potato', 2], ['spice', 1]], out: 3, t: 70, v: 100, bf: { mpr: 1.4, mdmg: 0.06, mana: 40 }, dur: 720, col: '#7affd0', d: 'Бірюзове рагу, що світиться зсередини. Магія тече легко, як вода.' },
+        { id: 'ember_chili', n: 'Чилі з Жарогрибом', st: 'cauldron', tier: 4, in: [['mush_ember', 2], ['raw_boar', 2], ['fire_bloom', 1], ['spice', 1]], out: 3, t: 70, v: 100, bf: { dmg: 0.09, crit: 0.04, hp: 30 }, dur: 720, col: '#ff8a3a', d: 'Чилі, від якого пашить з вух. Удари стають влучними й важкими.' },
+        { id: 'shade_roll', n: 'Тіньовий рулет', st: 'stove', tier: 4, in: [['mush_shade', 2], ['raw_chicken', 2], ['dough', 1], ['salt', 1]], out: 2, t: 48, v: 90, bf: { spd: 0.08, crit: 0.05, def: 2 }, dur: 720, col: '#a070ff', d: 'Темний рулет, що розчиняється в роті. Рухаєшся, як тінь.' },
+        { id: 'gold_pie', n: 'Золотий пиріг Вартових', st: 'stove', tier: 4, in: [['mush_gold', 1], ['dough', 2], ['egg', 2], ['old_spice', 1]], out: 2, t: 56, v: 110, bf: { xp: 0.14, hpr: 1.0, hp: 20 }, dur: 900, col: '#ffd84a', d: 'Пиріг з давнього гриба. Рецепт знали лише Вартові.' },
+        { id: 'guard_feast', n: 'Бенкет Вартових', st: 'stove', tier: 4, in: [['raw_beef', 2], ['raw_boar', 2], ['mush_glow', 1], ['mush_ember', 1], ['old_spice', 1]], out: 2, t: 66, v: 120, bf: { dmg: 0.07, def: 3, hp: 40, hpr: 0.6 }, dur: 900, col: '#e070ff', d: 'Королівський бенкет у старому стилі. Для тих, хто йде на Двері.' },
+        { id: 'shroom_salad', n: 'Підземний салат', st: 'cutting_board', tier: 4, in: [['mush_glow', 1], ['mush_shade', 1], ['carrot', 2], ['salt', 1]], out: 2, t: 14, v: 70, bf: { spd: 0.05, mpr: 1.0, xp: 0.06 }, dur: 600, col: '#6ac07a', d: 'Хрумкий салат із двох видів грибів. Швидко готується.' },
+        { id: 'deep_soup', n: 'Глибинний суп', st: 'cauldron', tier: 4, in: [['mush_shade', 1], ['mush_glow', 1], ['raw_fish', 2], ['old_spice', 1]], out: 3, t: 66, v: 95, bf: { xp: 0.10, mdmg: 0.06, mana: 30, crit: 0.02 }, dur: 720, col: '#5a4ad8', d: 'Темний суп з глибини. Розум проясняється, думки ширшають.' },
+        { id: 'relic_tea', n: 'Чай із реліквійного пилу', st: 'cauldron', tier: 4, in: [['relic_dust', 2], ['mush_glow', 1], ['glow_lily', 1]], out: 2, t: 40, v: 40, bf: { mpr: 2.0, mana: 20, hpr: 0.8 }, dur: 600, col: '#e8d0ff', d: 'Тонкий чай, від якого світиться повітря. Нескінченна мана — на десять хвилин.' }
+    ];
+    for (const D of NEW) {
+        if (K_BY[D.id]) continue; D.rar = 'Епічний'; K_DISH.push(D); K_BY[D.id] = D; D.pow = kPow(D.bf);
+        if (SP[D.id]) itemSprites[D.id] = generateSprite(SP[D.id]);
+        FOOD[D.id] = { n: D.n, v: D.v, col: D.col, d: D.d };
+        ITEM_METADATA[D.id] = { name: D.n, rarity: D.rar, color: D.col, type: '🍲 Страва Вартових', stat: '+' + D.v + ' ситості · ' + kBufTxt(D.bf, D.dur), desc: D.d + ' Баф діє після їжі; одна страва за раз.' };
+        COOK['dish_' + D.id] = D.id;
+    }
+    // мешканці люблять цю їжу
+    try { const L = { smith: ['guard_feast', 'ember_chili'], mage: ['glow_stew', 'relic_tea', 'deep_soup'], alch: ['shroom_salad', 'deep_soup'], merchant: ['gold_pie', 'guard_feast'] }; for (const id in L) if (V32R_N[id]) V32R_N[id].love.push(...L[id]); } catch (e) { }
+    window.__zend.PROG.push({ id: 'cook4', ic: '🍲', name: 'Кухня Вартових', get() { let n = 0; try { for (const D of NEW) if (V39 && V39.fb && V39.fb.id === D.id) n = 1; } catch (e) { } return { txt: 'Страви 4-го рівня потребують грибів з Грибної ферми й Давніх прянощів з розкопок.', p: n ? 1 : 0.1 }; } });
+    window.__zcook2 = { NEW };
+})();
+// ===== v46.66 «Тіні Вартових» — рідкісні мисливські цілі після 40 рівня: четверо Тіней, що бродять там, де Вартові залишили слід =====
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx, H = window.__zelite, DG = window.__zdung; if (!E || !Z || !X || !H || !DG || typeof V377_DRAW === 'undefined') return;
+    const { item, P, C, F, gl, S, toast, tn, banner, guest, playing, clamp, rnd } = E; const EL = H.EL, TAU = Math.PI * 2;
+    const ri = (a, b) => Math.floor(rnd(a, b + 1));
+    item('shade_essence', 'Есенція тіні', 4, '👤 Матеріал', null, 'Холодна крапля, що відкидає чужу тінь. Падає з Тіней Вартових. Потрібна для Спор Тіньовика й Пекельної Кузні.', c => { gl(c, 16, 16, 15, '#a070ff', 0.45); P(c, [[16, 3], [24, 14], [22, 25], [16, 29], [10, 25], [8, 14]], '#2a1a4a', '#0c0618'); P(c, [[16, 6], [21, 14], [19, 23], [16, 26], [13, 23], [11, 14]], '#5a3aa0', null); P(c, [[14, 9], [17, 8], [16, 16]], '#e0d0ff99', null); F(c, '#ffffff', [[14, 11, 2, 2]]); F(c, '#00000066', [[17, 14, 3, 7]]); });
+    // Тіні: дані як у zhunt (body/feat/pal/pat), проксі-малювання через існуючі тіла
+    const SH = {
+        sh_ray: { n: 'Тінь Променя', w: 42, h: 66, hp: 4000, dmg: 44, xp: 1500, spd: 1.7, sight: 900, body: 'spirit', feat: ['crown'], pal: ['#fff3c0', '#c89a30', '#3a2a08', '#ffd84a'], col: '#ffd84a', pat: ['nova', 'volley', 'charge'], cause: 'Вас спопелила Тінь Променя', cond: 'Вдень на поверхні, після Склепу Променя', d: 'Відлуння першого Вартового. Світить — і випалює.', need: 'd1done', where: 'sky' },
+        sh_star: { n: 'Тінь Зорі', w: 42, h: 66, hp: 4200, dmg: 44, xp: 1550, spd: 1.7, sight: 900, body: 'spirit', feat: ['lamp'], pal: ['#d8e8ff', '#5a7ad8', '#101a4a', '#8ab4ff'], col: '#8ab4ff', pat: ['volley', 'drain', 'nova'], cause: 'Вас забрала Тінь Зорі', cond: 'Вночі на поверхні, після Обсерваторії', d: 'Астролог, що давно став зорею.', need: 'd2done', where: 'night' },
+        sh_abyss: { n: 'Тінь Безодні', w: 72, h: 62, hp: 4600, dmg: 48, xp: 1700, spd: 1.5, sight: 900, body: 'quad', feat: ['wings', 'moss'], pal: ['#cbb0ff', '#6a3ab8', '#1a0a36', '#c080ff'], col: '#c080ff', pat: ['leap', 'charge', 'nova'], cause: 'Вас поглинула Тінь Безодні', cond: 'Глибоко під землею, після Брами', d: 'Ліпить собі тіло з темряви Брами.', need: 'd3done', where: 'deep' },
+        sh_lamp: { n: 'Тінь Ліхтаря', w: 38, h: 58, hp: 3800, dmg: 42, xp: 1400, spd: 1.8, sight: 900, body: 'spirit', feat: ['scythe'], pal: ['#ffd8a0', '#d87a20', '#3a1a06', '#ffa040'], col: '#ffa040', pat: ['drain', 'charge', 'volley'], cause: 'Вас забрала Тінь Ліхтаря', cond: 'У печерах середньої глибини', d: 'Мертвий шахтар, що досі шукає вихід.', need: 'd1done', where: 'cave' }
+    };
+    const PROXY = { spirit: 'my_mara', quad: 'my_sphinx' };
+    for (const k in SH) { EL[k] = SH[k]; const D = SH[k], px = PROXY[D.body]; V377_DRAW[k] = (c, m, face) => { const tmp = EL[px]; EL[px] = EL[k]; try { V377_DRAW[px](c, m, face); } finally { EL[px] = tmp; } }; try { V28_MOBS.push([k, D.n, '❤ ' + D.hp, 'Тінь Вартових. ' + D.cond + '. ' + D.d]); } catch (e) { } }
+    const st = () => { const z = S(); if (!z) return null; return z.hunt || (z.hunt = { last: 0, k: {}, seen: {} }); };
+    const alive = () => mobs.find(m => SH[m.type] && m.hp > 0);
+    function floor(tp, minD, maxD) {
+        for (let a = 0; a < 10; a++) {
+            const side = Math.random() < 0.5 ? -1 : 1, sx = tp.x + side * (minD + Math.random() * (maxD - minD)), bx = Math.floor(sx / 32); if (bx < 3 || bx >= currentWorld.width - 3) continue;
+            const Hh = currentWorld.height, pyb = Math.floor(tp.y / 32); let fy = -1, bd = 1e9;
+            for (let y = Math.max(5, pyb - 14); y <= Math.min(Hh - 3, pyb + 14); y++) if (isSolid(bx, y) && !isSolid(bx, y - 1) && !isSolid(bx, y - 2) && !isSolid(bx, y - 3) && !isSolid(bx, y - 4) && Math.abs(y - pyb) < bd) { fy = y; bd = Math.abs(y - pyb); }
+            if (fy >= 0) return { sx, fy };
+        }
+        return null;
+    }
+    function spawn(type, x, fy) {
+        const D = SH[type], hp = Math.round(D.hp * rpgMobHp()), x0 = x - D.w / 2, y0 = fy * 32 - D.h - 0.5, L = Math.floor(x0 / 32), R = Math.floor((x0 + D.w - 0.01) / 32), Tt = Math.floor(y0 / 32);
+        for (let cx = L; cx <= R; cx++) for (let cy = Tt; cy < fy; cy++) if (isSolid(cx, cy)) return null;
+        const m = { type, x: x0, y: y0, vx: 0, vy: 0, hp, maxHp: hp, width: D.w, height: D.h, frame: Math.random() * 6, onGround: true, _alert: 300, elite: 1, _t0: Date.now() }; mobs.push(m); return m;
+    }
+    const okAt = (k, p, night) => { const D = SH[k], z = DG.ZD(); if (!z || !z[D.need]) return false; const bx = clamp(Math.floor(p.x / 32), 0, surfaceHeights.length - 1), d = Math.floor(p.y / 32) - (surfaceHeights[bx] || 40); if (D.where === 'sky') return !night && d < 10; if (D.where === 'night') return night && d < 10; if (D.where === 'cave') return d > 14 && d < 60; return d >= 50; };
+    function announce(k) { const D = SH[k]; banner('👤 ' + D.n, 'Тінь Вартових вийшла на слід'); toast('👤 ' + D.n + ' блукає поблизу. ' + D.cond + '. Іди на слід — вона вразлива до світла.', 6500); X.wave(player.x + 12, player.y + 22, D.col, 240, { life: 1.4 }); X.burst(player.x + 12, player.y + 10, D.col, 30, 4); try { Z.flash(D.col); } catch (e) { } tn('sine', 120, 60, 1.4, 0.12); tn('triangle', 90, 50, 1.6, 0.08, { delay: 0.2 }); }
+    let tk = 0;
+    Z.TICK.push(() => {
+        if (!playing() || !Z.host() || !currentWorld || !currentWorld.width || !E.lv40()) return; if (++tk % 600) return;
+        const a = st(); if (!a) return; const el = alive(), night = Math.sin(gameTime) <= 0; const pl = (MP && MP.sh) ? v17Players() : [{ x: player.x + 12, y: player.y + 22 }];
+        if (el) { const far = pl.every(p => Math.hypot(p.x - el.x, p.y - el.y) > 2600); el._far = far ? (el._far || 0) + 1 : 0; if (el._far >= 3) { X.burst(el.x + el.width / 2, el.y + el.height / 2, SH[el.type].col, 30, 4); mobs.splice(mobs.indexOf(el), 1); } return; }
+        if (Date.now() - (a.last || 0) < 1200000) return;
+        for (const pp of pl) {
+            const ks = Object.keys(SH).filter(k => okAt(k, pp, night)); if (!ks.length || Math.random() > 0.1) continue; const f = floor(pp, 520, 900); if (!f) continue;
+            const k = ks[(Math.random() * ks.length) | 0], m = spawn(k, f.sx, f.fy); if (m) { a.last = Date.now(); Z.send({ t: 'x_zsh', k }); announce(k); break; }
+        }
+    });
+    Z.MSG.x_zsh = m => { try { if (SH[m.k]) announce(m.k); } catch (e) { } };
+    // лут
+    v18Loot = (function (o) { return function (m) {
+        o.apply(this, arguments);
+        try {
+            if (!m || !SH[m.type]) return; const D = SH[m.type], cx = m.x + m.width / 2, cy = m.y + m.height / 3, a = st(), d = (id, n) => { if (ITEM_METADATA[id]) v20Drop(id, n, cx, cy, (Math.random() - 0.5) * 4); };
+            d('shade_essence', ri(1, 2)); d('relic_dust', ri(1, 3)); d('gold_coin', ri(40, 70)); if (Math.random() < 0.3) d('spore_shade', 1); if (Math.random() < 0.35) { const k = Object.keys((window.__zarch || { REL: {} }).REL); if (k.length) d('frag_' + k[Math.random() * k.length | 0], 1); } if (Math.random() < 0.1) d('old_spice', 1);
+            if (a) { a.k[m.type] = (a.k[m.type] | 0) + 1; } toast('👤 Тінь Вартових розвіяна: ' + D.n + '!', 5000);
+            for (let i = 0; i < 3; i++) setTimeout(() => X.wave(cx, cy, i ? '#ffffff' : D.col, 100 + i * 80, { life: 1 }), i * 150);
+        } catch (e) { console.error('zhunt2 loot', e); }
+    }; })(v18Loot);
+    E.TABS.push({ id: 'hunt', ic: '👤', name: 'Тіні', render() { const a = st(); let h = '<div class="msg">Після здолання сторожів на світі іноді виходять Тіні — раз на двадцять хвилин. Це гідні суперники рівня 40+. Дають Есенцію тіні, реліквійний пил і уламки.</div>'; for (const k in SH) { const D = SH[k], z = DG.ZD(), n = a && a.k[k] | 0, ok = z && z[D.need]; h += '<div class="card" style="display:block;border-color:' + D.col + '66;opacity:' + (ok ? 1 : 0.5) + '"><b style="color:' + D.col + '">' + (ok ? '👤 ' + D.n : '🔒 ???') + '</b> <span class="chip ' + (n ? 'ok' : 'no') + '">здолано ×' + n + '</span><small>' + (ok ? D.cond + ' · ❤ ' + D.hp + '. ' + D.d : 'Відкриється, коли здолаєш відповідного сторожа.') + '</small></div>'; } return h; } });
+    E.PROG.push({ id: 'shades', ic: '👤', name: 'Тіні Вартових', get() { const a = st(); const n = a ? Object.keys(SH).filter(k => a.k[k]).length : 0; return { txt: n + ' з 4 Тіней розвіяно', p: n / 4 }; } });
+    window.__zhunt2 = { SH, spawn, floor };
+})();
+// ===== v46.66 спільне для споруд Спадщини: реєстрація мобів/босів і малюнки (Кузня, Лабіринт, Архів) =====
+(function () {
+    'use strict';
+    const A = window.__zdgart, DG = window.__zdung, MX = window.__zmx; if (!A || !DG || !MX || typeof zfPoly !== 'function') return;
+    const P = zfPoly, C = zfC, F = zfFr, cv = A.cv;
+    const two = (w, h, fn) => [cv(w, h, g => fn(g, 0)), cv(w, h, g => fn(g, 1))];
+    const rad = (g, x, y, r, c0, c1) => { const q = g.createRadialGradient(x, y, 0, x, y, r); q.addColorStop(0, c0); q.addColorStop(1, c1); g.fillStyle = q; g.fillRect(x - r, y - r, r * 2, r * 2); };
+    const DM = (id, nm, o) => Object.assign({ id, name: nm, boss: false, hp: 100, dmg: 15, spd: 1.2, w: 28, h: 30, ai: 'walk', xp: 30, drops: [], spawn: { when: 'any', where: 'cave', rate: 0, max: 0 }, phases: [], atk: [], intro: '', outro: '' }, o);
+    function reg(d, sprite) { DG.DEF[d.id] = d; (d.boss ? MX.M.bosses : MX.M.mobs)[d.id] = d; if (sprite) { A.MOB[d.id] = sprite; MX.M.canv[d.id] = sprite; } try { V18DMG[d.id] = d.dmg; XP_BASE[d.id] = d.xp; } catch (e) { } }
+    // ---------- ПЕКЕЛЬНА КУЗНЯ ----------
+    const emberImp = two(28, 32, (g, f) => {
+        const O = '#1a0504';
+        rad(g, 14, 18, 15, 'rgba(255,120,40,.4)', 'rgba(255,120,40,0)');
+        P(g, [[3, 12 - f * 3], [11, 14], [10, 20], [4, 22 - f * 2]], '#7a1a10', O); P(g, [[25, 12 - f * 3], [17, 14], [18, 20], [24, 22 - f * 2]], '#7a1a10', O);
+        P(g, [[9, 16], [19, 16], [20, 28], [14, 31], [8, 28]], '#a82a14', O); P(g, [[11, 18], [17, 18], [17, 26], [11, 26]], '#ff7a3a', null);
+        C(g, 14, 10, 7, '#c8321a', O, 1.4); P(g, [[8, 6], [6, 0], [11, 4]], '#ffcf5a', O); P(g, [[20, 6], [22, 0], [17, 4]], '#ffcf5a', O);
+        F(g, O, [[10, 9, 3, 3], [15, 9, 3, 3]]); F(g, '#ffe27a', [[11, 9.6, 1.6, 1.6], [16, 9.6, 1.6, 1.6]]); F(g, O, [[11, 14, 6, 2 + f]]); F(g, '#ff9a3a', [[12, 14.4, 4, 1]]);
+        P(g, [[14, 3], [17, 8 - f], [14, 6], [11, 8 - f]], '#ffcf5a', null);
+    });
+    const slagback = two(42, 46, (g, f) => {
+        const O = '#12060a';
+        F(g, O, [[8, 30, 10, 15 - f], [24, 30, 10, 14 + f]]); F(g, '#3a3340', [[9, 30, 8, 14 - f], [25, 30, 8, 13 + f]]); F(g, O, [[6, 43 - f, 14, 3], [22, 42 + f, 14, 3]]);
+        P(g, [[4, 14], [12, 6], [30, 6], [38, 14], [36, 34], [6, 34]], '#4a4452', O); P(g, [[7, 15], [13, 9], [29, 9], [35, 15], [21, 22]], '#6a6272', null);
+        g.strokeStyle = '#ff6a2a'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(10, 16); g.lineTo(15, 22); g.lineTo(13, 28); g.moveTo(30, 14); g.lineTo(26, 21); g.lineTo(31, 29); g.moveTo(21, 20); g.lineTo(22, 30); g.stroke();
+        rad(g, 21, 24, 12, 'rgba(255,120,40,.4)', 'rgba(255,120,40,0)'); C(g, 21, 23, 4, '#ff9a3a', O, 1); C(g, 21, 23, 2, '#ffe27a', null);
+        F(g, O, [[0, 14 + f * 2, 8, 20]]); F(g, '#4a4452', [[1, 15 + f * 2, 6, 18]]); F(g, O, [[34, 14 - f * 2, 8, 20]]); F(g, '#4a4452', [[35, 15 - f * 2, 6, 18]]); F(g, '#ff6a2a', [[1, 30 + f * 2, 6, 3], [35, 30 - f * 2, 6, 3]]);
+        P(g, [[12, 8], [15, 0], [27, 0], [30, 8]], '#4a4452', O); F(g, O, [[14, 3, 14, 3]]); F(g, '#ffcf5a', [[16, 3.6, 3, 1.6], [24, 3.6, 3, 1.6]]);
+    });
+    const bossForge = two(70, 92, (g, f) => {
+        const O = '#14060a', M = '#3a3340', L = '#6a6272', H = '#ff9a3a';
+        rad(g, 35, 54, 36, 'rgba(255,100,30,.32)', 'rgba(255,100,30,0)');
+        F(g, O, [[14, 54, 14, 36 - f], [42, 54, 14, 35 + f]]); F(g, M, [[15, 54, 12, 35 - f], [43, 54, 12, 34 + f]]); F(g, O, [[10, 88 - f, 20, 4], [40, 87 + f, 20, 4]]);
+        P(g, [[8, 24], [20, 12], [50, 12], [62, 24], [58, 62], [12, 62]], M, O); P(g, [[12, 25], [22, 15], [48, 15], [58, 25], [35, 38]], L, null);
+        g.strokeStyle = '#ff6a2a'; g.lineWidth = 2; g.beginPath(); g.moveTo(17, 28); g.lineTo(24, 40); g.lineTo(21, 52); g.moveTo(52, 26); g.lineTo(45, 38); g.lineTo(50, 54); g.moveTo(35, 36); g.lineTo(37, 56); g.stroke();
+        C(g, 35, 44, 8, '#2a0a06', O, 1.6); C(g, 35, 44, 6, H, null); C(g, 35, 44, 3, '#fff0b0', null);
+        F(g, O, [[0, 22 + f * 3, 12, 34]]); F(g, M, [[1, 23 + f * 3, 10, 32]]); F(g, O, [[58, 22 - f * 3, 12, 34]]); F(g, M, [[59, 23 - f * 3, 10, 32]]);
+        P(g, [[-4, 54 + f * 3], [14, 54 + f * 3], [10, 68 + f * 3], [0, 68 + f * 3]], '#5a5262', O); P(g, [[56, 54 - f * 3], [74, 54 - f * 3], [70, 68 - f * 3], [60, 68 - f * 3]], '#5a5262', O); F(g, H, [[0, 60 + f * 3, 12, 3], [60, 60 - f * 3, 12, 3]]);
+        P(g, [[18, 14], [22, 2], [48, 2], [52, 14]], M, O); F(g, O, [[22, 6, 26, 6]]); F(g, H, [[26, 7.4, 6, 3], [38, 7.4, 6, 3]]); F(g, '#fff0b0', [[28, 8, 2, 1.4], [40, 8, 2, 1.4]]);
+        P(g, [[22, 2], [14, -2], [20, 8]], '#ff6a2a', O); P(g, [[48, 2], [56, -2], [50, 8]], '#ff6a2a', O); P(g, [[28, 2], [31, -6 + f * 2], [34, 2]], '#ffcf5a', null); P(g, [[36, 2], [39, -8 - f * 2], [42, 2]], '#ffcf5a', null);
+    });
+    // ---------- ДЗЕРКАЛЬНИЙ ЛАБІРИНТ ----------
+    const glint = two(28, 36, (g, f) => {
+        const O = '#06223a';
+        rad(g, 14, 20, 15, 'rgba(143,240,255,.35)', 'rgba(143,240,255,0)');
+        P(g, [[9, 12], [19, 12], [21, 30], [14, 34], [7, 30]], 'rgba(143,240,255,.55)', O); P(g, [[11, 13], [17, 13], [18, 22], [12, 22]], 'rgba(230,255,255,.7)', null);
+        C(g, 14, 8, 6, 'rgba(180,250,255,.7)', O, 1.2); F(g, O, [[11, 7, 2.4, 3], [15.4, 7, 2.4, 3]]); F(g, '#ffffff', [[11.4, 7.4, 1, 1.2], [15.8, 7.4, 1, 1.2]]);
+        F(g, 'rgba(143,240,255,.6)', [[3, 14 + f * 2, 5, 12], [20, 14 - f * 2, 5, 12]]); g.strokeStyle = '#ffffff'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(10, 13); g.lineTo(18, 28); g.moveTo(17, 12); g.lineTo(13, 20); g.stroke();
+    });
+    const glassGolem = two(38, 50, (g, f) => {
+        const O = '#06223a';
+        F(g, O, [[7, 32, 9, 17 - f], [22, 32, 9, 16 + f]]); F(g, '#5ac8e0', [[8, 32, 7, 16 - f], [23, 32, 7, 15 + f]]);
+        P(g, [[4, 12], [10, 6], [28, 6], [34, 12], [32, 34], [6, 34]], '#4ab8d8', O); P(g, [[7, 13], [12, 9], [26, 9], [31, 13], [19, 22]], '#c8ffff', null); P(g, [[8, 24], [19, 22], [30, 24], [28, 33], [10, 33]], '#2a88b0', null);
+        g.strokeStyle = '#ffffff'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(12, 10); g.lineTo(19, 20); g.lineTo(26, 12); g.moveTo(19, 20); g.lineTo(15, 32); g.stroke();
+        F(g, O, [[0, 12 + f * 2, 7, 20]]); F(g, '#5ac8e0', [[1, 13 + f * 2, 5, 18]]); F(g, O, [[31, 12 - f * 2, 7, 20]]); F(g, '#5ac8e0', [[32, 13 - f * 2, 5, 18]]);
+        P(g, [[11, 8], [14, 0], [24, 0], [27, 8]], '#4ab8d8', O); F(g, O, [[13, 3, 12, 3]]); F(g, '#ffffff', [[15, 3.6, 3, 1.6], [21, 3.6, 3, 1.6]]);
+    });
+    const bossDouble = two(52, 82, (g, f) => {
+        const O = '#04141e', B = '#1a4a66', L = '#8ff0ff';
+        rad(g, 26, 46, 30, 'rgba(143,240,255,.35)', 'rgba(143,240,255,0)');
+        F(g, O, [[10, 50, 12, 31 - f], [30, 50, 12, 30 + f]]); F(g, B, [[11, 50, 10, 30 - f], [31, 50, 10, 29 + f]]); F(g, O, [[7, 78 - f, 17, 4], [28, 77 + f, 17, 4]]);
+        P(g, [[6, 22], [16, 12], [36, 12], [46, 22], [42, 54], [10, 54]], B, O); P(g, [[9, 23], [17, 15], [35, 15], [43, 23], [26, 34]], '#3a7aa0', null); F(g, L, [[24, 14, 4, 36]]); F(g, '#ffffff', [[25, 16, 2, 32]]);
+        F(g, O, [[0, 20 + f * 2, 9, 30]]); F(g, B, [[1, 21 + f * 2, 7, 28]]); F(g, O, [[43, 20 - f * 2, 9, 30]]); F(g, B, [[44, 21 - f * 2, 7, 28]]);
+        P(g, [[46, 28 - f * 2], [49, 8 - f * 2], [52, 28 - f * 2]], '#e8ffff', O); F(g, '#ffffff', [[48, 12 - f * 2, 2, 16]]);
+        P(g, [[14, 14], [18, 2], [34, 2], [38, 14]], B, O); F(g, '#02080e', [[18, 5, 16, 7]]); F(g, L, [[21, 7, 3, 2], [29, 7, 3, 2]]); F(g, '#ffffff', [[22, 7.4, 1, 1], [30, 7.4, 1, 1]]);
+    });
+    // ---------- ДВЕРІ АРХІВУ ----------
+    const scrollGhost = two(28, 36, (g, f) => {
+        const O = '#1a0e2a';
+        rad(g, 14, 20, 15, 'rgba(200,170,255,.35)', 'rgba(200,170,255,0)');
+        P(g, [[8, 10], [20, 10], [24, 30 + f], [20, 33], [14, 30 + f], [8, 33], [4, 30 + f]], 'rgba(200,180,255,.6)', O); P(g, [[10, 12], [18, 12], [20, 26], [8, 26]], 'rgba(240,230,255,.55)', null);
+        C(g, 14, 8, 6, '#d8c8f8', O, 1.2); P(g, [[8, 7], [14, 0], [20, 7]], '#7a5ab8', O); F(g, O, [[11, 8, 2, 3], [15, 8, 2, 3]]); F(g, '#ffd84a', [[11.4, 8.6, 1.2, 1.4], [15.4, 8.6, 1.2, 1.4]]);
+        F(g, '#e8d8a0', [[17, 17 + f, 9, 7]]); F(g, '#8a6a30', [[17, 17 + f, 9, 1], [17, 23 + f, 9, 1], [21, 17 + f, 1, 7]]); F(g, '#7a5ab8', [[18, 19 + f, 3, 1], [22, 19 + f, 3, 1], [18, 21 + f, 3, 1]]);
+    });
+    const runeGuard = two(38, 54, (g, f) => {
+        const O = '#0a0e18', M = '#5a6070', L = '#9aa4b8', R = '#ffd84a';
+        F(g, O, [[8, 34, 9, 19 - f], [21, 34, 9, 18 + f]]); F(g, M, [[9, 34, 7, 18 - f], [22, 34, 7, 17 + f]]); F(g, O, [[6, 51 - f, 12, 3], [20, 50 + f, 12, 3]]);
+        P(g, [[4, 14], [11, 8], [27, 8], [34, 14], [32, 36], [6, 36]], M, O); P(g, [[7, 15], [12, 11], [26, 11], [31, 15], [19, 22]], L, null);
+        g.strokeStyle = R; g.lineWidth = 1.1; g.beginPath(); g.moveTo(14, 22); g.lineTo(18, 26); g.lineTo(14, 30); g.moveTo(24, 22); g.lineTo(20, 26); g.lineTo(24, 30); g.moveTo(19, 18); g.lineTo(19, 33); g.stroke(); rad(g, 19, 26, 12, 'rgba(255,216,74,.3)', 'rgba(255,216,74,0)');
+        F(g, O, [[0, 14 + f * 2, 7, 22]]); F(g, M, [[1, 15 + f * 2, 5, 20]]); F(g, O, [[31, 14 - f * 2, 7, 22]]); F(g, M, [[32, 15 - f * 2, 5, 20]]); P(g, [[33, 36 - f * 2], [40, 36 - f * 2], [37, 50 - f * 2]], L, O);
+        P(g, [[12, 9], [15, 1], [23, 1], [26, 9]], M, O); F(g, O, [[14, 4, 10, 3]]); F(g, R, [[16, 4.6, 2, 1.6], [21, 4.6, 2, 1.6]]);
+    });
+    const bossEcho = two(78, 100, (g, f) => {
+        const O = '#0c0618', M = '#3a2478', L = '#b090f0', G = '#ffd84a';
+        rad(g, 39, 56, 42, 'rgba(176,112,255,.38)', 'rgba(176,112,255,0)');
+        F(g, O, [[16, 58, 15, 41 - f], [47, 58, 15, 40 + f]]); F(g, M, [[17, 58, 13, 40 - f], [48, 58, 13, 39 + f]]); F(g, O, [[12, 96 - f, 22, 4], [44, 95 + f, 22, 4]]);
+        P(g, [[8, 26], [22, 12], [56, 12], [70, 26], [66, 66], [12, 66]], M, O); P(g, [[12, 27], [24, 15], [54, 15], [66, 27], [39, 42]], '#5a3aa0', null);
+        g.strokeStyle = G; g.lineWidth = 1.6; g.strokeRect(22, 30, 34, 26); g.beginPath(); g.moveTo(26, 34); g.lineTo(31, 40); g.lineTo(26, 46); g.moveTo(52, 34); g.lineTo(47, 40); g.lineTo(52, 46); g.moveTo(39, 32); g.lineTo(39, 54); g.stroke(); rad(g, 39, 43, 18, 'rgba(255,216,74,.3)', 'rgba(255,216,74,0)');
+        F(g, O, [[0, 24 + f * 3, 12, 38]]); F(g, M, [[1, 25 + f * 3, 10, 36]]); F(g, O, [[66, 24 - f * 3, 12, 38]]); F(g, M, [[67, 25 - f * 3, 10, 36]]);
+        P(g, [[70, 62 - f * 3], [74, 20 - f * 3], [78, 62 - f * 3]], L, O); F(g, G, [[72, 62 - f * 3, 4, 4]]); P(g, [[-2, 30], [4, 14], [8, 34]], '#5a3aa0', O);
+        P(g, [[20, 14], [24, 0], [54, 0], [58, 14]], M, O); F(g, '#05020e', [[26, 5, 26, 7]]); F(g, G, [[30, 7, 5, 3], [43, 7, 5, 3]]); P(g, [[24, 0], [18, -6], [24, 6]], L, O); P(g, [[54, 0], [60, -6], [54, 6]], L, O);
+    });
+    // ---------- реєстрація ----------
+    reg(DM('x_emberimp', 'Жарівець', { hp: 210, dmg: 26, spd: 1.8, w: 26, h: 30, ai: 'fly', xp: 85 }), emberImp);
+    reg(DM('x_slagback', 'Шлаковий горбань', { hp: 760, dmg: 36, spd: 1.0, w: 40, h: 44, ai: 'charge', xp: 220 }), slagback);
+    reg(DM('x_b_forge', 'Хазяїн Горнила', { boss: true, hp: 36000, dmg: 34, spd: 1.2, w: 66, h: 88, ai: 'charge', xp: 12000, phases: [{ at: 0.7, spd: 1.2, say: 'Горнило ще гаряче!' }, { at: 0.4, spd: 1.4, say: 'Я кую тебе!' }, { at: 0.15, spd: 1.65, say: 'ПЕРЕГРІВ!' }], atk: [{ k: 'slam', cd: 5, n: 1, dmg: 36, col: '#ff7a3a' }, { k: 'shots', cd: 3, n: 5, dmg: 26, col: '#ff9a3a' }, { k: 'rain', cd: 8, n: 4, dmg: 28, col: '#ff6a2a' }, { k: 'summon', cd: 14, n: 2, mob: 'x_emberimp' }], intro: 'Ковалю потрібен новий метал. Ти підійдеш.', outro: 'Горнило гасне. Метал упав.' }), bossForge);
+    reg(DM('x_mirrorglint', 'Відблиск', { hp: 280, dmg: 22, spd: 1.6, w: 26, h: 34, ai: 'fly', xp: 95 }), glint);
+    reg(DM('x_glassgolem', 'Скляний голем', { hp: 820, dmg: 34, spd: 1.0, w: 36, h: 48, ai: 'charge', xp: 230 }), glassGolem);
+    reg(DM('x_b_double', 'Двійник', { boss: true, hp: 42000, dmg: 36, spd: 1.4, w: 50, h: 80, ai: 'charge', xp: 15000, phases: [{ at: 0.7, spd: 1.5, say: 'Я — це ти, тільки швидший.' }, { at: 0.4, spd: 1.7, say: 'Ти ж мене створив.' }, { at: 0.15, spd: 2.0, say: 'Розбий — і ти розіб’єшся.' }], atk: [{ k: 'slam', cd: 4, n: 1, dmg: 38, col: '#8ff0ff' }, { k: 'shots', cd: 2.6, n: 6, dmg: 28, col: '#8ff0ff' }, { k: 'rain', cd: 7, n: 5, dmg: 28, col: '#c8ffff' }, { k: 'summon', cd: 13, n: 2, mob: 'x_mirrorglint' }], intro: 'Ти прийшов за собою. Я тут.', outro: 'Дзеркало тріскає. Ти один.' }), bossDouble);
+    reg(DM('x_scrollghost', 'Хранитель сувоїв', { hp: 300, dmg: 24, spd: 1.4, w: 26, h: 34, ai: 'fly', xp: 100 }), scrollGhost);
+    reg(DM('x_runeguard', 'Рунний сторож', { hp: 900, dmg: 38, spd: 1.0, w: 36, h: 52, ai: 'charge', xp: 260 }), runeGuard);
+    reg(DM('x_b_echo', 'Відлуння Глибинного Вартового', { boss: true, hp: 64000, dmg: 44, spd: 1.2, w: 74, h: 98, ai: 'charge', xp: 30000, phases: [{ at: 0.75, spd: 1.25, say: 'Ти приніс печаті. Тепер принеси відповідь.' }, { at: 0.45, spd: 1.5, say: 'Я був Вартовим. Тепер я — відлуння.' }, { at: 0.2, spd: 1.8, say: 'Двері — не для тебе. Двері — для світу.' }], atk: [{ k: 'slam', cd: 5, n: 1, dmg: 44, col: '#b070ff' }, { k: 'shots', cd: 2.8, n: 7, dmg: 30, col: '#ffd84a' }, { k: 'rain', cd: 7, n: 6, dmg: 32, col: '#b070ff' }, { k: 'summon', cd: 15, n: 2, mob: 'x_runeguard' }], intro: 'П’ять печатей. П’ять голосів. Лишилось одне питання.', outro: 'Відлуння стихає. Двері відчиняються.' }), bossEcho);
+    window.__zart2 = { two, rad, reg, DM };
+})();
+// ===== v46.66 зброя Спадщини Вартових: 4 Пекельні (кують на Пекельному ковадлі, 3 якості) + 4 «Клятви Вартових» (нагорода Архіву) =====
+(function () {
+    'use strict';
+    const E0 = window.__zend, Z = window.__zr, EP = window.__zepic, G = window.__zgear; if (!E0 || !Z || !EP || !G) return;
+    const { E, aoe, ring, dot, heal, say, icd, live } = EP, SP = EP.spr, X = window.__zpfx;
+    const P = zfPoly, C = zfC, F = zfFr;
+    const held = () => { try { return inventory[selectedHotbarSlot]; } catch (e) { return null; } };
+    const pxy = () => [player.x + 12, player.y + 22];
+    const FXb = (x, y, c, n, sp, o) => X.burst(x, y, c, n, sp, o), FXw = (x, y, c, r, o) => X.wave(x, y, c, r, o);
+    Object.assign(RPG_PAL, {
+        lhell: { H: '#fff0d0', L: '#ff9a3a', M: '#c8321a', D: '#5a1408', O: '#1a0504' },
+        loath: { H: '#ffffff', L: '#e8c8ff', M: '#9a6ae0', D: '#3a1a78', O: '#0c0420' }
+    });
+    const TN = { melee: ['⚔', 'Воїн'], ranged: ['🏹', 'Стрілець'], magic: ['✨', 'Маг'], summon: ['🐾', 'Приклик.'] };
+    const KN = { sword: 'Меч', bow: 'Лук', staff: 'Посох', whip: 'Батіг', tome: 'Гримуар' };
+    const glint = SP.glint, over = SP.over, sp = SP.sp;
+    // ---------- базові зброї ----------
+    const BASE = {
+        blade: { n: 'Клинок Горнила', t: 'melee', k: 'sword', pal: 'lhell', dmg: 232, cd: 20, opt: {}, hell: 1, desc: 'Кожне влучання підпалює ціль. Кожне 5-те — виверження магми під ворогом.', lore: 'Викуваний там, де камінь не остигає.', spr: () => over(sp('sword', 'lhell', '#ffb060'), cx => { glint(cx, 26, 6, 2, '#fff0d0'); F(cx, '#ff6a2a', [[12, 19, 1, 3], [16, 15, 1, 3]]); }), au: ['flame', '#ff9a3a', '#fff0d0'] },
+        bow: { n: 'Лук Жару', t: 'ranged', k: 'bow', pal: 'lhell', dmg: 134, cd: 15, opt: { ammo: 'arrow' }, hell: 1, desc: 'Стріли підпалюють. Кожне 4-те влучання розсипається жаром по всіх поряд.', lore: 'Тятива з жил Тіні, що ще тліє.', spr: () => over(sp('bow', 'lhell', '#ffb060'), cx => { glint(cx, 9, 16, 1, '#fff0d0'); F(cx, '#ff9a3a', [[24, 6, 2, 1]]); }), au: ['flame', '#ff9a3a', '#fff0d0'] },
+        staff: { n: 'Посох Магми', t: 'magic', k: 'staff', pal: 'lhell', dmg: 178, cd: 26, opt: { mana: 18, orb: 'stardust', aoe: 96 }, hell: 1, desc: 'Влучання підпалюють. 18% шансу — метеор у центр бою.', lore: 'Магма в ньому не охолоне ніколи.', spr: () => over(sp('staff', 'lhell', '#ff6a2a'), cx => { C(cx, 24, 8, 2.2, '#ff9a3a', '#5a1408', 0.9); glint(cx, 28, 3, 1, '#fff0d0'); }), au: ['flame', '#ff6a2a', '#fff0d0'] },
+        whip: { n: 'Батіг Пекла', t: 'summon', k: 'whip', pal: 'lhell', dmg: 92, cd: 20, opt: { range: 235 }, hell: 1, desc: 'Влучання підпалюють. Кожне 6-те — вогняний ланцюг на двох сусідніх ворогів.', lore: 'Кожен удар пахне попелом.', spr: () => SP.whipSpr(RPG_PAL.lhell, '#fff0d0'), au: ['flame', '#ff6a2a', '#fff0d0'] },
+        oblade: { n: 'Клятва Меча', t: 'melee', k: 'sword', pal: 'loath', dmg: 274, cd: 20, opt: {}, desc: 'Кожне влучання додає Клятву (до 8). На восьмій — хвиля присяги: шкода навколо й трохи здоров’я.', lore: 'Той, хто дав слово Вартовим, не відступає.', spr: () => over(sp('sword', 'loath', '#ffffff'), cx => { glint(cx, 26, 6, 2, '#ffffff'); glint(cx, 14, 19, 1, '#e8c8ff'); }), au: ['mote', '#e8c8ff', '#ffffff'] },
+        obow: { n: 'Клятва Лука', t: 'ranged', k: 'bow', pal: 'loath', dmg: 152, cd: 15, opt: { ammo: 'arrow' }, desc: 'Кожне влучання додає Клятву (до 8). На восьмій — залп присяги й трохи здоров’я.', lore: 'Стріла знає, кому вона присягала.', spr: () => over(sp('bow', 'loath', '#ffffff'), cx => { glint(cx, 9, 16, 1, '#ffffff'); glint(cx, 25, 8, 1, '#e8c8ff'); }), au: ['mote', '#e8c8ff', '#ffffff'] },
+        otome: { n: 'Клятва Гримуара', t: 'magic', k: 'tome', pal: 'loath', dmg: 196, cd: 25, opt: { mana: 18, radius: 150, nova: 'rune' }, desc: 'Кожне влучання додає Клятву (до 8). На восьмій — вибух присяги, що повертає ману.', lore: 'Сторінки, на яких слово важить більше за чорнило.', spr: () => SP.tomeSpr(RPG_PAL.loath, '#ffffff', cx => { glint(cx, 16, 16, 3, '#ffffff'); }), au: ['orbit', '#e8c8ff', '#ffffff'] },
+        owhip: { n: 'Клятва Батога', t: 'summon', k: 'whip', pal: 'loath', dmg: 104, cd: 20, opt: { range: 240 }, desc: 'Кожне влучання додає Клятву (до 8). На восьмій — хвиля присяги, що посилює й тебе.', lore: 'Батіг, що гнуть лише слова.', spr: () => SP.whipSpr(RPG_PAL.loath, '#ffffff'), au: ['mote', '#e8c8ff', '#ffffff'] }
+    };
+    const QL = [{ s: '', m: 1.0, n: 'Обпалений', c: '#ff9a3a' }, { s: '_2', m: 1.12, n: 'Загартований', c: '#ffcf5a' }, { s: '_3', m: 1.25, n: 'Досконалий', c: '#fff0b0' }];
+    const MY = {}, ORDER = [];
+    function reg(id, b, nm, ql) {
+        const dmg = Math.round(b.dmg * (ql ? ql.m : 1));
+        WEAPONS[id] = Object.assign({ name: nm, t: b.t, k: b.k, pal: b.pal, dmg, cd: b.cd, tier: 4, desc: b.desc, aim: 1, lg: 1 }, b.opt); if (b.k === 'sword' || b.k === 'dagger') WEAPONS[id].aim = 0;
+        WEAPONS[id].nochest = 1; HELD_TOOLS[id] = 1; SWORD_GLOW[id] = 1; try { SWCOL[id] = RPG_PAL[b.pal].L; } catch (e) { }
+        G.mk(id, nm, 4, TN[b.t][0] + ' ' + TN[b.t][1] + ' · ' + KN[b.k] + (b.hell ? ' · Пекельна' : ' · Зброя Вартових'), 'Шкода: ' + dmg + (b.opt.mana ? ' · Мана: ' + b.opt.mana : '') + (b.opt.ammo ? ' · Потрібні боєприпаси' : ''), b.desc + ' «' + b.lore + '»' + (ql ? ' Якість: ' + ql.n + ' (+' + Math.round((ql.m - 1) * 100) + '%).' : ''));
+        try { itemSprites[id] = b.spr(); } catch (e) { console.error('zweap2 sprite', id, e); }
+        if (ql) { try { ITEM_METADATA[id].color = ql.c; } catch (e) { } }
+        MY[id] = { b, kk: b.hell ? 'h' : 'o' }; ORDER.push(id);
+    }
+    for (const k of ['blade', 'bow', 'staff', 'whip']) QL.forEach((q, i) => reg('hell_' + k + q.s, BASE[k], q.n + ' ' + BASE[k].n, q));
+    for (const k of ['oblade', 'obow', 'otome', 'owhip']) reg('oath_' + k.slice(1), BASE[k], BASE[k].n);
+    const CLS = { warrior: 'oath_blade', ranger: 'oath_bow', mage: 'oath_tome', summoner: 'oath_whip' };
+    // ---------- пасивки ----------
+    const S = { hit: {}, oath: 0, oathT: 0 };
+    function proc(id, t) {
+        const M = MY[id], b = M.b, [px, py] = pxy(), X0 = t.x, Y0 = t.y, o = t.o, c = S.hit[id] = (S.hit[id] || 0) + 1; E.f = E.f || 0;
+        if (M.kk === 'h') {
+            const type = id.split('_')[1];
+            FXb(X0, Y0, '#ff9a3a', 5, 2.6, { up: 1 }); try { dot(t, id, 0.1, 4, 15, '#ff7a3a'); } catch (e) { }
+            if (type === 'blade' && c % 5 === 0 && icd('hb', 40)) { aoe(X0, Y0 + 10, 120, 0.7, id, o, { col: '#ff6a2a' }); ring(X0, Y0 + 14, '#ff6a2a', 120, 26, 1); FXw(X0, Y0 + 12, '#ff9a3a', 130, { life: 0.8 }); FXb(X0, Y0 + 10, '#ffcf5a', 20, 4, { up: 2 }); say('Виверження!', '#ff9a3a'); }
+            else if (type === 'bow' && c % 4 === 0 && icd('hw', 30)) { aoe(X0, Y0, 90, 0.5, id, o, { col: '#ff9a3a' }); FXw(X0, Y0, '#ff9a3a', 90, { life: 0.6 }); FXb(X0, Y0, '#ffcf5a', 16, 3.4, { up: 1.2 }); }
+            else if (type === 'staff' && Math.random() < 0.18 && icd('hs', 50)) { aoe(X0, Y0, 130, 1.0, id, o, { col: '#ff6a2a' }); ring(X0, Y0, '#ff6a2a', 130, 30, 1); FXw(X0, Y0, '#ff9a3a', 150, { life: 0.9 }); FXb(X0, Y0 - 30, '#ffcf5a', 22, 4, { up: -1.2 }); say('Метеор!', '#ff9a3a'); try { shake = Math.max(shake, 5); } catch (e) { } }
+            else if (type === 'whip' && c % 6 === 0 && icd('hz', 40)) { let n = 0; for (const q of live()) { if (q.k !== 'mob' || !q.o || q.o === o || Math.hypot(q.x - X0, q.y - Y0) > 190) continue; E.bolts.push({ x1: X0, y1: Y0, x2: q.x, y2: q.y, col: '#ff9a3a', t: 0, life: 11, seed: Math.random() * 99 }); try { aoe(q.x, q.y, 50, 0.45, id, o, { col: '#ff9a3a' }); dot(q, id, 0.1, 3, 15, '#ff7a3a'); } catch (e) { } if (++n >= 2) break; } if (n) say('Ланцюг!', '#ff9a3a'); }
+        } else {
+            S.oathT = E.f + 360; if (S.oath < 8) S.oath++; FXb(X0, Y0, '#e8c8ff', 3, 2, { up: 1 });
+            if (S.oath >= 8 && icd('oa', 60)) {
+                S.oath = 0; const type = id.slice(5); aoe(px, py, 210, type === 'whip' ? 0.9 : 1.2, id, null, { col: '#e8c8ff' }); heal(Math.max(1, Math.round(player.maxHealth * 0.04))); if (type === 'tome') { RPG.mana = Math.min(RPG.maxMana, RPG.mana + 25); }
+                FXw(px, py, '#e8c8ff', 220, { life: 1 }); FXw(px, py, '#ffffff', 120, { life: 0.6 }); ring(px, py, '#e8c8ff', 210, 30, 1); FXb(px, py, '#ffffff', 26, 5, { up: 1.4 }); say('Клятва!', '#e8c8ff'); try { shake = Math.max(shake, 6); } catch (e) { } try { Z.flash('#e8c8ff'); } catch (e) { }
+            }
+        }
+    }
+    rpgHit = (function (o) { return function (t, dmg, opt) { let it = null; try { it = held(); } catch (e) { } const mine = it && MY[it.id] && !E.busy && t && t.o && !(opt && opt.dot); const r = o.call(this, t, dmg, opt); try { if (mine && r) proc(it.id, t); } catch (e) { console.error('zweap2 proc', e); } return r; }; })(rpgHit);
+    Z.TICK.push(() => { try { if (S.oath > 0 && E.f > S.oathT) S.oath = 0; } catch (e) { } });
+    // ---------- викидання снарядів з руки: колір і світіння ----------
+    weaponUse = (function (o) { return function () { const it = held(), n0 = rpgProjs.length, r = o.apply(this, arguments); try { if (it && MY[it.id]) { const col = RPG_PAL[MY[it.id].b.pal].L; for (let i = n0; i < rpgProjs.length; i++) { const p = rpgProjs[i]; if (p.k === 'fire' || p.k === 'missile' || p.k === 'spark' || p.k === 'arrow' || p.k === 'bolt' || p.k === 'bullet') p.col = col; } } } catch (e) { } return r; }; })(weaponUse);
+    // ---------- смужка Клятви ----------
+    Z.DRAW.push((t) => { const it = held(); if (!it || !MY[it.id] || MY[it.id].kk !== 'o' || S.oath <= 0) return; const [px, py] = pxy(), c = ctx; c.save(); for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + (i - 3.5) * 0.22, x = px + Math.cos(a) * 34, y = py - 14 + Math.sin(a) * 34; c.globalCompositeOperation = 'lighter'; c.fillStyle = i < S.oath ? 'rgba(232,200,255,.95)' : 'rgba(120,80,170,.25)'; c.beginPath(); c.arc(x, y, i < S.oath ? 3 : 2, 0, 6.3); c.fill(); } c.restore(); });
+    window.__zweap2 = { MY, BASE, QL, CLS, ORDER, S, proc };
+})();
+// ===== v46.66 «Пекельна Кузня»: споруда з базальту й лави, Хазяїн Горнила, Пекельне ковадло з міні-грою температури, Пекельна зброя =====
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx, DG = window.__zdung, MAP = window.__zdgmap, W2 = window.__zweap2; if (!E || !Z || !X || !DG || !W2 || !window.__zart2 || typeof v378Furn !== 'function') return;
+    const { item, P, C, F, gl, drop, cnt, take, S, toast, tn, banner, guest, playing, clamp, rnd, inst, kind } = E; const TAU = Math.PI * 2;
+    // ---------- блоки ----------
+    DG.CH['1'] = 82; DG.CH['2'] = 83; DG.CH['3'] = 84; DG.CH['4'] = 85; DG.CH['5'] = 86;
+    // ---------- предмети ----------
+    ACC['forge_ring'] = ['Кільце Горнила', 4, { hp: 45, def: 4, rhp: 0.8, all: 0.03 }, 'Тепле навіть у льоду. Лава більше не палить: ти пройшов Горнило. Нагорода за Хазяїна Горнила.', 'ring', '#ff9a3a', '#3a0c06'];
+    ITEM_METADATA['forge_ring'] = { name: 'Кільце Горнила', rarity: RPG_TIERS[4].r, color: RPG_TIERS[4].c, type: '💍 Аксесуар · Вартові', stat: '+45 здоров’я, +4 захисту, +0,8 рег., +3% шкоди · імунітет до лави', desc: ACC.forge_ring[3] };
+    try { itemSprites['forge_ring'] = generateSprite(cx => { gl(cx, 16, 16, 15, '#ff7a3a', 0.45); cx.strokeStyle = '#3a0c06'; cx.lineWidth = 6; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); cx.strokeStyle = '#ff9a3a'; cx.lineWidth = 3.6; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); P(cx, [[16, 3], [21, 9], [16, 14], [11, 9]], '#ffcf5a', '#5a1408'); F(cx, '#fff0d0', [[15, 6, 2, 3]]); }); } catch (e) { }
+    accApply = (function (o) { return function (st) { o.apply(this, arguments); try { if ((player.acc || []).some(a => a && a.id === 'forge_ring')) st.lavaImm = 1; } catch (e) { } }; })(accApply);
+    // ---------- споруда ----------
+    kind('zk', {
+        name: 'Пекельна Кузня', col: '#ff7a3a', col2: '#ffd8a0', tint: '#ffb080', vig: '#1a0402', sub: 'Тут кують те, що не кується', rumor: 'Десь глибоко під землею загули міхи — у Горнилі знову палає вогонь.',
+        y0: (sf, h, T) => E.deepY(h, T, 6), minP: 60, fr: [0.15, 0.85],
+        build(B) {
+            const o = B('zk', 104, 30, 'Пекельна Кузня'), FY = 26;
+            o.fill(0, 0, 104, 30, '1'); for (let i = 0; i < 70; i++) { const x = Math.floor(o.R() * 104), y = Math.floor(o.R() * 30); o.at(x, y, o.R() < 0.55 ? '2' : '3'); }
+            o.air(4, 0, 4, 8); o.shaft = { x: 4, w: 4 };
+            o.room('r0', 2, 8, 14, 19, []); o.at(3, 12, 'T').at(14, 12, 'T').at(8, 8, 'L').at(4, 18, '5').at(13, 18, '5'); o.platform(9, 18, 3, '2');
+            o.lorePt(8, FY, 'Горнило не гасло дев’ять століть. Його вогонь живиться тими, хто приходить подивитись.', 'k1');
+            o.air(16, 22, 4, 5);
+            // Ливарня
+            const r1 = o.room('r1', 20, 6, 24, 21, [['x_emberimp', 3], ['x_slagback', 1]], { title: 'Ливарня' });
+            o.fill(26, 25, 11, 2, '4'); o.platform(23, 21, 3, '2').platform(29, 18, 4, '2').platform(35, 15, 3, '2').platform(26, 12, 3, '2'); o.at(22, 8, 'F').at(42, 8, 'F').at(30, 10, 'L').at(24, 25, 'F').at(38, 25, 'F');
+            o.lorePt(22, FY, 'Ливарники пливили метал з сердець. Одні — з каменів, інші — з тих, хто поруч.', 'k2');
+            r1.seal.push(o.seal(44, 21, 1, 5));
+            // Коридор лави
+            o.air(45, 21, 14, 6); o.fill(48, 25, 8, 2, '4'); o.platform(48, 23, 2, '2').platform(52, 22, 2, '2').platform(56, 23, 2, '2'); o.at(46, 21, 'F').at(58, 21, 'F'); o.chest(46, FY, 'side');
+            // Зала Ковалів
+            const r2 = o.room('r2', 59, 5, 22, 22, [['x_emberimp', 3], ['x_slagback', 2]], { title: 'Зала Ковалів' });
+            o.fill(61, 25, 5, 2, '4').fill(75, 25, 5, 2, '4'); o.platform(63, 20, 4, '2').platform(70, 17, 4, '2').platform(76, 13, 3, '2').platform(65, 12, 3, '2'); o.at(61, 8, 'F').at(79, 8, 'F').at(70, 8, 'L').at(70, 25, '5'); o.chest(72, FY, 'side');
+            o.lorePt(62, FY, 'Ковалі працювали по двоє: один тримав, другий бив. Тримав завжди той, кого не шкода.', 'k3');
+            r2.seal.push(o.seal(80, 22, 1, 5));
+            o.air(81, 22, 4, 5);
+            // Горнило
+            o.room('r3', 85, 2, 19, 25, [], { boss: 'x_b_forge', title: 'Горнило', bx: 95 }); o.fill(85, 27, 19, 1, '2'); o.fill(88, 24, 5, 3, '4'); o.fill(98, 24, 5, 3, '4');
+            o.at(86, 6, 'F').at(103, 6, 'F').at(86, 16, 'F').at(103, 16, 'F').at(95, 3, 'L').at(87, 25, '5'); o.platform(89, 20, 3, '2').platform(98, 20, 3, '2').platform(94, 15, 3, '2'); o.fin = { x: 100, y: FY };
+            o.lorePt(86, FY, 'Хазяїн Горнила не пам’ятає, ким був. Знає лише: метал любить гарячих.', 'k4');
+            return o;
+        },
+        loot(I, rich) { const s = new Array(16).fill(null); const put = (id, n) => { const f = s.map((q, i) => q ? -1 : i).filter(i => i >= 0); if (f.length) s[f[Math.random() * f.length | 0]] = { id, count: n }; }; put('magma_ingot', rich ? 8 : 3); put('obsidian', rich ? 8 : 4); if (Math.random() < (rich ? 0.9 : 0.5)) put('ember_core', rich ? 4 : 1 + (Math.random() * 2 | 0)); put('life_potion', 2); if (Math.random() < (rich ? 0.8 : 0.3)) put('relic_dust', 1 + (Math.random() * 2 | 0)); if (rich) put('shade_essence', 1); return s; },
+        reward(I, m) {
+            const z = S(); z.forgeDone = 1; E.lore('k5');
+            E.finish(I, m, { msg: 'Горнило гасне, а Кільце ще гаряче. Пекельне ковадло відкрите.', seal: 'forge', items: [['forge_ring', 1], ['magma_ingot', 8], ['ember_core', 3]] });
+        },
+        vis: {
+            backdrop(c, I, r, th, t, k, o) { const { x0, y0, w, h, bot } = o, n = Math.max(2, Math.round(r.w / 6)); for (let i = 0; i < n; i++) { const x = x0 + (i + 0.5) * w / n, hh = 60 + (Math.sin(i * 3.1 + t * 0.4) * 0.5 + 0.5) * 120; const g = c.createLinearGradient(0, bot, 0, bot - hh); g.addColorStop(0, X.rgba('#ff6a2a', 0.2 * k)); g.addColorStop(1, X.rgba('#ff6a2a', 0)); c.fillStyle = g; c.fillRect(x - 14, bot - hh, 28, hh); } },
+            room(c, I, r, th, t, k, add) { const bot = (I.y + r.y + r.h) * 32, x0 = (I.x + r.x) * 32, W = r.w * 32; add(c, () => { for (let i = 0; i < 3; i++) { const x = x0 + ((t * (12 + i * 5) + i * W / 3) % W); X.glow(x, bot - 10 - i * 5, 70, '#ff7a3a', 0.1 * k); } }); },
+            scene(c, I, T, th, t, k, add, v) { add(c, () => { for (let y = 0; y < T.H; y++) for (let x = 0; x < T.W; x++) { if (T.g[y][x] !== '4') continue; const wx = (I.x + x) * 32 + 16, wy = (I.y + y) * 32 + 16; if (wx < v.x0 || wx > v.x1 || I.y + y < v.y0 || I.y + y > v.y1) continue; if (T.g[y - 1] && T.g[y - 1][x] !== '4') X.glow(wx, wy - 8, 52 + 6 * Math.sin(t * 3 + x), '#ff7a3a', 0.34 * k); else if ((x + y) % 3 === 0) X.glow(wx, wy, 40, '#ff5a1a', 0.18 * k); } }); },
+            particle(ex, ey, t, th) { X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.4, vy: -0.5 - Math.random() * 0.9, g: -0.003, life: 3, s: 1.8, c: Math.random() < 0.5 ? '#ff9a3a' : '#ffd8a0', a: 0.85 }); }
+        }
+    });
+    // ---------- боси: лавові стовпи й кільця ----------
+    let bf = 0;
+    Z.TICK.push(() => {
+        if (!playing() || !currentWorld) return; const I = inst('zk'); if (!I || I.boss || !Z.host()) return; const R = DG.rt(I), m = R.boss; if (!m || m.hp <= 0) return; bf++; const hf = m.hp / m.maxHp, px = player.x + 12;
+        if (bf % Math.round(hf < 0.4 ? 300 : 420) === 0) { for (let i = 0; i < 4; i++) DG.PIL.push({ x: px + (i - 1.5) * 80 + (Math.random() - 0.5) * 30, y0: player.y - 340, y1: player.y + 60, t: 0, delay: 55 + i * 9, dmg: 34, col: '#ff6a2a', who: 'Хазяїн Горнила' }); toast('🔥 Лавові стовпи!'); }
+        if (bf % (hf < 0.4 ? 540 : 780) === 120) { DG.RING.push({ x: m.x + m.width / 2, y: m.y + m.height - 8, r: 20, dmg: 38, col: '#ff7a3a', who: 'Хазяїн Горнила' }); toast('🔥 Хвиля жару — стрибай!'); }
+        if (hf < 0.15 && bf % 12 === 0) X.emit(m.x + rnd(0, m.width), m.y + rnd(0, m.height), { vx: rnd(-1, 1), vy: -rnd(1, 2.4), life: 0.8, s: 3, c: '#ffcf5a', a: 1 });
+    });
+    // ---------- захист стін споруд до перемоги ----------
+    // ---------- Пекельне ковадло ----------
+    v378Furn('hell_anvil', { n: 'Пекельне ковадло', w: 2, h: 1, st: 'floor', light: 90, col: '#ff7a3a', type: '🔨 Пекельна кузня', stat: 'ПКМ — кувати Пекельну зброю з міні-грою температури', d: 'Ковадло, що не гасне. На ньому кують Пекельну зброю: розжарюй метал міхом і бий у розжареному вікні. Чим точніше — тим краща якість.' },
+        function (c) {
+            c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(2, 30, 60, 2); F(c, '#14060a', [[4, 22, 56, 9]]); F(c, '#3a3340', [[5, 23, 54, 7]]); F(c, '#5a5262', [[5, 23, 54, 2]]);
+            F(c, '#14060a', [[8, 10, 48, 13]]); F(c, '#4a4452', [[9, 11, 46, 11]]); F(c, '#7a7284', [[9, 11, 46, 3]]); F(c, '#14060a', [[0, 12, 12, 5]]); F(c, '#4a4452', [[1, 13, 10, 3]]); F(c, '#14060a', [[52, 11, 10, 6]]); F(c, '#4a4452', [[53, 12, 8, 4]]);
+            F(c, '#ff6a2a', [[16, 14, 28, 3]]); F(c, '#ffcf5a', [[18, 14.6, 24, 1.4]]); F(c, '#fff0d0', [[22, 14.8, 16, 0.8]]); F(c, '#ff7a3a', [[8, 26, 4, 2], [50, 26, 5, 2]]);
+        }, { obsidian: 20, magma_ingot: 12, shade_essence: 2 }, 40);
+    // ---------- міні-гра ----------
+    const COST = { magma_ingot: 8, obsidian: 6, ember_core: 3, shade_essence: 1, gold_ingot: 10, cosmic_ingot: 5 };
+    const GEM = { blade: ['gem_ruby', 3], bow: ['gem_emerald', 3], staff: ['gem_sapphire', 3], whip: ['gem_emerald', 2] };
+    const costOf = t => { const o = Object.assign({}, COST); if (GEM[t]) o[GEM[t][0]] = GEM[t][1]; return o; };
+    const canFor = t => { const c = costOf(t); return Object.keys(c).every(k => cnt(k) >= c[k]); };
+    const chipsOf = c => '<div class="chips">' + Object.keys(c).map(k => '<span class="chip ' + (cnt(k) >= c[k] ? 'ok' : 'no') + '">' + ((ITEM_METADATA[k] || {}).name || k) + ' ' + Math.min(cnt(k), c[k]) + '/' + c[k] + '</span>').join('') + '</div>';
+    const FORGE_ITEMS = [['blade', '⚔', 'Воїн'], ['bow', '🏹', 'Стрілець'], ['staff', '✨', 'Маг'], ['whip', '🐾', 'Приклик.']];
+        function renderPanel() {
+        const z = S(), done = z && z.forgeDone; let h = '<div class="msg">💎 Кування коштує цінних матеріалів: золоті й космічні зливки, самоцвіти. Розжарюй метал міхом (ПРОБІЛ), бий молотом (E або Enter) у розжареному вікні. 5 ударів. Чим точніше — тим вища якість: Обпалений → Загартований (+12%) → Досконалий (+25%).' + (cnt('mush_ember') >= 2 ? ' 🍄 2 Жарогриби в запасі: уповільнюють остигання.' : '') + '</div>';
+        for (const [t, ic, cl] of FORGE_ITEMS) { const b = W2.BASE[t]; h += '<div class="card" style="display:block"><b>' + ic + ' ' + b.n + '</b> <span class="chip">' + cl + ' · шкода ' + b.dmg + '–' + Math.round(b.dmg * 1.25) + '</span><small>' + b.desc + '</small><button data-z="forge:' + t + '" ' + (canForge() ? '' : 'disabled') + '>🔨 Кувати</button></div>'; }
+        return h;
+    }
+    const STYLE = document.createElement('style'); STYLE.textContent = '#zk-g{position:fixed;inset:0;z-index:70;display:none;background:rgba(6,2,2,.82);align-items:center;justify-content:center;flex-direction:column;font-family:"Segoe UI",sans-serif;color:#ffe8d0}#zk-g canvas{box-shadow:0 0 60px #ff6a2a88,0 0 0 4px #2a1208,0 0 0 6px #8a5a30!important;position:relative!important;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:min(94vw,760px);height:auto;aspect-ratio:760/440;border:2px solid #ff9a3a;border-radius:12px;box-shadow:0 0 40px #ff6a2a66;max-width:96vw}#zk-g .h{margin-top:10px;font-size:14px;opacity:.85;text-align:center}#zk-g button{margin:10px 6px 0;padding:10px 22px;border-radius:10px;border:1px solid #ff9a3a;background:linear-gradient(#5a1e0c,#2a0c06);color:#ffe8d0;font-weight:700;font-size:15px;cursor:pointer;touch-action:manipulation;box-shadow:0 0 14px #ff6a2a55,inset 0 1px 0 #ffffff22;transition:transform .1s,box-shadow .15s}#zk-g button:hover{box-shadow:0 0 24px #ff9a3a99,inset 0 1px 0 #ffffff33}#zk-g button:active{transform:scale(.94)}'; document.head.appendChild(STYLE);
+    const GD = document.createElement('div'); GD.id = 'zk-g'; GD.innerHTML = '<canvas width="760" height="440"></canvas><div class="h"></div><div><button id="zk-b">🔥 Міх (ПРОБІЛ)</button><button id="zk-h">🔨 Удар (E)</button><button id="zk-x">✖</button></div>'; document.body.appendChild(GD);
+    const cv = GD.querySelector('canvas'), cg = cv.getContext('2d'), HINT = GD.querySelector('.h');
+    const G = { sw: 0, shk: 0, rings: [], emb: [], on: 0, t: 0, temp: 0.2, strikes: 0, acc: [], pump: 0, type: 'blade', fx: [], flash: 0, msg: '', cool: 1, end: 0 };
+    function startGame(type) {
+        if (!canFor(type)) return; G.cost = costOf(type); for (const k in G.cost) take(k, G.cost[k]);
+        G.on = 1; G.t = 0; G.temp = 0.2; G.strikes = 0; G.acc = []; G.pump = 0; G.type = type; G.fx = []; G.flash = 0; G.msg = ''; G.end = 0; G.cool = cnt('mush_ember') >= 2 ? (take('mush_ember', 2), 0.6) : 1; GD.style.display = 'flex'; try { Z.close(); } catch (e) { } loop();
+    }
+    function pump(on) { G.pump = on ? 1 : 0; }
+    function strike() {
+        if (!G.on || G.end) return; const t = G.temp; let a = 0, tx = 'Холодно!';
+        if (t > 1) { a = 0; tx = 'Перегрів!'; } else { const c = 0.675, d = Math.abs(t - c); a = clamp(1 - d / 0.28, 0, 1); tx = a > 0.85 ? 'Ідеально!' : a > 0.5 ? 'Добре' : a > 0 ? 'Так собі' : (t < c ? 'Холодно!' : 'Перегрів!'); }
+        G.acc.push(a); G.strikes++; G.msg = tx; G.flash = 1; G.sw = 1; G.shk = 6 + a * 8; G.rings.push({ x: 380, y: 300, r: 8, l: 1, c: a > 0.5 ? '#ffe27a' : '#ff6a2a' }); G.temp = Math.max(0.12, G.temp - 0.22);
+        for (let i = 0; i < 18 + a * 24; i++) G.fx.push({ x: 380 + rnd(-14, 14), y: 296, vx: rnd(-4, 4) * (0.5 + a), vy: -rnd(1, 6), l: 1, c: a > 0.5 ? '#ffe27a' : '#ff6a2a' });
+        tn('triangle', 180 + a * 300, 90, 0.18, 0.12, { rev: 0 }); tn('square', 800 + a * 700, 300, 0.08, 0.05);
+        if (G.strikes >= 5) { G.end = 1; setTimeout(finishGame, 900); }
+    }
+    function finishGame() {
+        const avg = G.acc.reduce((s, v) => s + v, 0) / G.acc.length, q = avg >= 0.78 ? 2 : avg >= 0.5 ? 1 : 0, id = 'hell_' + G.type + W2.QL[q].s; G.on = 0; GD.style.display = 'none';
+        drop(id, player.x + 12, player.y - 10, 1, 0); const x = player.x + 12, y = player.y + 10, col = W2.QL[q].c; X.burst(x, y, col, 40 + q * 20, 5, { up: 1.4 }); X.wave(x, y, col, 160 + q * 50, { life: 1.2 }); X.wave(x, y, '#ffffff', 100, { life: 0.7 }); try { Z.flash(col); } catch (e) { }
+        banner('🔨 ' + ITEM_METADATA[id].name, 'Точність ' + Math.round(avg * 100) + '% — якість «' + W2.QL[q].n + '»'); tn('sine', 400, 1200, 0.7, 0.1); tn('triangle', 800, 1600, 0.6, 0.06, { delay: 0.15 });
+        try { profXp('smith', 20 + q * 10); } catch (e) { }
+    }
+    function closeGame(refund) { if (!G.on) return; G.on = 0; GD.style.display = 'none'; if (refund && G.strikes < 1) { for (const k in (G.cost || COST)) drop(k, player.x + 12, player.y, (G.cost || COST)[k], 0); toast('Куванню скасовано. Матеріали повернулись.'); } else if (G.strikes) toast('Заготовка охолола. Матеріали втрачено.'); }
+
+    // ---------- малювання майстерні ----------
+    function flame(c, x, y, w, h, t, col1, col2) { c.beginPath(); c.moveTo(x - w, y); for (let i = 0; i <= 8; i++) { const u = i / 8, px = x - w + u * 2 * w, hh = h * Math.sin(u * Math.PI) * (0.7 + 0.3 * Math.sin(t * 9 + i * 1.7)); c.lineTo(px, y - hh); } c.lineTo(x + w, y); c.closePath(); const g = c.createLinearGradient(0, y, 0, y - h); g.addColorStop(0, col1); g.addColorStop(1, col2); c.fillStyle = g; c.fill(); }
+    function drawForge() {
+        const c = cg, W = 760, H = 440, t = G.t, hot = clamp(G.temp, 0, 1);
+        c.save(); G.shk = Math.max(0, G.shk - 0.6); if (G.shk > 0) c.translate(rnd(-G.shk, G.shk) * 0.5, rnd(-G.shk, G.shk) * 0.5);
+        // стіна з цегли
+        let g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#120708'); g.addColorStop(1, '#2a100a'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+        c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2; for (let y = 0; y < H; y += 34) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 34 % 2) * 30; x < W; x += 60) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 34); c.stroke(); } }
+        // відблиск жару на стіні
+        c.globalCompositeOperation = 'lighter'; g = c.createRadialGradient(150, 320, 10, 150, 320, 460); g.addColorStop(0, 'rgba(255,110,30,' + (0.28 + hot * 0.3) + ')'); g.addColorStop(1, 'rgba(255,110,30,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over';
+        // інструменти на стіні
+        c.fillStyle = '#05030a'; for (const [x, a] of [[250, -0.2], [300, 0.1], [610, 0.15]]) { c.save(); c.translate(x, 70); c.rotate(a); c.fillRect(-3, 0, 6, 70); c.fillRect(-18, -8, 36, 16); c.restore(); }
+        // підлога
+        g = c.createLinearGradient(0, 340, 0, H); g.addColorStop(0, '#3a2a30'); g.addColorStop(1, '#120a0e'); c.fillStyle = g; c.fillRect(0, 340, W, 100); c.fillStyle = 'rgba(255,140,60,' + (0.12 + hot * 0.25) + ')'; c.fillRect(0, 340, W, 3);
+        // горно
+        c.fillStyle = '#0c0506'; c.fillRect(30, 200, 190, 160); c.fillStyle = '#4a2a22'; c.fillRect(36, 206, 178, 148); c.fillStyle = '#2a1410'; for (let i = 0; i < 5; i++) c.fillRect(36, 206 + i * 30, 178, 2);
+        c.fillStyle = '#07030a'; c.beginPath(); c.moveTo(60, 354); c.lineTo(60, 262); c.quadraticCurveTo(125, 214, 190, 262); c.lineTo(190, 354); c.fill();
+        g = c.createRadialGradient(125, 330, 6, 125, 330, 90); g.addColorStop(0, 'rgb(255,' + Math.round(200 + hot * 55) + ',140)'); g.addColorStop(0.4, 'rgb(255,' + Math.round(90 + hot * 80) + ',30)'); g.addColorStop(1, 'rgba(120,20,0,.2)'); c.fillStyle = g; c.fillRect(62, 262, 126, 92);
+        c.save(); c.beginPath(); c.moveTo(60, 354); c.lineTo(60, 262); c.quadraticCurveTo(125, 214, 190, 262); c.lineTo(190, 354); c.clip(); const fh = 30 + hot * 70 + (G.pump ? 22 : 0); for (let i = 0; i < 4; i++) flame(c, 85 + i * 27, 354, 24, fh * (0.7 + (i % 2) * 0.3), t + i, 'rgba(255,230,120,.95)', 'rgba(255,70,10,.0)'); c.restore();
+        // міх
+        const pp = G.pump ? 1 : 0; G.bel = (G.bel || 0) + (pp - (G.bel || 0)) * 0.25; const bw = G.bel * 26;
+        c.fillStyle = '#2a1a10'; c.beginPath(); c.moveTo(220, 290); c.lineTo(300 - bw, 270); c.lineTo(300 - bw, 340); c.lineTo(220, 330); c.fill(); c.strokeStyle = '#6a4a30'; c.lineWidth = 3; for (let i = 0; i < 4; i++) { const k = i / 3; c.beginPath(); c.moveTo(224 + k * (70 - bw), 290 - k * 18); c.lineTo(224 + k * (70 - bw), 330 + k * 8); c.stroke(); }
+        c.fillStyle = '#8a6a48'; c.fillRect(300 - bw, 276, 22, 58); c.fillStyle = '#b89060'; c.fillRect(300 - bw, 276, 22, 5);
+        if (pp && Math.random() < 0.7) G.emb.push({ x: 150 + rnd(-30, 30), y: 320, vx: rnd(-0.5, 1.2), vy: -rnd(1.5, 3.4), l: 1, s: rnd(1.5, 3.2) });
+        // ковадло: об'ємне, зі стороною, рогом, основою
+        const ax = 330, ay = 318; c.fillStyle = '#1a1014'; c.fillRect(ax - 8, ay + 30, 170, 36); c.fillStyle = '#2e2128'; c.fillRect(ax + 10, ay + 10, 120, 24); // основа
+        g = c.createLinearGradient(0, ay - 20, 0, ay + 22); g.addColorStop(0, '#a8a0b8'); g.addColorStop(0.35, '#6a6278'); g.addColorStop(1, '#3a3446'); c.fillStyle = g; c.beginPath(); c.moveTo(ax - 20, ay - 18); c.lineTo(ax + 150, ay - 18); c.lineTo(ax + 118, ay + 10); c.lineTo(ax + 92, ay + 12); c.lineTo(ax + 100, ay + 32); c.lineTo(ax + 30, ay + 32); c.lineTo(ax + 40, ay + 12); c.lineTo(ax + 12, ay + 10); c.closePath(); c.fill();
+        c.fillStyle = '#c8c0d8'; c.fillRect(ax - 20, ay - 18, 170, 5); c.fillStyle = g; c.beginPath(); c.moveTo(ax + 150, ay - 18); c.lineTo(ax + 196, ay - 12); c.lineTo(ax + 150, ay - 2); c.fill(); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(ax + 100, ay - 13, 50, 24);
+        // заготовка: форма змінюється з кожним ударом — стає клинком
+        const pr = G.strikes / 5, bx = ax + 8, by = ay - 28, bl = 100 + pr * 50, bh = 12 - pr * 5; const r = 90 + hot * 165, gg = 40 + hot * hot * 190, bb = 20 + hot * hot * hot * 150;
+        c.globalCompositeOperation = 'lighter'; g = c.createRadialGradient(bx + bl / 2, by, 4, bx + bl / 2, by, 120 + hot * 60); g.addColorStop(0, 'rgba(255,190,110,' + hot * 0.65 + ')'); g.addColorStop(1, 'rgba(255,120,30,0)'); c.fillStyle = g; c.fillRect(bx - 80, by - 140, bl + 160, 220); c.globalCompositeOperation = 'source-over';
+        c.fillStyle = 'rgb(' + r + ',' + gg + ',' + bb + ')'; c.beginPath(); c.moveTo(bx, by - bh); c.lineTo(bx + bl - 10, by - bh); c.lineTo(bx + bl + 14 * pr, by - bh / 2); c.lineTo(bx + bl - 10, by + 2); c.lineTo(bx, by + 2); c.closePath(); c.fill();
+        c.fillStyle = 'rgba(255,255,255,' + (hot * 0.5) + ')'; c.fillRect(bx + 4, by - bh + 1, bl - 20, 2);
+        // марево над розжареним металом
+        if (hot > 0.35) { c.strokeStyle = 'rgba(255,200,140,' + hot * 0.18 + ')'; c.lineWidth = 2; for (let k = 0; k < 4; k++) { c.beginPath(); for (let u = 0; u <= 20; u++) { const x = bx + u * bl / 20, y = by - 20 - k * 14 - Math.sin(t * 5 + u * 0.7 + k) * 4; if (u) c.lineTo(x, y); else c.moveTo(x, y); } c.stroke(); } }
+        // молот: замах і удар
+        G.sw = Math.max(0, G.sw - 0.07); const ang = -1.3 + (G.sw > 0 ? (1 - G.sw) * 1.3 * (G.sw > 0.5 ? 0 : 1) : 0) + (G.sw > 0.5 ? -0.0 : 0) + Math.sin(t * 3) * 0.05; c.save(); c.translate(430, 170); c.rotate(G.sw > 0 ? (G.sw > 0.6 ? -1.1 + (1 - G.sw) * 0.4 : -0.1 * (G.sw / 0.6)) : -0.9 + Math.sin(t * 3) * 0.06);
+        c.fillStyle = '#5a3a22'; c.fillRect(-5, 0, 10, 110); c.fillStyle = '#7a5232'; c.fillRect(-5, 0, 3, 110); const hg = c.createLinearGradient(-34, 0, 34, 0); hg.addColorStop(0, '#9a92a8'); hg.addColorStop(0.5, '#6a6278'); hg.addColorStop(1, '#3a3446'); c.fillStyle = hg; c.fillRect(-34, -30, 68, 32); c.fillStyle = '#d8d0e8'; c.fillRect(-34, -30, 68, 5); c.restore();
+        // кільця від удару, іскри, вуглинки
+        for (let i = G.rings.length - 1; i >= 0; i--) { const q = G.rings[i]; q.r += 9; q.l -= 0.045; if (q.l <= 0) { G.rings.splice(i, 1); continue; } c.strokeStyle = q.c; c.globalAlpha = q.l; c.lineWidth = 4 * q.l; c.beginPath(); c.ellipse(q.x, q.y, q.r, q.r * 0.35, 0, 0, TAU); c.stroke(); } c.globalAlpha = 1;
+        c.globalCompositeOperation = 'lighter'; for (let i = G.fx.length - 1; i >= 0; i--) { const p = G.fx[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.28; p.l -= 0.022; if (p.l <= 0) { G.fx.splice(i, 1); continue; } c.globalAlpha = p.l; c.fillStyle = p.c; c.fillRect(p.x, p.y, 3.4, 3.4); c.fillRect(p.x - p.vx, p.y - p.vy, 1.6, 1.6); }
+        if (Math.random() < 0.5) G.emb.push({ x: rnd(40, 700), y: 440, vx: rnd(-0.3, 0.3), vy: -rnd(0.4, 1.2), l: 1, s: rnd(1, 2.2) }); for (let i = G.emb.length - 1; i >= 0; i--) { const p = G.emb[i]; p.x += p.vx + Math.sin(t * 2 + i) * 0.3; p.y += p.vy; p.l -= 0.006; if (p.l <= 0) { G.emb.splice(i, 1); continue; } c.globalAlpha = p.l * 0.8; c.fillStyle = '#ff9a3a'; c.fillRect(p.x, p.y, p.s, p.s); } c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; if (G.emb.length > 140) G.emb.splice(0, 20);
+        // термометр: скляна трубка
+        const tx = 668, ty = 50, th = 300; c.fillStyle = 'rgba(10,4,6,.85)'; c.beginPath(); c.roundRect ? c.roundRect(tx - 22, ty - 14, 44, th + 52, 22) : c.rect(tx - 22, ty - 14, 44, th + 52); c.fill(); c.strokeStyle = '#8a6a50'; c.lineWidth = 3; c.stroke();
+        c.fillStyle = '#1e0e0c'; c.fillRect(tx - 10, ty, 20, th); const zy = ty + th * (1 - 0.815), zh = th * 0.28, pz = 0.5 + 0.5 * Math.sin(t * 4); c.fillStyle = 'rgba(120,255,170,' + (0.22 + pz * 0.2) + ')'; c.fillRect(tx - 12, zy, 24, zh); c.strokeStyle = '#7affa0'; c.lineWidth = 2; c.strokeRect(tx - 12, zy, 24, zh);
+        const lv = clamp(G.temp, 0, 1.05); g = c.createLinearGradient(0, ty + th, 0, ty); g.addColorStop(0, '#8a1a08'); g.addColorStop(0.5, '#ff6a1a'); g.addColorStop(0.8, '#ffcf5a'); g.addColorStop(1, '#ffffff'); c.fillStyle = g; c.fillRect(tx - 8, ty + th * (1 - lv), 16, th * lv); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,200,120,.5)'; c.fillRect(tx - 14, ty + th * (1 - lv) - 4, 28, 8); c.globalCompositeOperation = 'source-over';
+        c.beginPath(); c.arc(tx, ty + th + 14, 16, 0, TAU); c.fillStyle = '#ff5a1a'; c.fill(); c.strokeStyle = '#8a6a50'; c.stroke(); c.fillStyle = '#fff3'; c.beginPath(); c.arc(tx - 5, ty + th + 9, 5, 0, TAU); c.fill();
+        c.fillStyle = '#ffd8a0'; c.font = '600 12px sans-serif'; c.textAlign = 'center'; c.fillText('ЖАР', tx, ty - 22); c.textAlign = 'left';
+        // 5 ударів: ковадельця-піктограми
+        for (let i = 0; i < 5; i++) { const ax2 = 250 + i * 54, a = G.acc[i]; const col = a == null ? '#3a1a14' : a > 0.78 ? '#7affa0' : a > 0.4 ? '#ffd84a' : '#ff6a4a'; c.fillStyle = col; c.strokeStyle = a == null ? '#8a5a40' : '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(ax2 + 22, 40, 17, 0, TAU); c.fill(); c.stroke(); c.fillStyle = a == null ? '#8a5a40' : '#1a0a08'; c.font = '700 15px sans-serif'; c.textAlign = 'center'; c.fillText(a == null ? '🔨' : Math.round(a * 100), ax2 + 22, 46); c.textAlign = 'left'; if (a != null && a > 0.78) { c.globalCompositeOperation = 'lighter'; const gg2 = c.createRadialGradient(ax2 + 22, 40, 2, ax2 + 22, 40, 30); gg2.addColorStop(0, 'rgba(122,255,160,.5)'); gg2.addColorStop(1, 'rgba(122,255,160,0)'); c.fillStyle = gg2; c.fillRect(ax2 - 10, 8, 64, 64); c.globalCompositeOperation = 'source-over'; } }
+        // повідомлення
+        if (G.flash > 0.05) { const sc = 1 + (1 - G.flash) * 0.4; c.save(); c.translate(430, 118); c.scale(sc, sc); c.textAlign = 'center'; c.font = '800 30px Georgia,serif'; c.lineWidth = 5; c.strokeStyle = 'rgba(20,6,2,' + G.flash + ')'; c.strokeText(G.msg, 0, 0); c.fillStyle = 'rgba(255,236,200,' + Math.min(1, G.flash * 1.5) + ')'; c.fillText(G.msg, 0, 0); c.restore(); }
+        // віньєтка й спалах
+        g = c.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.85); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20); if (G.flash > 0.7) { c.fillStyle = 'rgba(255,230,180,' + (G.flash - 0.7) * 0.9 + ')'; c.fillRect(-10, -10, W + 20, H + 20); }
+        c.restore();
+    }
+    function loop() {
+        if (!G.on) return; G.t += 1 / 60;
+        const heat = G.pump ? 0.011 : 0, decay = (0.0042 + G.temp * 0.0035) * G.cool; G.temp = clamp(G.temp + heat - decay, 0, 1.1);
+        if (G.temp > 1.02 && !G.end) { G.msg = 'Перегрів!'; G.flash = 1; G.temp = 0.8; G.acc.push(0); G.strikes++; if (G.strikes >= 5) { G.end = 1; setTimeout(finishGame, 900); } }
+        drawForge();
+        G.flash = Math.max(0, G.flash - 0.04); HINT.textContent = 'Удар ' + Math.min(5, G.strikes + 1) + ' з 5 · тримай жар у зеленому вікні та бий!' + (G.end ? ' Готово!' : '');
+        requestAnimationFrame(loop);
+    }
+    window.addEventListener('keydown', e => { if (!G.on) return; if (e.code === 'Space') { pump(1); e.preventDefault(); e.stopImmediatePropagation(); } else if (e.code === 'Enter' || e.code === 'KeyE') { strike(); e.preventDefault(); e.stopImmediatePropagation(); } else if (e.code === 'Escape') { closeGame(1); e.preventDefault(); e.stopImmediatePropagation(); } else { e.stopImmediatePropagation(); } }, true);
+    window.addEventListener('keyup', e => { if (G.on && e.code === 'Space') { pump(0); e.stopImmediatePropagation(); } }, true);
+    GD.querySelector('#zk-b').addEventListener('pointerdown', () => pump(1)); window.addEventListener('pointerup', () => pump(0)); GD.querySelector('#zk-h').addEventListener('click', strike); GD.querySelector('#zk-x').addEventListener('click', () => closeGame(1));
+    Z.RC.push((bx, by, pressed) => {
+        if (!pressed || G.on) return false; let f = null; try { f = furnAt(bx, by); } catch (e) { } if (!f || f.t !== 'hell_anvil') return false; if (Math.hypot(player.x + 12 - (f.x + 1) * 32, player.y + 22 - (f.y + 0.5) * 32) > 200) return false; mouse.rightDown = false;
+        Z.open('🔨 Пекельне ковадло', '#ff7a3a', renderPanel, (z) => { if (z.startsWith('forge:')) startGame(z.slice(6)); }); return true;
+    });
+    E.PROG.push({ id: 'forge', ic: '🔥', name: 'Пекельна Кузня', get() { const z = S(), i = inst('zk'); return z && z.forgeDone ? { txt: 'Хазяїна Горнила здолано. Пекельне ковадло — твоє.', p: 1 } : { txt: i ? 'Кузня десь під землею — глянь на стрілку.' : 'Споруда з’явиться, коли відчиниться Глибинна Брама.', p: i ? 0.3 : 0 }; } });
+    E.LORE.k1 = ['Напис при вході', 'Горнило не гасло дев’ять століть. Його вогонь живиться тими, хто приходить подивитись.']; E.LORE.k2 = ['Ливарня', 'Ливарники пливили метал з сердець. Одні — з каменів, інші — з тих, хто поруч.']; E.LORE.k3 = ['Зала Ковалів', 'Ковалі працювали по двоє: один тримав, другий бив. Тримав завжди той, кого не шкода.']; E.LORE.k4 = ['Горнило', 'Хазяїн Горнила не пам’ятає, ким був. Знає лише: метал любить гарячих.']; E.LORE.k5 = ['Заповіт Коваля', 'Найміцніший клинок — той, що пройшов крізь жар і не втратив форми. Так само і людина.'];
+    window.__zkforge = { COST, GEM, costOf, startGame, strike, G, renderPanel };
+})();
+// ===== v46.66 «Дзеркальний Лабіринт»: лабіринт із драбинами, правдиві й хибні дзеркала, Двійник =====
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx, DG = window.__zdung, MX = window.__zmx, ART = window.__zart2; if (!E || !Z || !X || !DG || !MX || !ART) return;
+    const { item, P, C, F, gl, drop, cnt, S, toast, tn, banner, guest, playing, clamp, rnd, inst, kind } = E; const TAU = Math.PI * 2;
+    DG.CH['6'] = 69; DG.CH['7'] = 68; DG.CH['8'] = 80; DG.CH['9'] = 91;
+    const HIST = new WeakMap(), HB = { d: 1e9, f: 0 };
+    const hasMeta = id => !!ITEM_METADATA[id];
+    // ---------- аксесуари ----------
+    const ACCS = [
+        ['mir_pendant', 'Дзеркальна підвіска', 4, { crit: 0.04, spd: 0.04, mana: 30 }, 'Тримає твою тінь на крок попереду. Нагорода Двійника.', '#8ff0ff', '#04141e'],
+        ['mir_ring', 'Кільце Двійника', 4, { all: 0.04, def: 3, hp: 30 }, 'У ньому видно того, ким ти міг би бути. Нагорода Двійника.', '#c8ffff', '#04141e']
+    ];
+    for (const [id, nm, ti, st, d, c1, c2] of ACCS) { ACC[id] = [nm, ti, st, d, 'ring', c1, c2]; ITEM_METADATA[id] = { name: nm, rarity: RPG_TIERS[ti].r, color: RPG_TIERS[ti].c, type: '💍 Аксесуар · Вартові', stat: Object.keys(st).map(k => ACC_LABEL[k] ? ACC_LABEL[k](st[k]) : '').filter(Boolean).join(' · '), desc: d }; try { itemSprites[id] = generateSprite(cx => { gl(cx, 16, 16, 15, c1, 0.45); cx.strokeStyle = '#04141e'; cx.lineWidth = 6; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); cx.strokeStyle = c1; cx.lineWidth = 3.4; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); P(cx, [[16, 2], [22, 9], [16, 15], [10, 9]], '#e8ffff', '#064a66'); F(cx, '#ffffff', [[15, 5, 2, 3]]); }); } catch (e) { } }
+    // ---------- побудова лабіринту ----------
+    const COLS = 6, ROWS = 3, PW = 12, PH = 10, OX = 6, OY = 8;
+    function build(B) {
+        const W = OX + COLS * PW + 24, H = OY + ROWS * PH, o = B('zm', W, H, 'Дзеркальний Лабіринт');
+        o.fill(0, 0, W, H, '8'); const R = o.R;
+        // граф
+        const E_ = new Set(), key = (a, b, c, d) => (a < c || (a === c && b < d)) ? a + ',' + b + '-' + c + ',' + d : c + ',' + d + '-' + a + ',' + b, seen = new Set(['0,0']), st = [[0, 0]];
+        while (st.length) { const [c, r] = st[st.length - 1], nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [c + dx, r + dy]).filter(([a, b]) => a >= 0 && b >= 0 && a < COLS && b < ROWS && !seen.has(a + ',' + b)); if (!nb.length) { st.pop(); continue; } const [a, b] = nb[Math.floor(R() * nb.length)]; seen.add(a + ',' + b); E_.add(key(c, r, a, b)); st.push([a, b]); }
+        for (let i = 0; i < 4; i++) { const c = Math.floor(R() * (COLS - 1)), r = Math.floor(R() * ROWS); E_.add(key(c, r, c + 1, r)); }
+        const deg = {}; for (const e of E_) { const [a, b] = e.split('-'); deg[a] = (deg[a] || 0) + 1; deg[b] = (deg[b] || 0) + 1; }
+        const cx0 = c => OX + c * PW, cy0 = r => OY + r * PH;
+        const cells = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+            const mobs = (c === 0 && r === 0) ? [] : R() < 0.55 ? [['x_mirrorglint', 1 + (R() < 0.5 ? 1 : 0)]].concat(R() < 0.4 ? [['x_glassgolem', 1]] : []) : [];
+            const room = o.room('c' + c + r, cx0(c), cy0(r), 10, 8, mobs, (c === 0 && r === 0) ? { title: 'Вхід до Лабіринту' } : (mobs.length ? { title: 'Зал відображень' } : {})); cells.push({ c, r, room });
+            o.at(cx0(c) + 1, cy0(r) + 1, 'L'); if (R() < 0.7) o.scatter('c', cx0(c), cy0(r), 10, 8, 2, 'floor');
+        }
+        // двері між кімнатами
+        for (const e of E_) { const [a, b] = e.split('-').map(s => s.split(',').map(Number)), [c1, r1] = a, [c2, r2] = b;
+            if (r1 === r2) { const c = Math.min(c1, c2); o.air(cx0(c) + 10, cy0(r1) + 4, 2, 4); }
+            else { const r = Math.min(r1, r2), x = cx0(c1) + 4; o.air(x, cy0(r) + 8, 2, 2); for (let y = cy0(r) + 4; y <= cy0(r + 1) + 7; y++) { o.at(x, y, '6'); o.at(x + 1, y, '6'); } } }
+        // вхід: шахта до першої кімнати
+        o.air(OX + 3, 0, 4, OY + 1); o.shaft = { x: OX + 3, w: 4 };
+        o.lorePt(OX + 2, cy0(0) + 7, 'Хто увійшов у Лабіринт — вийде не тим, ким зайшов. Дзеркала не брешуть. Вони лише запізнюються.', 'm1');
+        // дзеркала: 3 правдиві + 3 хибні (детерміновано)
+        const cand = cells.filter(q => !(q.c === 0 && q.r === 0)).map(q => ({ q, w: (deg[q.c + ',' + q.r] === 1 ? 0 : 1) + R() })).sort((a, b) => a.w - b.w).map(a => a.q).slice(0, 6);
+        o.mir = cand.map((q, i) => ({ x: cx0(q.c) + 7, y: cy0(q.r) + 7, t: i % 2 === 0, i })); for (let i = o.mir.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [o.mir[i].t, o.mir[j].t] = [o.mir[j].t, o.mir[i].t]; }
+        let tr = o.mir.filter(m => m.t).length; for (const m of o.mir) { if (tr < 3 && !m.t) { m.t = true; tr++; } }
+        cand.forEach((q, i) => { if (R() < 0.6) o.chest(cx0(q.c) + 2, cy0(q.r) + 7, 'side'); });
+        // кімната боса
+        const bx0 = OX + COLS * PW, rb = o.room('rb', bx0, OY + (ROWS - 1) * PH - 8, 22, 18, [], { boss: 'x_b_double', title: 'Зала Двійника', bx: bx0 + 11 });
+        o.air(bx0 - 2, OY + (ROWS - 1) * PH + 4, 2, 4); o.fill(bx0, OY + (ROWS - 1) * PH + 8, 22, 2, '8'); o.at(bx0 + 3, OY + (ROWS - 1) * PH - 6, 'L').at(bx0 + 18, OY + (ROWS - 1) * PH - 6, 'L');
+        o.fill(bx0 - 2, OY + (ROWS - 1) * PH + 4, 2, 4, 'D'); o.seals.push({ x: bx0 - 2, y: OY + (ROWS - 1) * PH + 4, w: 2, h: 4 }); o.door = { x: bx0 - 2, y: OY + (ROWS - 1) * PH + 4, w: 2, h: 4 };
+        o.fin = { x: bx0 + 19, y: OY + (ROWS - 1) * PH + 7 }; o.lorePt(bx0 + 3, OY + (ROWS - 1) * PH + 7, 'Двійник не народжувався. Його зібрали з кожного, хто дивився надто довго.', 'm2');
+        o.fill(bx0 + 7, OY + (ROWS - 1) * PH + 2, 8, 1, '9'); o.fill(bx0 + 5, OY + (ROWS - 1) * PH - 2, 3, 1, '9'); o.fill(bx0 + 14, OY + (ROWS - 1) * PH - 2, 3, 1, '9');
+        return o;
+    }
+    // ---------- стан дзеркал ----------
+    function useMirror(I, i) {
+        const T = window.__zdgmap.build('zm'), m = T.mir[i]; if (!m) return; I.mst = I.mst || {}; if (I.mst[i]) return; I.mst[i] = 1; I.mc = I.mc || 0;
+        const wx = (I.x + m.x) * 32 + 16, wy = (I.y + m.y) * 32 - 20;
+        if (m.t) {
+            I.mc++; X.burst(wx, wy, '#8ff0ff', 40, 5, { up: 1 }); X.wave(wx, wy, '#8ff0ff', 130, { life: 1 }); X.wave(wx, wy, '#ffffff', 70, { life: 0.6 }); tn('sine', 700, 1500, 0.7, 0.1); tn('triangle', 1100, 2000, 0.5, 0.05, { delay: 0.12 }); drop('mirror_shard', wx, wy, 1 + (Math.random() < 0.5 ? 1 : 0)); toast('🪞 Правдиве дзеркало. Відображень відкрито: ' + I.mc + '/3');
+            if (I.mc >= 3 && !I.doorOpen) { I.doorOpen = 1; setTimeout(() => openDoor(I), 700); }
+        } else {
+            X.burst(wx, wy, '#ff6a8a', 30, 5, { up: 0.4 }); X.wave(wx, wy, '#ff6a8a', 120, { life: 0.8 }); tn('sawtooth', 600, 120, 0.5, 0.1); toast('🪞 Хибне відображення! Воно виходить із дзеркала.'); try { shake = Math.max(shake, 6); } catch (e) { }
+            for (let k = 0; k < 2; k++) { const D = DG.DEF.x_mirrorglint; try { const mm = MX.spawn(D, wx + (k ? 40 : -60), wy - 10); mm.dn = 1; } catch (e) { } }
+        }
+    }
+    function openDoor(I) { const T = window.__zdgmap.build('zm'), d = T.door; for (let y = 0; y < d.h; y++) for (let x = 0; x < d.w; x++) DG.wset(I.x + d.x + x, I.y + d.y + y, 0); const x = (I.x + d.x + 1) * 32, y = (I.y + d.y + 2) * 32; X.burst(x, y, '#8ff0ff', 50, 5, { up: 0.6 }); X.wave(x, y, '#8ff0ff', 200, { life: 1.2 }); banner('🪞 Двері відчинені', 'Три правдиві відображення відкрили шлях до Двійника.'); tn('triangle', 300, 800, 0.9, 0.1); try { Z.flash('#8ff0ff'); shake = Math.max(shake, 8); } catch (e) { } }
+    Z.RC.push((bx, by, pressed) => {
+        if (!pressed || !playing()) return false; const I = inst('zm'); if (!I) return false; const T = window.__zdgmap.build('zm'); const i = T.mir.findIndex(m => Math.abs(m.x + I.x - bx) <= 1 && Math.abs(m.y + I.y - by) <= 3); if (i < 0) return false;
+        if (Math.hypot(player.x + 12 - ((I.x + T.mir[i].x) * 32 + 16), player.y + 22 - (I.y + T.mir[i].y) * 32) > 140) return false; mouse.rightDown = false; if (I.mst && I.mst[i]) { toast('Це дзеркало вже не показує нічого нового.'); return true; }
+        if (!Z.host() && Z.mpOn()) { Z.send({ t: 'x_zmr', i }); return true; } useMirror(I, i); return true;
+    });
+    Z.MSG.x_zmr = m => { try { if (Z.host()) { const I = inst('zm'); if (I) useMirror(I, m.i | 0); } } catch (e) { } };
+    // ---------- боси: телепорт Двійника ----------
+    let bf = 0; Z.TICK.push(() => {
+        if (!playing() || !currentWorld || !Z.host()) return; const I = inst('zm'); if (!I || I.boss) return; const R = DG.rt(I), m = R.boss; if (!m || m.hp <= 0) return; bf++; const hf = m.hp / m.maxHp, T = window.__zdgmap.build('zm'), r = T.rooms.find(q => q.boss);
+        if (bf % Math.round(hf < 0.4 ? 300 : 460) === 0) { const x0 = (I.x + r.x + 2) * 32, x1 = (I.x + r.x + r.w - 2) * 32 - m.width, nx = clamp(player.x * 2 - m.x, x0, x1); X.burst(m.x + m.width / 2, m.y + m.height / 2, '#8ff0ff', 30, 4); X.wave(m.x + m.width / 2, m.y + m.height / 2, '#8ff0ff', 100, { life: 0.5 }); m.x = nx; m.vx = 0; X.burst(m.x + m.width / 2, m.y + m.height / 2, '#ffffff', 26, 5); X.wave(m.x + m.width / 2, m.y + m.height / 2, '#c8ffff', 130, { life: 0.7 }); tn('triangle', 1800, 400, 0.3, 0.08); toast('🪞 Двійник змінює бік!'); }
+        if (bf % 520 === 200) { const px = player.x + 12; for (let i = 0; i < 4; i++) DG.PIL.push({ x: px + (i - 1.5) * 70 + (Math.random() - 0.5) * 30, y0: player.y - 340, y1: player.y + 60, t: 0, delay: 55 + i * 9, dmg: 34, col: '#8ff0ff', who: 'Двійник' }); }
+    });
+    // ---------- споруда ----------
+    kind('zm', {
+        name: 'Дзеркальний Лабіринт', col: '#8ff0ff', col2: '#e8ffff', tint: '#a8e8ff', vig: '#02121a', sub: 'Дзеркала не брешуть — вони запізнюються', rumor: 'Десь у глибині завіяв холодний вітер. Хтось змайстрував лабіринт із дзеркал.',
+        y0: (sf, h, T) => E.deepY(h, T, 6), minP: 60, fr: [0.1, 0.9], build,
+        loot(I, rich) { const s = new Array(16).fill(null); const put = (id, n) => { const f = s.map((q, i) => q ? -1 : i).filter(i => i >= 0); if (f.length) s[f[Math.random() * f.length | 0]] = { id, count: n }; }; if (hasMeta('mirror_shard')) put('mirror_shard', rich ? 5 : 1 + (Math.random() * 2 | 0)); put('life_potion', 2); if (Math.random() < (rich ? 0.9 : 0.35)) put('relic_dust', 1 + (Math.random() * 2 | 0)); put('mana_potion', rich ? 3 : 1); if (rich) put('crystal_shard', 6); return s; },
+        reward(I, m) { const z = S(); z.mirrorDone = 1; E.lore('m3'); E.finish(I, m, { msg: 'Двійник розсипається. Ти знову один — і цілий.', seal: 'mirror', items: [['mir_pendant', 1], ['mir_ring', 1], ['mirror_shard', hasMeta('mirror_shard') ? 6 : 0]].filter(q => q[1]) }); },
+        vis: {
+            backdrop(c, I, r, th, t, k, o) { const { x0, y0, w, h } = o; const gb = c.createLinearGradient(0, y0, 0, y0 + h); gb.addColorStop(0, X.rgba('#0a3a5a', 0.18 * k)); gb.addColorStop(1, X.rgba('#02121a', 0.35 * k)); c.fillStyle = gb; c.fillRect(x0, y0, w, h); for (let i = 0; i < 5; i++) { const x = x0 + (i + 0.5) * w / 5, g = c.createLinearGradient(x - 40, y0, x + 40, y0 + h); g.addColorStop(0, X.rgba('#c8ffff', 0)); g.addColorStop(0.5, X.rgba('#c8ffff', 0.06 * k)); g.addColorStop(1, X.rgba('#c8ffff', 0)); c.fillStyle = g; c.beginPath(); c.moveTo(x - 14, y0); c.lineTo(x + 14, y0); c.lineTo(x + 54, y0 + h); c.lineTo(x + 18, y0 + h); c.fill(); } },
+            scene(c, I, T, th, t, k, add, v) {
+                const px = player.x + 12, py = player.y + 22; let HH = HIST.get(I); if (!HH) { HH = []; HIST.set(I, HH); } HH.push([px, player.y, player.facing]); if (HH.length > 90) HH.shift();
+                // --- краса: блиск скла на стінах, відображення підлоги, відлуння гравця, шматочки скла, шепіт ---
+                add(c, () => {
+                    c.save(); const tx0 = Math.max(I.x, Math.floor(v.x0 / 32)), tx1 = Math.min(I.x + T.W - 1, Math.floor(v.x1 / 32)), ty0 = Math.max(I.y, v.y0), ty1 = Math.min(I.y + T.H - 1, v.y1);
+                    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const ch = T.g[ty - I.y][tx - I.x]; if (ch !== '8') continue; const air = (a, b) => { const q = T.g[ty - I.y + b] && T.g[ty - I.y + b][tx - I.x + a]; return q === '.' || q === '6' || q === 'L'; }; const ex = air(0, -1) || air(0, 1) || air(-1, 0) || air(1, 0); if (!ex) continue;
+                        const sw = Math.pow(Math.max(0, Math.sin(t * 0.7 - (tx + ty * 0.6) * 0.42)), 10), wx = tx * 32, wy = ty * 32; c.globalCompositeOperation = 'lighter';
+                        if (sw > 0.02) { const g2 = c.createLinearGradient(wx, wy, wx + 32, wy + 32); g2.addColorStop(0, 'rgba(200,255,255,0)'); g2.addColorStop(0.5, 'rgba(220,255,255,' + (sw * 0.45 * k) + ')'); g2.addColorStop(1, 'rgba(200,255,255,0)'); c.fillStyle = g2; c.fillRect(wx, wy, 32, 32); }
+                        c.fillStyle = 'rgba(160,240,255,' + (0.28 * k) + ')'; if (air(0, -1)) c.fillRect(wx, wy, 32, 2); if (air(0, 1)) c.fillRect(wx, wy + 30, 32, 2); if (air(-1, 0)) c.fillRect(wx, wy, 2, 32); if (air(1, 0)) c.fillRect(wx + 30, wy, 2, 32);
+                        if (((tx * 7 + ty * 13) % 11) === 0) { const q = 0.5 + 0.5 * Math.sin(t * 2.4 + tx); c.fillStyle = 'rgba(255,255,255,' + (0.5 * q * k) + ')'; c.fillRect(wx + 12, wy + 12, 2, 8); c.fillRect(wx + 9, wy + 15, 8, 2); } }
+                    // відображення гравця в «підлозі» й відлуння позаду
+                    const HH2 = HIST.get(I) || []; const fy2 = (Math.floor((player.y + 44) / 32) + 1) * 32; c.globalCompositeOperation = 'lighter';
+                    for (let j = 1; j <= 5; j++) { const h0 = HH2[HH2.length - 1 - j * 7]; if (!h0) continue; const a = 0.22 - j * 0.035; c.fillStyle = 'rgba(143,240,255,' + Math.max(0, a * k) + ')'; c.fillRect(h0[0] - 8, h0[1] + 2, 16, 40); c.beginPath(); c.arc(h0[0], h0[1] - 4, 7, 0, TAU); c.fill(); }
+                    if (player.onGround) { const gg3 = c.createLinearGradient(0, fy2, 0, fy2 + 46); gg3.addColorStop(0, 'rgba(143,240,255,' + (0.32 * k) + ')'); gg3.addColorStop(1, 'rgba(143,240,255,0)'); c.fillStyle = gg3; c.fillRect(px - 9, fy2, 18, 46); c.beginPath(); c.arc(px, fy2 + 6, 7, 0, TAU); c.fill(); }
+                    // плаваючі скалки
+                    for (let n = 0; n < 16; n++) { const a0 = n * 2.399, bx = px + Math.cos(a0 + t * 0.07) * (140 + n * 22) , by = py + Math.sin(a0 * 1.3 + t * 0.09 * (n % 2 ? 1 : -1)) * (90 + n * 8) - 30; c.save(); c.translate(bx, by); c.rotate(t * 0.4 + n); const q = 0.5 + 0.5 * Math.sin(t * 1.8 + n); c.fillStyle = 'rgba(200,255,255,' + (0.1 + 0.25 * q) * k + ')'; c.beginPath(); c.moveTo(0, -7); c.lineTo(3, 0); c.lineTo(0, 8); c.lineTo(-3, 0); c.closePath(); c.fill(); c.restore(); }
+                    // призматичні промені
+                    for (let n = 0; n < 4; n++) { const x = px + (n - 1.5) * 260 + Math.sin(t * 0.2 + n) * 60; const g4 = c.createLinearGradient(x, py - 260, x + 120, py + 200); const hue = (t * 12 + n * 70) % 360; g4.addColorStop(0, 'hsla(' + hue + ',90%,70%,0)'); g4.addColorStop(0.5, 'hsla(' + hue + ',90%,70%,' + 0.07 * k + ')'); g4.addColorStop(1, 'hsla(' + hue + ',90%,70%,0)'); c.fillStyle = g4; c.beginPath(); c.moveTo(x - 16, py - 260); c.lineTo(x + 16, py - 260); c.lineTo(x + 150, py + 200); c.lineTo(x + 90, py + 200); c.fill(); }
+                    c.restore();
+                });
+                // мурашки: серцебиття, коли поряд непрочитане дзеркало
+                try { let md = 1e9; T.mir.forEach((m, i) => { if (!(I.mst && I.mst[i])) md = Math.min(md, Math.hypot(px - ((I.x + m.x) * 32 + 16), py - (I.y + m.y) * 32)); }); HB.d = md; if (md < 380 && (HB.f = (HB.f || 0) + 1) % Math.round(30 + md / 12) === 0) { tn('sine', 70, 45, 0.35, 0.09 * (1 - md / 420)); X.wave(px, py - 10, '#8ff0ff', 40 + (380 - md) * 0.4, { life: 0.5 }); } } catch (e) { }
+                add(c, () => { T.mir.forEach((m, i) => { const wx = (I.x + m.x) * 32, wy = (I.y + m.y) * 32; if (wx < v.x0 || wx > v.x1) return; const used = I.mst && I.mst[i], cx = wx + 16, cy = wy - 40, fw = 56, fh = 92, near = Math.hypot(px - cx, py - cy) < 300;
+                    c.save(); X.glow(cx, cy, 110, '#8ff0ff', 0.5 * k); c.fillStyle = used ? 'rgba(20,40,50,.85)' : 'rgba(180,240,255,.32)'; c.strokeStyle = '#e8ffff'; c.lineWidth = 4; c.beginPath(); c.roundRect ? c.roundRect(cx - fw / 2, cy - fh / 2, fw, fh, 26) : c.rect(cx - fw / 2, cy - fh / 2, fw, fh); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 1.2; c.beginPath(); c.roundRect ? c.roundRect(cx - fw / 2 - 6, cy - fh / 2 - 6, fw + 12, fh + 12, 32) : c.rect(cx - fw / 2 - 6, cy - fh / 2 - 6, fw + 12, fh + 12); c.stroke(); for (let q = 0; q < 6; q++) { const aa = t * 0.8 + q * 1.047; c.fillStyle = 'rgba(232,255,255,.9)'; c.beginPath(); c.arc(cx + Math.cos(aa) * (fw / 2 + 10), cy + Math.sin(aa) * (fh / 2 + 10) * 0.9, 2, 0, TAU); c.fill(); } c.strokeStyle = '#e8ffff'; c.lineWidth = 4;
+                    if (!used) { c.save(); c.beginPath(); c.rect(cx - fw / 2 + 3, cy - fh / 2 + 3, fw - 6, fh - 6); c.clip(); const H = HIST.get(I) || [], h0 = H[Math.max(0, H.length - 1 - (m.t ? 0 : 36))] || [px, player.y, 1], dx = clamp((h0[0] - cx) * 0.18, -16, 16); const gx = cx - dx, gy = cy + 18, face = -h0[2];
+                        c.globalAlpha = near ? 0.9 : 0.4; c.fillStyle = '#04141e'; c.fillRect(gx - 7, gy - 26, 14, 30); c.beginPath(); c.arc(gx, gy - 32, 7, 0, TAU); c.fill(); c.fillStyle = m.t ? '#c8ffff' : (near ? '#ff6a8a' : '#c8ffff'); c.fillRect(gx + face * 2 - 3, gy - 34, 2, 3); c.fillRect(gx + face * 2 + 2, gy - 34, 2, 3);
+                        const sh = (t * 40 + i * 30) % (fh + 40) - 20; const gg = c.createLinearGradient(cx - fw / 2, cy - fh / 2 + sh - 14, cx + fw / 2, cy - fh / 2 + sh + 14); gg.addColorStop(0, 'rgba(255,255,255,0)'); gg.addColorStop(0.5, 'rgba(255,255,255,.35)'); gg.addColorStop(1, 'rgba(255,255,255,0)'); c.globalAlpha = 1; c.fillStyle = gg; c.fillRect(cx - fw / 2, cy - fh / 2, fw, fh); c.restore(); } else { c.strokeStyle = 'rgba(200,255,255,.7)'; c.lineWidth = 1; c.beginPath(); c.moveTo(cx - 16, cy - 30); c.lineTo(cx, cy); c.lineTo(cx + 12, cy - 22); c.moveTo(cx, cy); c.lineTo(cx - 6, cy + 32); c.stroke(); }
+                    if (near && !used) X.label(cx, cy - fh / 2 - 14, 'ПКМ — торкнутись відображення', '#c8ffff'); c.restore(); }); });
+            },
+            particle(ex, ey, t, th) { X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.3, vy: -0.1 - Math.random() * 0.2, life: 3.2, s: 1.8, c: Math.random() < 0.5 ? '#c8ffff' : '#ffffff', a: 0.7, shape: Math.random() < 0.3 ? 1 : 0 }); }
+        }
+    });
+    E.LORE.m1 = ['Вхід до Лабіринту', 'Хто увійшов у Лабіринт — вийде не тим, ким зайшов. Дзеркала не брешуть. Вони лише запізнюються.']; E.LORE.m2 = ['Зала Двійника', 'Двійник не народжувався. Його зібрали з кожного, хто дивився надто довго.']; E.LORE.m3 = ['Розбите дзеркало', 'Правдиве відображення рухається разом із тобою. Хибне — трохи пізніше. Це все, що треба знати.'];
+    E.PROG.push({ id: 'maze', ic: '🪞', name: 'Дзеркальний Лабіринт', get() { const z = S(), i = inst('zm'); if (z && z.mirrorDone) return { txt: 'Двійника здолано.', p: 1 }; return { txt: i ? 'Знайди три правдиві дзеркала (відображення рухається разом із тобою, без запізнення). Відкрито: ' + (i.mc | 0) + '/3.' : 'Лабіринт з’явиться, коли відчиниться Глибинна Брама.', p: i ? 0.2 + 0.2 * Math.min(3, i.mc | 0) : 0 }; } });
+    window.__zkmaze = { build, useMirror };
+})();
+// ===== v46.66 «Двері Архіву»: п’ять печатей, Архів Вартових з літописом, головоломка рун, Відлуння Глибинного Вартового, «Клятва» й фінал =====
+(function () {
+    'use strict';
+    const E = window.__zend, Z = window.__zr, X = window.__zpfx, DG = window.__zdung, MX = window.__zmx, W2 = window.__zweap2; if (!E || !Z || !X || !DG || !MX || !W2 || !window.__zart2) return;
+    const { item, P, C, F, gl, drop, cnt, take, S, toast, tn, banner, guest, playing, clamp, rnd, inst, kind, SEALS } = E; const TAU = Math.PI * 2;
+    DG.CH['R'] = 53; // рунна цегла (не копається)
+    DG.CH['Q'] = 89; DG.CH['q'] = 62;
+    const KS = ['ray', 'star', 'abyss', 'forge', 'mirror'];
+    ACC['warden_sign'] = ['Знак Вартового', 4, { hp: 60, def: 5, rhp: 1.2, all: 0.06, crit: 0.03 }, 'Той, хто відчинив Двері Архіву, більше не гість. Знак Вартового — нагорода Відлуння.', 'ring', '#e8c8ff', '#1a0c30'];
+    ITEM_METADATA['warden_sign'] = { name: 'Знак Вартового', rarity: RPG_TIERS[4].r, color: '#e8c8ff', type: '💍 Аксесуар · Вартові', stat: '+60 здоров’я, +5 захисту, +1,2 рег., +6% шкоди, +3% крита', desc: ACC.warden_sign[3] };
+    try { itemSprites['warden_sign'] = generateSprite(cx => { gl(cx, 16, 16, 15, '#e8c8ff', 0.5); cx.strokeStyle = '#1a0c30'; cx.lineWidth = 6; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); cx.strokeStyle = '#e8c8ff'; cx.lineWidth = 3.4; cx.beginPath(); cx.arc(16, 18, 8, 0, TAU); cx.stroke(); P(cx, [[16, 1], [23, 9], [16, 16], [9, 9]], '#ffd84a', '#5a3a08'); P(cx, [[16, 4], [20, 9], [16, 13], [12, 9]], '#ffffff', null); }); } catch (e) { }
+    // ---------- побудова ----------
+    const RUNES = [{ n: 'Хвиля', ic: '〰', col: '#58e0d0', hint: 'Вода тече першою — вона не питає дозволу.' }, { n: 'Зоря', ic: '✦', col: '#a8c8ff', hint: 'Зоря дивиться другою — вона бачить, що було.' }, { n: 'Серце', ic: '♥', col: '#ff6a8a', hint: 'Серце б’ється третім — воно пам’ятає, навіщо.' }, { n: 'Лист', ic: '❦', col: '#9aff6a', hint: 'Лист шелестить останнім — він знає, що все минає.' }];
+    const ORDER = [0, 1, 2, 3];
+    function build(B) {
+        const o = B('za', 112, 34, 'Двері Архіву'), FY = 30; o.fill(0, 0, 112, 34, '=');
+        for (let i = 0; i < 90; i++) { const x = Math.floor(o.R() * 112), y = Math.floor(o.R() * 34); o.at(x, y, 'R'); }
+        o.air(4, 0, 4, 8); o.shaft = { x: 4, w: 4 };
+        // Зал Печатей
+        o.room('r0', 2, 8, 22, 23, [], { title: 'Зал Печатей' }); o.fill(2, 31, 22, 1, 'q'); o.fill(2, 30, 22, 1, 'q'); o.air(2, 8, 22, 22); o.at(4, 10, 'L').at(21, 10, 'L').at(12, 8, 'L').at(3, 14, 'T').at(22, 14, 'T');
+        o.pd = [{ x: 6, y: FY - 1, k: 'ray' }, { x: 9, y: FY - 1, k: 'star' }, { x: 12, y: FY - 1, k: 'abyss' }, { x: 15, y: FY - 1, k: 'forge' }, { x: 18, y: FY - 1, k: 'mirror' }];
+        o.lorePt(5, FY - 1, 'П’ять печатей. П’ять доріг. Один відчинений Архів. Вартові не вірили, що колись прийдуть п’ятеро.', 'z1');
+        o.fill(24, 24, 2, 6, 'Q'); o.seals.push({ x: 24, y: 24, w: 2, h: 6 }); o.door = { x: 24, y: 24, w: 2, h: 6 };
+        o.air(26, 24, 2, 6);
+        // Галерея Сувоїв
+        o.room('r1', 28, 8, 22, 23, [['x_scrollghost', 3], ['x_runeguard', 1]], { title: 'Галерея Сувоїв' }); o.fill(28, 31, 22, 1, 'q'); o.fill(28, 30, 22, 1, 'q'); o.air(28, 8, 22, 22);
+        o.platform(31, 25, 4, 'R').platform(38, 21, 4, 'R').platform(44, 17, 4, 'R').platform(32, 13, 4, 'R'); o.at(30, 10, 'L').at(48, 10, 'L').at(40, 8, 'L').at(36, FY - 1, 'M'); o.chest(46, 16, 'side');
+        o.lorePt(30, FY - 1, RUNES[0].hint + ' (Літопис Вартових, пл. 1)', 'z2'); o.lorePt(46, FY - 1, RUNES[1].hint + ' (Літопис Вартових, пл. 2)', 'z3');
+        o.air(50, 24, 2, 6);
+        // Читальня
+        o.room('r2', 52, 8, 22, 23, [['x_scrollghost', 3], ['x_runeguard', 2]], { title: 'Читальня' }); o.fill(52, 31, 22, 1, 'q'); o.fill(52, 30, 22, 1, 'q'); o.air(52, 8, 22, 22);
+        o.platform(55, 25, 4, 'R').platform(62, 20, 4, 'R').platform(68, 15, 4, 'R').platform(56, 14, 4, 'R'); o.at(54, 10, 'L').at(72, 10, 'L').at(64, 8, 'L').at(60, FY - 1, 'M'); o.chest(70, 14, 'side');
+        o.lorePt(54, FY - 1, RUNES[2].hint + ' (Літопис Вартових, пл. 3)', 'z4'); o.lorePt(70, FY - 1, RUNES[3].hint + ' (Літопис Вартових, пл. 4)', 'z5');
+        o.air(74, 24, 2, 6);
+        // Зал Рун
+        const rr = o.room('r3', 76, 8, 20, 23, [], { title: 'Зал Рун' }); o.fill(76, 31, 20, 1, 'q'); o.fill(76, 30, 20, 1, 'q'); o.air(76, 8, 20, 22); o.at(78, 10, 'L').at(94, 10, 'L');
+        o.rn = [0, 1, 2, 3].map(i => ({ x: 80 + i * 4, y: FY - 1, i, r: ORDER[i] }));
+        o.lorePt(78, FY - 1, 'Порядок рун — порядок свідчень. Хто переплутає, збудить Хранителів.', 'z6');
+        o.fill(96, 24, 2, 6, 'Q'); o.seals.push({ x: 96, y: 24, w: 2, h: 6 }); o.door2 = { x: 96, y: 24, w: 2, h: 6 };
+        o.air(98, 24, 2, 6);
+        // Зала Відлуння
+        o.room('r4', 100, 2, 12, 29, [], { boss: 'x_b_echo', title: 'Зала Відлуння', bx: 106 }); o.air(98, 24, 14, 6); o.air(100, 2, 12, 29); o.fill(100, 31, 12, 1, 'q'); o.fill(100, 30, 12, 1, 'q'); o.at(101, 8, 'L').at(110, 8, 'L').at(106, 3, 'L'); o.platform(101, 22, 3, 'R').platform(108, 18, 3, 'R').platform(103, 14, 3, 'R');
+        o.fin = { x: 110, y: FY - 1 }; o.lorePt(101, FY - 1, 'Він не ворог. Він просто досі чекає — на того, хто нарешті скаже: «Я прийшов».', 'z7');
+        return o;
+    }
+    // ---------- літопис ----------
+    E.LORE.z1 = ['Зал Печатей', 'П’ять печатей. П’ять доріг. Один відчинений Архів. Вартові не вірили, що колись прийдуть п’ятеро.'];
+    E.LORE.z2 = ['Плита I: Хвиля', RUNES[0].hint]; E.LORE.z3 = ['Плита II: Зоря', RUNES[1].hint]; E.LORE.z4 = ['Плита III: Серце', RUNES[2].hint]; E.LORE.z5 = ['Плита IV: Лист', RUNES[3].hint];
+    E.LORE.z6 = ['Зал Рун', 'Порядок рун — порядок свідчень. Хто переплутає, збудить Хранителів.']; E.LORE.z7 = ['Остання плита', 'Він не ворог. Він просто досі чекає — на того, хто нарешті скаже: «Я прийшов».'];
+    E.LORE.z8 = ['Заповіт Вартових', 'Ми склали світло в клинки, щоб воно не загинуло з нами. Тепер ти несеш його далі. Світанок — не місце. Це вибір, який роблять щоранку.'];
+    // ---------- Двері й п’єдестали ----------
+    function openWall(I, d, label, col) { const x = (I.x + d.x + 1) * 32, y = (I.y + d.y + d.h / 2) * 32; for (let i = 0; i < d.h; i++) setTimeout(() => { for (let k = 0; k < d.w; k++) DG.wset(I.x + d.x + k, I.y + d.y + d.h - 1 - i, 0); X.burst(x, (I.y + d.y + d.h - 1 - i) * 32 + 16, col, 12, 4, { up: 1 }); tn('triangle', 200 + i * 80, 300 + i * 100, 0.2, 0.06); }, i * 130); X.wave(x, y, col, 260, { life: 1.4 }); try { Z.flash(col); shake = Math.max(shake, 12); } catch (e) { } banner(label[0], label[1]); }
+    function placeSeal(I, k) {
+        const z = S(); I.ped = I.ped || {}; if (I.ped[k]) return; const id = SEALS[k][0]; if (cnt(id) < 1 && !(z.sg['u' + k])) { toast('Потрібна «' + SEALS[k][1] + '». Її віддає один зі сторожів.'); return; }
+        if (cnt(id) > 0) take(id, 1); z.sg['u' + k] = 1; I.ped[k] = 1; const T = window.__zdgmap.build('za'), p = T.pd.find(q => q.k === k), wx = (I.x + p.x) * 32 + 16, wy = (I.y + p.y) * 32 - 30;
+        X.burst(wx, wy, SEALS[k][2], 30, 5, { up: 1.2 }); X.wave(wx, wy, SEALS[k][2], 120, { life: 1 }); tn('sine', 500, 1100, 0.6, 0.1);
+        const n = KS.filter(q => I.ped[q]).length; toast('🔱 ' + SEALS[k][1] + ' на місці (' + n + '/5)');
+        if (n >= 5 && !I.d1) { I.d1 = 1; setTimeout(() => { openWall(I, T.door, ['🚪 Двері Архіву відчиняються', 'П’ять печатей — п’ять голосів. Архів прокидається.'], '#ffd84a'); E.lore('z1'); }, 900); }
+    }
+    Z.RC.push((bx, by, pressed) => {
+        if (!pressed || !playing()) return false; const I = inst('za'); if (!I) return false; const T = window.__zdgmap.build('za');
+        const pd = T.pd.find(q => Math.abs(q.x + I.x - bx) <= 1 && Math.abs(q.y + I.y - by) <= 2); if (pd) { if (Math.hypot(player.x + 12 - ((I.x + pd.x) * 32 + 16), player.y + 22 - (I.y + pd.y) * 32) > 150) return false; mouse.rightDown = false; if (!Z.host() && Z.mpOn()) { Z.send({ t: 'x_zap', k: pd.k, pid: MP.id }); return true; } placeSeal(I, pd.k); return true; }
+        const rn = T.rn.find(q => Math.abs(q.x + I.x - bx) <= 1 && Math.abs(q.y + I.y - by) <= 3); if (rn) { if (Math.hypot(player.x + 12 - ((I.x + rn.x) * 32 + 16), player.y + 22 - (I.y + rn.y) * 32) > 170) return false; mouse.rightDown = false; if (!Z.host() && Z.mpOn()) { Z.send({ t: 'x_zar', i: rn.i }); return true; } pressRune(I, rn.i); return true; }
+        return false;
+    });
+    Z.MSG.x_zap = m => { try { if (!Z.host()) return; const I = inst('za'); if (I && KS.includes(m.k)) placeSeal(I, m.k); } catch (e) { } };
+    Z.MSG.x_zar = m => { try { if (!Z.host()) return; const I = inst('za'); if (I) pressRune(I, m.i | 0); } catch (e) { } };
+    // ---------- головоломка рун ----------
+    function pressRune(I, i) {
+        if (I.d2) return; I.rs = I.rs || []; const T = window.__zdgmap.build('za'), rn = T.rn[i], wx = (I.x + rn.x) * 32 + 16, wy = (I.y + rn.y) * 32, R = RUNES[rn.r];
+        if (I.rs.length && I.rs[I.rs.length - 1] === i) return; I.rs.push(i); const okSoFar = I.rs.every((q, j) => T.rn[q].r === j);
+        if (okSoFar) { X.burst(wx, wy, R.col, 24, 4, { up: 1 }); X.wave(wx, wy, R.col, 90, { life: 0.8 }); tn('sine', 400 + I.rs.length * 150, 700 + I.rs.length * 200, 0.5, 0.1); I.rl = I.rs.length;
+            if (I.rs.length >= 4) { I.d2 = 1; setTimeout(() => { openWall(I, T.door2, ['✨ Руни сходяться', 'Свідчення сказано. Шлях до Відлуння відкрито.'], '#ffd84a'); E.lore('z6'); }, 700); } }
+        else { I.rs = []; I.rl = 0; X.burst(wx, wy, '#ff6a8a', 30, 5); X.wave(wx, wy, '#ff6a8a', 140, { life: 0.8 }); tn('sawtooth', 300, 80, 0.5, 0.12); toast('Порядок хибний — Хранителі прокидаються!'); try { shake = Math.max(shake, 8); } catch (e) { }
+            for (let k = 0; k < 2; k++) { try { const m = MX.spawn(DG.DEF.x_scrollghost, wx + (k ? 70 : -70), wy - 40); m.dn = 1; } catch (e) { } } }
+    }
+    // ---------- бос: Відлуння ----------
+    let bf = 0; Z.TICK.push(() => {
+        if (!playing() || !currentWorld || !Z.host()) return; const I = inst('za'); if (!I || I.boss) return; const R = DG.rt(I), m = R.boss; if (!m || m.hp <= 0) return; bf++; const hf = m.hp / m.maxHp, px = player.x + 12, cx = m.x + m.width / 2, cy = m.y + m.height / 2;
+        if (bf % Math.round(hf < 0.45 ? 280 : 400) === 0) { for (let i = 0; i < 5; i++) DG.PIL.push({ x: px + (i - 2) * 76 + (Math.random() - 0.5) * 24, y0: player.y - 360, y1: player.y + 60, t: 0, delay: 55 + i * 8, dmg: 38, col: '#ffd84a', who: 'Відлуння' }); toast('✨ Відлуння: колони світла!'); }
+        if (bf % (hf < 0.45 ? 520 : 760) === 150) { DG.RING.push({ x: cx, y: m.y + m.height - 8, r: 20, dmg: 42, col: '#b070ff', who: 'Відлуння' }); X.wave(cx, cy, '#b070ff', 160, { life: 0.8 }); toast('🔮 Хвиля відлуння — стрибай!'); }
+        if (hf < 0.2 && bf % 10 === 0) X.emit(cx + rnd(-m.width / 2, m.width / 2), cy + rnd(-m.height / 2, m.height / 2), { vx: rnd(-1, 1), vy: -rnd(0.5, 2), life: 0.9, s: 3, c: '#ffd84a', a: 1 });
+    });
+    // ---------- нагорода й фінал ----------
+    kind('za', {
+        name: 'Двері Архіву', col: '#e8c8ff', col2: '#ffe8a0', tint: '#e0c8ff', vig: '#0c0418', sub: 'Тут Вартові залишили все, що не встигли сказати', rumor: 'Там, де закінчуються всі шляхи, вперше відчинилось щось дуже давнє.',
+        y0: (sf, h, T) => E.deepY(h, T, 6), minP: 70, fr: [0.1, 0.9], build,
+        need: () => KS.every(k => { const z = S(); return z && (z.sg[k]); }),
+        loot(I, rich) { const s = new Array(16).fill(null); const put = (id, n) => { const f = s.map((q, i) => q ? -1 : i).filter(i => i >= 0); if (f.length) s[f[Math.random() * f.length | 0]] = { id, count: n }; }; put('relic_dust', rich ? 6 : 2 + (Math.random() * 2 | 0)); put('life_potion', 3); put('mana_potion', 3); if (Math.random() < (rich ? 1 : 0.5)) put('old_spice', rich ? 2 : 1); if (rich) { put('shade_essence', 3); put('time_essence', 3); } return s; },
+        reward(I, m) {
+            const z = S(); z.archiveDone = 1; z.ending = 1; z.title = 'Спадкоємець Вартових'; const wid = W2.CLS[RPG.cls] || 'oath_blade'; E.lore('z8'); E.lore('z7');
+            E.finish(I, m, { msg: 'Відлуння стихає. Архів відкрив тобі все. Ти — Спадкоємець Вартових.', items: [[wid, 1], ['warden_sign', 1], ['relic_dust', 6]], after: () => ending() });
+        },
+        vis: {
+            backdrop(c, I, r, th, t, k, o) { const { x0, y0, w, h } = o; for (let i = 0; i < 8; i++) { const x = x0 + (i + 0.5) * w / 8, hh = h * (0.4 + 0.5 * ((i * 37) % 10) / 10); c.fillStyle = X.rgba('#e8c8ff', 0.05 * k); c.fillRect(x - 10, y0 + h - hh, 20, hh); c.fillStyle = X.rgba('#ffd84a', 0.08 * k); c.fillRect(x - 10, y0 + h - hh, 20, 3); } },
+            room(c, I, r, th, t, k, add) { const x0 = (I.x + r.x) * 32, y0 = (I.y + r.y) * 32, W = r.w * 32; add(c, () => { for (let i = 0; i < 6; i++) { const x = x0 + ((i * 97 + t * 8) % W), y = y0 + 60 + ((i * 53 + t * 5 * (i % 2 ? 1 : -1) + 5000) % (r.h * 32 - 120)); X.glow(x, y, 34, i % 2 ? '#ffd84a' : '#e8c8ff', 0.08 * k); } }); },
+            scene(c, I, T, th, t, k, add, v) {
+                const px = player.x + 12, py = player.y + 22;
+                add(c, () => {
+                    T.pd.forEach(p => { const wx = (I.x + p.x) * 32 + 16, wy = (I.y + p.y) * 32 + 32; if (wx < v.x0 || wx > v.x1) return; const placed = I.ped && I.ped[p.k], col = SEALS[p.k][2]; c.save(); c.fillStyle = '#2a2040'; c.fillRect(wx - 18, wy - 12, 36, 12); c.fillStyle = '#4a3a68'; c.fillRect(wx - 14, wy - 28, 28, 18); c.fillStyle = '#6a5a8a'; c.fillRect(wx - 14, wy - 28, 28, 3);
+                        c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.arc(wx, wy - 40, 11, 0, TAU); c.stroke(); if (placed) { X.glow(wx, wy - 40, 70 + 8 * Math.sin(t * 3), col, 0.6 * k); c.fillStyle = col; c.beginPath(); c.arc(wx, wy - 40, 8, 0, TAU); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(wx - 2, wy - 42, 2.4, 0, TAU); c.fill(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = X.rgba(col, 0.35 * k); c.lineWidth = 3; c.beginPath(); c.moveTo(wx, wy - 50); c.lineTo(wx, wy - 300); c.stroke(); } else { X.glow(wx, wy - 40, 36, col, 0.18 * k); }
+                        if (!placed && Math.hypot(px - wx, py - wy) < 180) X.label(wx, wy - 66, cnt(SEALS[p.k][0]) ? 'ПКМ — покласти ' + SEALS[p.k][1] : SEALS[p.k][1], col); c.restore(); });
+                    const rr = T.rooms.find(q => q.id === 'r3'), rbx = (I.x + rr.x) * 32;
+                    T.rn.forEach(q => { const wx = (I.x + q.x) * 32 + 16, wy = (I.y + q.y) * 32, R = RUNES[q.r], on = I.rs && I.rs.includes(q.i) && !I.d2 || I.d2; if (wx < v.x0 || wx > v.x1) return; c.save(); c.fillStyle = '#1a1230'; c.strokeStyle = on ? R.col : '#6a5a8a'; c.lineWidth = 3; c.fillRect(wx - 22, wy - 54, 44, 64); c.strokeRect(wx - 22, wy - 54, 44, 64); X.glow(wx, wy - 22, on ? 90 : 36, R.col, on ? 0.55 * k : 0.16 * k); c.font = '700 30px sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#fff' : R.col + '99'; c.fillText(R.ic, wx, wy - 14); c.restore(); if (!I.d2 && Math.hypot(px - wx, py - wy) < 190) X.label(wx, wy - 66, 'ПКМ — ' + R.n, R.col); });
+                    const dd = [T.door, T.door2]; for (const d of dd) { if (!d) continue; const wx = (I.x + d.x + 1) * 32, wy = (I.y + d.y + d.h / 2) * 32; if (wx < v.x0 || wx > v.x1) continue; if (worldMap[I.y + d.y][I.x + d.x] === 89) X.glow(wx, wy, 90 + 10 * Math.sin(t * 2), '#ffd84a', 0.3 * k); }
+                });
+            },
+            particle(ex, ey, t, th) { X.emit(ex, ey, { vx: (Math.random() - 0.5) * 0.3, vy: -0.15 - Math.random() * 0.3, life: 3.6, s: 1.8, c: Math.random() < 0.5 ? '#ffe8a0' : '#e8c8ff', a: 0.75, shape: Math.random() < 0.25 ? 1 : 0 }); }
+        }
+    });
+    // ---------- фінал: кінотека ----------
+    const END = document.createElement('div'); END.id = 'zka-end'; END.innerHTML = '<div class="a"></div><div class="b"></div><div class="c"></div>'; document.body.appendChild(END);
+    const ST = document.createElement('style'); ST.textContent = '#zka-end{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(circle at 50% 40%,#2a1850ee,#05020cf2);color:#f6ecd8;font-family:Georgia,"Times New Roman",serif;text-align:center;opacity:0;transition:opacity 1.6s}#zka-end.on{opacity:1}#zka-end .a{font-size:15px;letter-spacing:.4em;text-transform:uppercase;color:#e8c8ff;opacity:0;transition:opacity 1.5s}#zka-end .b{font-size:clamp(28px,5vw,54px);font-weight:700;color:#ffe8a0;text-shadow:0 0 30px #ffd84a99;opacity:0;transition:opacity 1.5s}#zka-end .c{max-width:min(640px,86vw);font-size:17px;line-height:1.7;color:#e6dcf4;opacity:0;transition:opacity 1.5s}#zka-end .x{opacity:1!important}'; document.head.appendChild(ST);
+    function ending() {
+        const a = END.querySelector('.a'), b = END.querySelector('.b'), c = END.querySelector('.c'); END.style.display = 'flex'; a.className = 'a'; b.className = 'b'; c.className = 'c'; a.textContent = 'Двері Архіву відчинено'; b.textContent = 'Спадкоємець Вартових'; c.textContent = 'Двадцять клинків розсіяні, п’ять печатей — на місцях, а Відлуння нарешті мовчить. Серце Світанку б’ється рівно. Ти не просто здолав Вартових — ти став тим, хто їх змінить. Світанок — не місце. Це вибір, який роблять щоранку.';
+        setTimeout(() => END.classList.add('on'), 30); setTimeout(() => a.classList.add('x'), 1400); setTimeout(() => b.classList.add('x'), 3000); setTimeout(() => c.classList.add('x'), 5000);
+        for (let i = 0; i < 6; i++) setTimeout(() => { X.wave(player.x + 12, player.y + 10, i % 2 ? '#ffd84a' : '#e8c8ff', 200 + i * 60, { life: 1.6 }); tn('sine', 300 + i * 80, 500 + i * 120, 1.2, 0.08); }, 600 + i * 700);
+        setTimeout(() => { END.classList.remove('on'); setTimeout(() => { END.style.display = 'none'; }, 1700); }, 13000);
+    }
+    END.addEventListener('click', () => { END.classList.remove('on'); setTimeout(() => { END.style.display = 'none'; }, 800); });
+    E.TABS.forEach(t => { if (t.id === 'ov') { const o = t.render; t.render = function () { let h = o.apply(this, arguments); const z = S(); if (z && z.title) h = '<div class="msg" style="border-color:#ffd84a">👑 Титул: <b>' + z.title + '</b></div>' + h; return h; }; } });
+    E.PROG.push({ id: 'archive', ic: '🚪', name: 'Двері Архіву', get() { const z = S(), i = inst('za'); if (z && z.archiveDone) return { txt: 'Архів відкрито. Ти — Спадкоємець Вартових.', p: 1 }; const n = KS.filter(k => E.hasSeal(k)).length; return { txt: i ? 'Принеси п’ять печатей до п’єдесталів (на стрілці). Розв’яжи руни, переможи Відлуння.' : n + '/5 печатей зібрано. Коли їх буде п’ять — Двері з’являться.', p: i ? 0.5 : n / 10 }; } });
+    window.__zkarc = { build, ORDER, RUNES, ending, pressRune, placeSeal };
 })();
 // ===== v46.65 «Вознесіння»: підкласи (по 3 на клас), Печать Вознесіння, ранги, пасивки, активні здібності з анімаціями =====
 // Після 40 рівня досвід іде у ранг підкласу (1–10). Підклас відкривається Печаттю Вознесіння (дуже дорогий крафт).
@@ -50105,12 +51170,23 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.65', 'Вартові Світанку', 'new'], ['46.64', 'Моди без меж'], ['46.63', 'Характер, Фото, Моди'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.66', 'Спадщина Вартових', 'new'], ['46.65', 'Вартові Світанку'], ['46.64', 'Моди без меж'], ['46.63', 'Характер, Фото, Моди'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.66': [
+                ['#e0b060', '📖 Щоденник Вартових', 'З 40 рівня біля нижнього краю екрана з’являється книжка. У ній: шлях до всіх нових місць, літопис (сторінки знаходиш у спорудах і на розкопках), музей реліквій, Тіні й печаті. Після Глибинної Брами у світі самі з’являються три нові споруди, а до них веде стрілка ліворуч.'],
+                ['#7affd0', '🍄 Підземна ферма грибів', 'Грибна грядка (верстак, 30 рівень) ставиться під землею. Чотири види: Світлогриб, Жарогриб, Тіньовик та рідкісний Золотий шапкогриб. Вода поряд пришвидшує ріст, а світло не потрібне. Спори крафтяться з печерних рослин, тіньові — з Есенції тіні.'],
+                ['#c8a070', '🏺 Розкопки й Музей', 'Під землею блищать місця розкопок. З пензликом археолога (дерево, залізо, золото) 8 клацань ПКМ — і знахідка: уламки шести реліквій, давні прянощі, спори золотого гриба. Склади реліквії в Музеї Щоденника — отримай постійні бонуси (до +4% шкоди, +30 здоров’я та мани, +3 захист).'],
+                ['#e070ff', '🍲 Страви Вартових', 'Вісім страв четвертого рівня (з грибів і давніх прянощів): сильніші за святкові, діють до 15 хвилин. Підуть мешканцям у любимчики.'],
+                ['#a070ff', '👤 Тіні Вартових', 'Раз на двадцять хвилин біля місць пройдених сторожів бродить рідкісна Тінь: Променя, Зорі, Безодні чи Ліхтаря. Сильні бійці для 40+ рівня. З них падає Есенція тіні.'],
+                ['#ff7a3a', '🔥 Пекельна Кузня', 'Споруда з базальту, лави й обсидіану, три зали й Хазяїн Горнила. Нагорода: Кільце Горнила (імунітет до лави), Печать Горнила й Пекельне ковадло — кувати Пекельну зброю в міні-грі температури: роздмухуй жар і бий у зеленому вікні. Чим точніше — тим вища якість (+12% чи +25%).'],
+                ['#8ff0ff', '🪞 Дзеркальний Лабіринт', 'Справжній лабіринт з драбинами й шістьма дзеркалами. Правдиве відображення рухається разом із тобою, хибне — із запізненням і червоними очима. Три правдиві відчиняють двері до Двійника, що міняється з тобою місцями.'],
+                ['#e8c8ff', '🚪 Двері Архіву', 'П’ять печатей (три данжі, Кузня й Лабіринт) відчиняють Двері. Далі — літопис, головоломка з рун, Відлуння Глибинного Вартового, «Клятва» твого класу й титул Спадкоємця Вартових.'],
+                ['#ffcf5a', '⚔ 16 нових зброй', '12 Пекельних (4 види у 3 якостях) з вогняними ефектами й 4 «Клятви Вартових» зі стеком присяги.'],
+            ],
             '46.65': [
                 ['#ffcf5a', '🗡 20 легендарних зброй Вартових', 'По п’ять на кожен клас. Їх не можна викувати — лише знайти в данжах, скринях чи вибити з босів. Кожна має свій ефект, анімацію й історію; ефекти мають кулдауни, тож зброя сильна, але не ламає баланс.'],
                 ['#7ab0ff', '🏛 Три сюжетні данжі', 'Склеп Першого Променя, Затоплена Обсерваторія Зір і Глибинна Брама. Відкриваються за ходом історії: після двох світових босів ти отримуєш Компас Світанку, далі — ключі, п’єдестали та фінальний бій із Глибинним вартовим.'],
