@@ -49402,9 +49402,9 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
     }
     function onWorldBoss(b) {
         const z = ZD(); if (!z || guest()) return; z.bk++;
-        const cx = b.x + (b.w || 40) / 2, cy = b.y + (b.h || 40) / 2; z.pity++;
+        const cx = b.x + (b.w || 40) / 2, cy = b.y + (b.h || 40) / 2;
         const a = WORLD.filter(i => !z.got[i]);
-        if (a.length && Math.random() < 0.08 + 0.09 * z.pity) { z.pity = 0; const id = a[Math.random() * a.length | 0]; setTimeout(() => giveWeapon(id, cx, cy - 20), 800); }
+        if (a.length && Math.random() < 0.08) { z.pity = 0; const id = a[Math.random() * a.length | 0]; setTimeout(() => giveWeapon(id, cx, cy - 20), 800); }
         if (!z.kab && z.bk >= 6) { z.kab = 1; setTimeout(() => { dropItem('key_abyss', cx, cy - 30, 0); banner('🗝 Ключ Безодні', 'Шостий велетень пав — і ключ із ним.'); }, 1200); }
         storyTick(true);
     }
