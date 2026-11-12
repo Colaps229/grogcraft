@@ -11394,7 +11394,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
         // ================= 📜 v20: ПРОФЕСІЇ — ЯДРО =================
-        const GAME_VER = '46.70', GAME_VER_NAME = 'Крила й ранець';
+        const GAME_VER = '46.71', GAME_VER_NAME = 'Таємниці й Обтяження';
         const PROF = { xp: {}, pk: {} };
         const V20 = { f: 0, gain: {}, buf: { regen: 0, focus: 0, shield: 0, feast: 0, feastSpd: 0 }, fs: { st: 0 }, rfish: {}, fx: [], sonar: 0, cr: null, sel: 'mine', selPerk: null, warn: {}, fish: [] };
         const PB_XP = [40, 110, 220, 380, 600, 900, 1300, 1850, 2600, 3600];
@@ -54140,6 +54140,16 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         { id: 'p7', n: 'Зоряний купол', ic: '🌌', d: 'Телескоп та карти неба.', need: { star_thread: 12, crystal_shard: 20, time_essence: 4 }, xp: 260, rew: [['alc_star', 1]] },
         { id: 'p8', n: 'Велика хроніка', ic: '📖', d: 'Історія гільдії, записана золотом.', need: { gold_ingot: 40, ink_essence: 10, phoenix_feather: 2 }, xp: 400, rew: [['gold_ingot', 8], ['amul_balance', 1]] }
     ];
+    // ---------- Гільдійний дім: п'ять кімнат по три рівні ----------
+    const ROOMS = [
+        { id: 'hearth', ic: '🔥', n: 'Камін', c: '#ff9a4a', d: 'Тепло для всіх: +0,4 регенерації здоров’я за рівень.', e: 'регенерація +0,4/рів.', lv: [{ wood: 60, iron_ingot: 8 }, { iron_ingot: 20, ember_leaf: 10, gold_ingot: 4 }, { gold_ingot: 14, phoenix_feather: 2, ember_leaf: 20 }] },
+        { id: 'library', ic: '📚', n: 'Бібліотека', c: '#8fc8ff', d: 'Спільні записи: +2% досвіду за рівень.', e: 'досвід +2%/рів.', lv: [{ wood: 50, ink_essence: 2 }, { gold_ingot: 6, ink_essence: 5, star_thread: 4 }, { gold_ingot: 16, ink_essence: 10, time_essence: 3 }] },
+        { id: 'armory', ic: '⚔', n: 'Зброярня', c: '#e8a0a0', d: 'Спільні тренування: +2% до всієї шкоди за рівень.', e: 'шкода +2%/рів.', lv: [{ iron_ingot: 25, wood: 30 }, { iron_ingot: 40, gold_ingot: 8, crystal_shard: 8 }, { gold_ingot: 18, crystal_shard: 20, frost_heart: 3 }] },
+        { id: 'pantry', ic: '🧺', n: 'Комора', c: '#a8e0a0', d: 'Прохолодні полиці: їжа псується на 5% повільніше за рівень.', e: 'псування −5%/рів.', lv: [{ wood: 40, salt: 10 }, { ice: 30, salt: 20, aged_cheese: 4 }, { ice: 60, frost_heart: 4, kvass: 6 }] },
+        { id: 'tower', ic: '🔭', n: 'Вежа неба', c: '#c8a0ff', d: 'Попутний вітер: політ крил та ранця витрачає на 6% менше сили за рівень.', e: 'політ −6%/рів.', lv: [{ wood: 60, crystal_shard: 6 }, { crystal_shard: 16, star_thread: 8, gold_ingot: 6 }, { gold_ingot: 16, star_thread: 16, aur_shard: 20 }] }
+    ];
+    const RM = {}; ROOMS.forEach(r => RM[r.id] = r);
+    const hl = (r, g) => { g = g === undefined ? myGuild() : g; return g && g.h ? (g.h[r] | 0) : 0; };
     const NAME_A = ['Срібні', 'Вогняні', 'Тихі', 'Золоті', 'Північні', 'Дубові', 'Вільні', 'Зоряні', 'Кам’яні', 'Лисячі'];
     const NAME_B = ['Лицарі', 'Алхіміки', 'Мандрівники', 'Будівничі', 'Вовки', 'Ковалі', 'Хранителі', 'Мисливці', 'Брати', 'Підмайстри'];
     const COLS = ['#e0503c', '#e8a03c', '#e8e060', '#5ac878', '#4aa8ff', '#a070e0', '#e070b0', '#f0f0f0'];
@@ -54171,6 +54181,13 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             if (back > 0) grant(pid, [[d.it, back]]);
             if (n <= 0) return; g.pr[d.it] = cur + n; g.m[pid].c += n;
             if (Object.keys(P.need).every(k => (g.pr[k] || 0) >= P.need[k])) finishProject(g, P);
+        } else if (a === 'hgive') {
+            const R_ = RM[d.r]; if (!g || !R_) { grant(pid, [[d.it, d.n | 0]]); return; }
+            g.h = g.h || {}; g.hp = g.hp || {}; const L0 = g.h[R_.id] | 0, need = L0 < 3 ? R_.lv[L0] : null;
+            if (!need || !need[d.it]) { grant(pid, [[d.it, d.n | 0]]); return; }
+            const pr = g.hp[R_.id] = g.hp[R_.id] || {}, cur = pr[d.it] || 0, n = clamp(d.n | 0, 0, need[d.it] - cur), back = (d.n | 0) - n;
+            if (back > 0) grant(pid, [[d.it, back]]); if (n <= 0) return; pr[d.it] = cur + n; g.m[pid].c += n;
+            if (Object.keys(need).every(k => (pr[k] || 0) >= need[k])) { g.h[R_.id] = L0 + 1; g.hp[R_.id] = {}; g.xp += 20 * (L0 + 1); g.lv = lvOf(g.xp); g.hn = { r: R_.id, l: L0 + 1, t: Date.now() }; }
         } else if (a === 'claim') { if (g && g.pend[pid] && g.pend[pid].length) { const it = g.pend[pid]; g.pend[pid] = []; grant(pid, it); } }
         else if (a === 'kick') { if (g && g.o === pid && d.pid && g.m[d.pid] && d.pid !== pid) delete g.m[d.pid]; }
         s.t = Date.now(); broadcast();
@@ -54254,13 +54271,17 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
                 if (L >= 6) st.maxHp = Math.round(st.maxHp * 1.08);
                 if (L >= 7) st.hpRegen += 1;
                 if (nearBanner) st.hpRegen += 1;
+                const g_ = myGuild(); if (g_ && g_.h) {
+                    st.hpRegen += 0.4 * hl('hearth', g_); st.xpMult += 0.02 * hl('library', g_);
+                    const ar = hl('armory', g_); if (ar) ['melee', 'ranged', 'magic', 'summon'].forEach(t => { st.mult[t] *= 1 + 0.02 * ar; });
+                }
                 if (FB.t > 0) { st.xpMult += FB.xp; st.hpRegen += FB.rg; }
             } catch (e) { }
         };
     })(accApply);
     try { if (window.__zam) window.__zam.setRateMod(() => lvlNow() >= 3 ? 0.9 : 1); } catch (e) { }
     const prevMul = window.__zfMul || (() => 1);
-    window.__zfMul = () => prevMul() * (lvlNow() >= 4 ? 0.9 : 1);
+    window.__zfMul = () => prevMul() * (lvlNow() >= 4 ? 0.9 : 1) * (1 - 0.05 * hl('pantry'));
 
     // ================== панель ==================
     let tab = 'home', draft = { n: '', c: COLS[0] };
@@ -54278,7 +54299,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         }
         const L = lvOf(g.xp), nx = L >= 7 ? 1 : (g.xp - LVX[L]) / (LVX[L + 1] - LVX[L]);
         h += hero('⚑', g.n, 'Рівень ' + L + (L >= 7 ? ' · максимальний' : ' · ' + (g.xp - LVX[L]) + '/' + (LVX[L + 1] - LVX[L]) + ' досвіду') + ' · ' + Object.keys(g.m).length + ' учасн.', g.c, nx, { t: 'Р' + L });
-        h += '<div class="zgtabs">' + [['home', '🏛 Огляд'], ['proj', '📦 Проєкти'], ['rew', '🎁 Нагороди' + ((g.pend[me()] || []).length ? ' •' : '')]].map(([k, t]) => '<button data-z="tab:' + k + '" class="' + (tab === k ? 'on' : '') + '" style="--c:' + g.c + '">' + t + '</button>').join('') + '</div>';
+        h += '<div class="zgtabs">' + [['home', '🏛 Огляд'], ['proj', '📦 Проєкти'], ['house', '🏡 Дім'], ['rew', '🎁 Нагороди' + ((g.pend[me()] || []).length ? ' •' : '')]].map(([k, t]) => '<button data-z="tab:' + k + '" class="' + (tab === k ? 'on' : '') + '" style="--c:' + g.c + '">' + t + '</button>').join('') + '</div>';
         if (tab === 'home') {
             h += '<div class="zcsec">Бонуси рівнів</div>';
             for (let i = 1; i <= 7; i++) { const p = PERK[i], ok = L >= i; h += card({ ic: ok ? p.ic : '🔒', c: ok ? g.c : '#6a6478', t: 'Рівень ' + i + ' · ' + p.t, tags: ok ? tag('діє', 'ok') : '', d: p.d }); }
@@ -54287,6 +54308,8 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             h += card({ ic: '🕊', c: g.b.sanct ? '#a8f0d8' : '#6a6478', t: 'Святилище спокою', tags: g.b.sanct ? tag('відкрито', 'ok') : tag('проєкт «Святилище спокою»', ''), d: 'Поруч знімає Напругу амулетів.' });
             h += '<div class="zcsec">Учасники</div>' + Object.entries(g.m).sort((a, b) => b[1].c - a[1].c).map(([pid, mm], i) => card({ ic: i === 0 ? '👑' : '🧑', c: g.c, t: mm.n + (pid === g.o ? ' · засновник' : '') + (pid === me() ? ' (ти)' : ''), tags: tag('внесок ' + mm.c, i === 0 ? 'gold' : ''), d: '', x: (g.o === me() && pid !== me() ? '<button class="zxb" data-z="kick:' + pid + '">Виключити</button>' : '') })).join('');
             h += '<div style="margin-top:10px"><button class="zxb" data-z="leave">🚪 Залишити гільдію</button></div>';
+        } else if (tab === 'house') {
+            h += houseHtml(g);
         } else if (tab === 'proj') {
             if (g.pi >= PRJ.length) h += card({ ic: '🏆', c: '#ffe27a', t: 'Усі проєкти завершено', d: 'Гільдія побудувала все, що було можливо.' });
             else {
@@ -54302,6 +54325,122 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
         }
         return wrap(h);
     }
+    let hroom = 'hearth';
+    function houseSvg(g) {
+        const L = id => hl(id, g), tot = ROOMS.reduce((a, r) => a + L(r.id), 0), col = g.c, P = (a, b) => a + ',' + b;
+        const hx = (c, k) => { const n = parseInt(c.slice(1), 16), r = n >> 16, gg = (n >> 8) & 255, b = n & 255, f = v => Math.max(0, Math.min(255, Math.round(v * k))); return 'rgb(' + f(r) + ',' + f(gg) + ',' + f(b) + ')'; };
+        const dark = hx(col, .55), lite = hx(col, 1.25);
+        let o = '<svg class="zgh" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">';
+        o += '<defs>'
+            + '<linearGradient id="zgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a2a"/><stop offset=".55" stop-color="#2a2060"/><stop offset="1" stop-color="#7a4a8a"/></linearGradient>'
+            + '<linearGradient id="zgAu" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5affc8" stop-opacity="0"/><stop offset=".35" stop-color="#5affc8" stop-opacity=".5"/><stop offset=".7" stop-color="#b080ff" stop-opacity=".45"/><stop offset="1" stop-color="#b080ff" stop-opacity="0"/></linearGradient>'
+            + '<linearGradient id="zgRoof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + lite + '"/><stop offset="1" stop-color="' + dark + '"/></linearGradient>'
+            + '<linearGradient id="zgWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a47a4c"/><stop offset="1" stop-color="#6e4c2c"/></linearGradient>'
+            + '<linearGradient id="zgStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a8494"/><stop offset="1" stop-color="#4e4a5c"/></linearGradient>'
+            + '<linearGradient id="zgHill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a4a3a"/><stop offset="1" stop-color="#102418"/></linearGradient>'
+            + '<radialGradient id="zgGl"><stop offset="0" stop-color="#ffd98a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient>'
+            + '<radialGradient id="zgMoon"><stop offset="0" stop-color="#fffbe8"/><stop offset=".6" stop-color="#f4ecc8"/><stop offset="1" stop-color="#d8cc98"/></radialGradient>'
+            + '<pattern id="zgPl" width="10" height="9" patternUnits="userSpaceOnUse"><rect width="10" height="9" fill="none"/><path d="M0 8.5H10" stroke="#3a2412" stroke-width="1" opacity=".55"/><path d="M5 0V8" stroke="#3a2412" stroke-width=".6" opacity=".25"/></pattern>'
+            + '<pattern id="zgSh" width="12" height="8" patternUnits="userSpaceOnUse"><path d="M0 7.5q6 3 12 0M-6 3.5q6 3 12 0M6 3.5q6 3 12 0" fill="none" stroke="#0e0618" stroke-width="1" opacity=".5"/></pattern>'
+            + '</defs>';
+        // небо
+        o += '<rect width="400" height="250" fill="url(#zgSky)" rx="14"/>';
+        o += '<path d="M-10 70 C70 30 140 90 220 50 S350 30 420 70 L420 110 C340 80 250 120 160 90 S40 100 -10 100 Z" fill="url(#zgAu)" class="zgh-au"/>';
+        for (let i = 0; i < 34; i++) { const x = (i * 97) % 395 + 3, y = (i * 53) % 118 + 4, r = .6 + (i % 4) * .35; o += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff" class="zgh-st" style="animation-delay:' + (i * .29 % 3).toFixed(2) + 's"/>'; }
+        o += '<circle cx="330" cy="46" r="34" fill="#fff6d0" opacity=".13"/><circle cx="330" cy="46" r="17" fill="url(#zgMoon)"/><circle cx="324" cy="42" r="3" fill="#cfc28c" opacity=".6"/><circle cx="336" cy="52" r="2.2" fill="#cfc28c" opacity=".5"/><circle cx="337" cy="39" r="1.6" fill="#cfc28c" opacity=".5"/>';
+        // далекі гори й пагорби
+        o += '<path d="M0 168 L48 118 L82 150 L130 104 L184 156 L236 124 L290 158 L340 112 L400 160 L400 250 L0 250 Z" fill="#1c1840" opacity=".9"/>';
+        o += '<path d="M0 188 Q90 150 190 178 T400 168 L400 250 L0 250 Z" fill="url(#zgHill)"/>';
+        // сосни
+        const pine = (x, y, sc, k) => { let s_ = '<g transform="translate(' + x + ' ' + y + ') scale(' + sc + ')"><rect x="-2" y="0" width="4" height="9" fill="#3a2414"/>'; for (let i = 0; i < 4; i++) s_ += '<polygon points="' + P(-13 + i * 2.4, -i * 11 + 2) + ' ' + P(13 - i * 2.4, -i * 11 + 2) + ' ' + P(0, -i * 11 - 15) + '" fill="' + (i % 2 ? '#1f5a3a' : '#276a44') + '" stroke="#0a1c10" stroke-width="1"/>'; return s_ + '</g>'; };
+        o += pine(22, 196, 1.05) + pine(46, 202, .8) + pine(372, 196, 1.1) + pine(350, 204, .8) + pine(18, 214, .65);
+        // земля
+        o += '<path d="M0 210 Q100 196 200 206 T400 204 L400 250 L0 250 Z" fill="#17301f"/><path d="M0 222 Q120 210 230 220 T400 216 L400 250 L0 250 Z" fill="#102418"/>';
+        // --- вежа (праворуч) ---
+        const tl = L('tower'), th = 46 + tl * 22, ty = 206 - th;
+        if (tl) {
+            o += '<g><rect x="290" y="' + ty + '" width="42" height="' + th + '" fill="url(#zgStone)" stroke="#120c08" stroke-width="2.5"/>';
+            for (let y = ty + 8; y < 204; y += 11) o += '<path d="M290 ' + y + 'H332" stroke="#2a2438" stroke-width="1" opacity=".6"/><path d="M' + (300 + (y % 3) * 7) + ' ' + y + 'v-11M' + (318 - (y % 3) * 5) + ' ' + y + 'v-11" stroke="#2a2438" stroke-width="1" opacity=".45"/>';
+            o += '<rect x="286" y="' + (ty - 5) + '" width="50" height="8" fill="#5a5470" stroke="#120c08" stroke-width="2"/>';
+            for (let i = 0; i < 4; i++) o += '<rect x="' + (288 + i * 12.5) + '" y="' + (ty - 12) + '" width="8" height="8" fill="#6a6482" stroke="#120c08" stroke-width="1.5"/>';
+            o += '<polygon points="' + P(284, ty - 12) + ' ' + P(311, ty - 44) + ' ' + P(338, ty - 12) + '" fill="url(#zgRoof)" stroke="#120c08" stroke-width="2.5"/><polygon points="' + P(311, ty - 44) + ' ' + P(338, ty - 12) + ' ' + P(311, ty - 12) + '" fill="#000" opacity=".22"/>';
+            o += '<line x1="311" y1="' + (ty - 44) + '" x2="311" y2="' + (ty - 60) + '" stroke="#120c08" stroke-width="2"/><path d="M311 ' + (ty - 60) + ' q14 -4 24 4 q-10 5 -24 3z" fill="' + lite + '" stroke="#120c08" stroke-width="1.5" class="zgh-fl"/>';
+            for (let k = 0; k < tl; k++) { const wy = ty + 14 + k * 24; o += '<g><path d="M303 ' + (wy + 18) + 'v-12a8 8 0 0116 0v12z" fill="#c8a0ff" opacity=".85" class="zgh-win" stroke="#120c08" stroke-width="2"/><path d="M311 ' + (wy - 2) + 'v20M303 ' + (wy + 9) + 'h16" stroke="#120c08" stroke-width="1.4"/></g>'; }
+            if (tl >= 3) o += '<g transform="translate(311 ' + (ty - 16) + ')"><circle r="9" fill="#2a2450" stroke="#120c08" stroke-width="2"/><rect x="-2" y="-18" width="4" height="12" fill="#c8b070" transform="rotate(-35)" stroke="#120c08" stroke-width="1"/><circle r="2" fill="#c8a0ff" class="zgh-win"/></g>';
+            o += '</g>';
+        } else o += '<g opacity=".28"><rect x="290" y="150" width="42" height="56" fill="none" stroke="#c8a0ff" stroke-width="1.6" stroke-dasharray="5 4"/><text x="311" y="182" font-size="9" text-anchor="middle" fill="#c8a0ff">🔭</text></g>';
+        // --- комора (прибудова ліворуч) ---
+        const pl = L('pantry');
+        if (pl) {
+            o += '<g><rect x="14" y="164" width="64" height="42" fill="url(#zgWood)" stroke="#120c08" stroke-width="2.4"/><rect x="14" y="164" width="64" height="42" fill="url(#zgPl)"/><polygon points="' + P(8, 166) + ' ' + P(46, 142) + ' ' + P(84, 166) + '" fill="url(#zgRoof)" stroke="#120c08" stroke-width="2.4"/><polygon points="' + P(8, 166) + ' ' + P(46, 142) + ' ' + P(84, 166) + '" fill="url(#zgSh)"/>';
+            for (let k = 0; k < pl + 1; k++) { const bx = 22 + k * 16; o += '<ellipse cx="' + bx + '" cy="203" rx="7" ry="3" fill="#5a3a1c"/><rect x="' + (bx - 7) + '" y="189" width="14" height="14" fill="#8a5a2c" stroke="#120c08" stroke-width="1.6"/><path d="M' + (bx - 7) + ' 194h14M' + (bx - 7) + ' 199h14" stroke="#3a2412" stroke-width="1.4"/>'; }
+            for (let k = 0; k < pl * 2; k++) { const hx2 = 20 + k * 9; o += '<path d="M' + hx2 + ' 168v10" stroke="#120c08" stroke-width="1"/><ellipse cx="' + hx2 + '" cy="181" rx="2.4" ry="5" fill="' + (k % 2 ? '#6aaa4a' : '#b08a3a') + '" stroke="#120c08" stroke-width="1" class="zgh-sw" style="animation-delay:' + k * .3 + 's"/>'; }
+            o += '<rect x="56" y="178" width="14" height="28" rx="2" fill="#3a2414" stroke="#120c08" stroke-width="1.6"/>';
+            o += '</g>';
+        } else o += '<g opacity=".28"><rect x="14" y="164" width="64" height="42" fill="none" stroke="#a8e0a0" stroke-width="1.6" stroke-dasharray="5 4"/><text x="46" y="190" font-size="9" text-anchor="middle" fill="#a8e0a0">🧺</text></g>';
+        // --- основний будинок ---
+        o += '<ellipse cx="170" cy="208" rx="112" ry="8" fill="#000" opacity=".35"/>';
+        o += '<rect x="86" y="184" width="170" height="24" fill="url(#zgStone)" stroke="#120c08" stroke-width="2.4"/>';
+        for (let i = 0; i < 9; i++) o += '<path d="M' + (86 + i * 19) + ' 184v24M86 ' + (190 + (i % 2) * 8) + 'h170" stroke="#2a2438" stroke-width="1" opacity=".5"/>';
+        o += '<rect x="90" y="118" width="162" height="68" fill="url(#zgWood)" stroke="#120c08" stroke-width="2.6"/><rect x="90" y="118" width="162" height="68" fill="url(#zgPl)"/>';
+        o += '<rect x="90" y="118" width="6" height="68" fill="#3a2412"/><rect x="246" y="118" width="6" height="68" fill="#3a2412"/><rect x="90" y="150" width="162" height="4" fill="#3a2412" opacity=".7"/>';
+        // дах
+        o += '<polygon points="' + P(74, 122) + ' ' + P(171, 58) + ' ' + P(268, 122) + '" fill="url(#zgRoof)" stroke="#120c08" stroke-width="3"/><polygon points="' + P(74, 122) + ' ' + P(171, 58) + ' ' + P(268, 122) + '" fill="url(#zgSh)"/><polygon points="' + P(171, 58) + ' ' + P(268, 122) + ' ' + P(171, 122) + '" fill="#000" opacity=".2"/>';
+        o += '<path d="M74 122H268" stroke="#120c08" stroke-width="3"/><path d="M80 126H262" stroke="#120c08" stroke-width="1.4" opacity=".5"/>';
+        // димохар
+        o += '<rect x="214" y="66" width="22" height="42" fill="url(#zgStone)" stroke="#120c08" stroke-width="2.4"/><rect x="210" y="62" width="30" height="8" fill="#6a6480" stroke="#120c08" stroke-width="2"/>';
+        for (let i = 0; i < 4; i++) o += '<path d="M214 ' + (74 + i * 9) + 'h22" stroke="#2a2438" stroke-width="1" opacity=".6"/>';
+        if (L('hearth')) { const n = 2 + L('hearth') * 2; for (let i = 0; i < n; i++) o += '<circle cx="225" cy="58" r="6" fill="#d8d0e0" class="zgh-sm" style="animation-delay:' + (i * 3.4 / n).toFixed(2) + 's"/>'; }
+        // мансарда: бібліотека
+        const lb = L('library');
+        o += '<g><polygon points="' + P(140, 104) + ' ' + P(171, 80) + ' ' + P(202, 104) + '" fill="url(#zgRoof)" stroke="#120c08" stroke-width="2.4"/><rect x="146" y="102" width="50" height="22" fill="#7a5a36" stroke="#120c08" stroke-width="2"/>';
+        o += '<g><path d="M158 122v-10a13 13 0 0126 0v10z" fill="' + (lb ? '#8fc8ff' : '#2a2438') + '" opacity="' + (lb ? .85 : .7) + '" stroke="#120c08" stroke-width="2"' + (lb ? ' class="zgh-win"' : '') + '/>';
+        if (lb) { for (let k = 0; k < lb + 2; k++) o += '<rect x="' + (161 + k * 5) + '" y="' + (116 - (k % 2) * 3) + '" width="3.6" height="' + (8 + (k % 2) * 3) + '" fill="' + ['#e0503c', '#e8e060', '#5ac878', '#4aa8ff', '#a070e0'][k % 5] + '" stroke="#120c08" stroke-width=".8"/>'; }
+        o += '<path d="M171 99v23" stroke="#120c08" stroke-width="1.4"/></g></g>';
+        // вікно каміна
+        const hh = L('hearth');
+        o += '<g><rect x="104" y="130" width="34" height="30" rx="3" fill="' + (hh ? '#ff9a4a' : '#2a2438') + '" opacity="' + (hh ? .95 : .7) + '" stroke="#120c08" stroke-width="2.4"' + (hh ? ' class="zgh-fire"' : '') + '/>';
+        if (hh) { o += '<path d="M121 158c-9-3-10-12-4-18 1 5 4 5 5 2 4 4 11 8 4 16z" fill="#ffe27a" opacity=".9" class="zgh-fire"/>'; }
+        o += '<path d="M121 130v30M104 145h34" stroke="#120c08" stroke-width="1.6"/><rect x="100" y="158" width="42" height="5" fill="#5a3a1c" stroke="#120c08" stroke-width="1.6"/>';
+        o += '<circle cx="107" cy="166" r="2.4" fill="' + col + '"/><circle cx="114" cy="167" r="2" fill="' + lite + '"/><circle cx="121" cy="166" r="2.4" fill="' + dark + '"/><circle cx="128" cy="167" r="2" fill="' + col + '"/><circle cx="135" cy="166" r="2.4" fill="' + lite + '"/></g>';
+        // двері з аркою
+        o += '<g><path d="M163 186v-30a13 13 0 0126 0v30z" fill="#3a2414" stroke="#120c08" stroke-width="2.6"/><path d="M176 143v43M163 166h26" stroke="#1a0e06" stroke-width="1.2" opacity=".6"/><circle cx="185" cy="168" r="2" fill="#ffd36b"/>';
+        o += '<rect x="154" y="186" width="44" height="6" fill="url(#zgStone)" stroke="#120c08" stroke-width="2"/><rect x="148" y="192" width="56" height="6" fill="url(#zgStone)" stroke="#120c08" stroke-width="2"/></g>';
+        // ліхтарі біля дверей
+        for (const lx of [150, 202]) o += '<g><line x1="' + lx + '" y1="132" x2="' + lx + '" y2="142" stroke="#120c08" stroke-width="1.5"/><rect x="' + (lx - 4) + '" y="142" width="8" height="11" rx="2" fill="#ffd36b" stroke="#120c08" stroke-width="1.6" class="zgh-win"/><circle cx="' + lx + '" cy="147" r="14" fill="url(#zgGl)" opacity=".55" class="zgh-win"/></g>';
+        // зброярня: щит і мечі
+        const ar = L('armory');
+        if (ar) { o += '<g transform="translate(224 154)"><line x1="-16" y1="-10" x2="16" y2="10" stroke="#c8ccd8" stroke-width="3"/><line x1="16" y1="-10" x2="-16" y2="10" stroke="#c8ccd8" stroke-width="3"/><line x1="-16" y1="-10" x2="16" y2="10" stroke="#120c08" stroke-width="1" opacity=".5"/><rect x="-18" y="-13" width="6" height="3" fill="#a07a3c" transform="rotate(35 -15 -11)"/><path d="M-9 -11 H9 V4 Q9 14 0 18 Q-9 14 -9 4Z" fill="' + col + '" stroke="#120c08" stroke-width="2"/><path d="M0 -9V16M-8 3H8" stroke="' + lite + '" stroke-width="1.6" opacity=".9"/>' + (ar >= 2 ? '<circle cx="0" cy="3" r="3.6" fill="#ffe27a" stroke="#120c08" stroke-width="1.2" class="zgh-win"/>' : '') + (ar >= 3 ? '<polygon points="0,-16 3,-11 -3,-11" fill="#ffe27a" stroke="#120c08" stroke-width="1"/>' : '') + '</g>'; }
+        else o += '<g opacity=".28" transform="translate(224 154)"><rect x="-14" y="-12" width="28" height="30" fill="none" stroke="#e8a0a0" stroke-width="1.6" stroke-dasharray="4 3"/></g>';
+        // стяг на даху
+        o += '<line x1="171" y1="58" x2="171" y2="30" stroke="#120c08" stroke-width="2.4"/><path d="M171 30 q18 -5 32 5 q-14 6 -32 4z" fill="' + col + '" stroke="#120c08" stroke-width="1.8" class="zgh-fl"/><circle cx="183" cy="35" r="3" fill="#fff" opacity=".85"/><circle cx="171" cy="29" r="2.4" fill="#ffd36b"/>';
+        // паркан, стежка, квіти
+        o += '<path d="M176 198 q-6 12 -26 20 t-40 18" stroke="#6a5a48" stroke-width="10" fill="none" stroke-linecap="round" opacity=".8"/><path d="M176 198 q-6 12 -26 20 t-40 18" stroke="#8a7a62" stroke-width="2" stroke-dasharray="2 8" fill="none" stroke-linecap="round"/>';
+        for (let i = 0; i < 9; i++) { const fx = 252 + i * 15; o += '<path d="M' + fx + ' 212v-12M' + (fx + 7) + ' 212v-10" stroke="#5a3a1c" stroke-width="3"/>'; }
+        o += '<path d="M250 205H382M250 211H382" stroke="#5a3a1c" stroke-width="2"/>';
+        for (let i = 0; i < 12; i++) { const fx = 100 + i * 21, fy = 214 + (i % 3) * 4; o += '<circle cx="' + fx + '" cy="' + fy + '" r="2.4" fill="' + [col, lite, '#ffe27a', '#fff'][i % 4] + '" stroke="#120c08" stroke-width=".8"/><path d="M' + fx + ' ' + fy + 'v5" stroke="#2a6a3a" stroke-width="1.4"/>'; }
+        // ліхтарні стовпи за кількістю рівнів
+        for (let i = 0; i < Math.min(tot, 8); i++) { const x = 22 + i * 46, y = 232; o += '<line x1="' + x + '" y1="' + (y - 10) + '" x2="' + x + '" y2="' + (y + 4) + '" stroke="#120c08" stroke-width="2"/><circle cx="' + x + '" cy="' + (y - 13) + '" r="3.6" fill="#ffd36b" stroke="#120c08" stroke-width="1.2" class="zgh-win" style="animation-delay:' + i * .25 + 's"/><circle cx="' + x + '" cy="' + (y - 13) + '" r="12" fill="url(#zgGl)" opacity=".45" class="zgh-win" style="animation-delay:' + i * .25 + 's"/>'; }
+        // світлячки
+        for (let i = 0; i < 7; i++) o += '<circle cx="' + (60 + i * 46) + '" cy="' + (176 + (i * 17) % 40) + '" r="1.5" fill="#fff8b0" class="zgh-ff" style="animation-delay:' + (i * .7).toFixed(1) + 's"/>';
+        // віконний підпис рівнів
+        o += '<g font-family="system-ui" font-size="9" font-weight="700" fill="#f0e8d0" text-anchor="middle"><text x="121" y="182">' + (L('hearth') ? '★'.repeat(L('hearth')) : '') + '</text><text x="171" y="52" fill="#8fc8ff"></text></g>';
+        return o + '</svg>';
+    }
+    function houseHtml(g) {
+        const tot = ROOMS.reduce((a, r) => a + hl(r.id, g), 0);
+        let h = '<div class="zcsec">Гільдійний дім · ' + tot + '/15 рівнів кімнат</div>' + houseSvg(g);
+        h += '<div class="zgrm">' + ROOMS.map(r => '<button data-z="hroom:' + r.id + '" class="' + (hroom === r.id ? 'on' : '') + '" style="--c:' + r.c + '">' + r.ic + ' ' + r.n + ' ' + hl(r.id, g) + '/3</button>').join('') + '</div>';
+        const R_ = RM[hroom] || ROOMS[0], L0 = hl(R_.id, g);
+        let body = '<div style="font-size:13px;margin-bottom:6px">' + R_.d + '</div><div style="font-size:12px;opacity:.85;margin-bottom:6px">Ефект зараз: <b>' + (L0 ? R_.e.replace(/(\d+[,.]?\d*)/, m => String(+(m.replace(',', '.')) * L0).replace('.', ',')) : 'ще не збудовано') + '</b></div>';
+        if (L0 >= 3) body += '<div class="zxg ok">✔ Кімнату збудовано повністю</div>';
+        else {
+            const need = R_.lv[L0], pr = (g.hp && g.hp[R_.id]) || {}; let tt = 0, gg = 0; for (const k in need) { tt += need[k]; gg += Math.min(need[k], pr[k] || 0); }
+            body += '<div style="font-size:12.5px;margin-bottom:4px">Рівень ' + (L0 + 1) + ' · внесено ' + Math.round(100 * gg / tt) + '%</div>' + bar(gg / tt, '', R_.c);
+            body += '<div class="zgp">' + Object.keys(need).map(k => { const c = pr[k] || 0, nn = need[k], have = cnt(k); return '<div class="zgi"><img src="' + (itemSprites[k] || '') + '"><div class="zgit"><b>' + nm(k) + '</b><small>' + c + ' / ' + nn + ' · у тебе ' + have + '</small>' + bar(c / nn, '', R_.c) + '</div><div class="zgib"><button data-z="hd:' + R_.id + ':' + k + ':1" ' + (have && c < nn ? '' : 'disabled') + '>+1</button><button data-z="hd:' + R_.id + ':' + k + ':10" ' + (have && c < nn ? '' : 'disabled') + '>+10</button><button data-z="hd:' + R_.id + ':' + k + ':all" ' + (have && c < nn ? '' : 'disabled') + '>усе</button></div></div>'; }).join('') + '</div>';
+        }
+        return h + card({ ic: R_.ic, c: R_.c, t: R_.n, tags: tag('рів. ' + L0 + '/3', L0 >= 3 ? 'ok' : 'gold'), d: '', x: body });
+    }
     function openPanel() {
         Z.open('⚑ Гільдія', '#e8c860', panelHtml, (zz) => {
             if (!zz) return; const g = myGuild();
@@ -54313,6 +54452,13 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             else if (zz === 'leave') { act('leave'); toast('Ти залишив гільдію.'); }
             else if (zz.startsWith('kick:')) act('kick', { pid: zz.slice(5) });
             else if (zz === 'claim') { act('claim'); tn('sine', 880, 1320, 0.14, 0.06, { rev: 1 }); }
+            else if (zz.startsWith('hd:') && g) {
+                const [, rm, it, q] = zz.split(':'), R_ = RM[rm], L0 = hl(rm); if (R_ && L0 < 3) {
+                    const need = R_.lv[L0][it] || 0, left = need - ((g.hp && g.hp[rm] && g.hp[rm][it]) || 0); let n = q === 'all' ? Math.min(left, cnt(it)) : Math.min(+q, left, cnt(it));
+                    if (n > 0) { take(it, n); act('hgive', { r: rm, it, n }); tn('triangle', 440 + L0 * 90, 560 + L0 * 90, 0.08, 0.05); try { X.burst(player.x + 12, player.y + 10, R_.c, 6, 1.6, { up: 1 }); } catch (e) { } }
+                }
+            }
+            else if (zz.startsWith('hroom:')) { hroom = zz.slice(6); }
             else if (zz.startsWith('dn:') && g) {
                 const [, it, q] = zz.split(':'), P = prjOf(g), need = P.need[it] || 0, left = need - (g.pr[it] || 0); let n = q === 'all' ? Math.min(left, cnt(it)) : Math.min(+q, left, cnt(it));
                 if (n > 0) { take(it, n); act('give', { it, n }); tn('triangle', 440, 540, 0.08, 0.05); try { X.burst(player.x + 12, player.y + 10, g.c, 6, 1.6, { up: 1 }); } catch (e) { } }
@@ -54358,7 +54504,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
                     for (let i = 8; i >= 0; i--) { const u = i / 8; c.lineTo(18 + u * 20 + (i === 8 ? 3 : 0), 31 + Math.sin(t * 3 + u * 3.4) * 2.2 * u + (sway * u) - (i === 8 ? 5 : 0) * 0); }
                     c.closePath(); c.fill(); c.stroke();
                     c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(27, 20 + sway * .6, 4, 0, TAU); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(27, 20 + sway * .6, 2, 0, TAU); c.fill();
-                    if (g0) { gl(c, 16, 6, 12, '#ffe27a', .18 + .05 * Math.sin(t * 2)); }
+                    if (g0) { gl(c, 16, 6, 12, '#ffe27a', .18 + .05 * Math.sin(t * 2)); const ht = g0.h ? ROOMS.reduce((a, r) => a + (g0.h[r.id] | 0), 0) : 0; for (let i = 0; i < Math.min(ht, 10); i++) { const a = t * .5 + i * (TAU / Math.min(ht, 10)), lx = 16 + Math.cos(a) * 26, ly = 20 + Math.sin(a) * 9 - 8; gl(c, lx, ly, 6, RM[ROOMS[i % 5].id].c, .35 + .15 * Math.sin(t * 3 + i)); c.fillStyle = '#ffe9a8'; c.beginPath(); c.arc(lx, ly, 1.6, 0, TAU); c.fill(); } }
                     const d = Math.hypot(player.x + 12 - (f.x + .5) * 32, player.y + 22 - (f.y + 1.5) * 32); if (g0 && d < 400) { c.strokeStyle = 'rgba(255,226,122,.18)'; c.lineWidth = 1; c.setLineDash([4, 6]); c.beginPath(); c.arc(16, 48, 400 - 8 + Math.sin(t) * 3, 0, TAU); c.stroke(); c.setLineDash([]); }
                 } else if (f.t === 'guild_feast') {
                     const dd = f.fd || []; dd.forEach((d, i) => { const x = 8 + i * 9, y = 9; c.fillStyle = '#f0e8d0'; c.beginPath(); c.ellipse(x + 3, y + 3, 4.4, 1.8, 0, 0, TAU); c.fill(); c.fillStyle = d.a > 0.6 ? '#7a8a2a' : d.a > 0.3 ? '#b88a3c' : '#c8602c'; c.beginPath(); c.arc(x + 3, y + 1.4, 2.6, Math.PI, 0); c.fill(); c.strokeStyle = OL; c.lineWidth = .6; c.stroke();
@@ -54389,6 +54535,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
             }
             if (nb !== nearBanner) { nearBanner = nb; try { recalcStats(); } catch (e) { } if (nb) toast('⚑ Аура стяга: +1 регенерації'); }
             if (sanct && ft % 60 === 0) { try { window.__zam && window.__zam.relieve(1.5); } catch (e) { } try { X.burst(player.x + 12, player.y + 10, '#a8f0d8', 2, .8, { up: 1 }); } catch (e) { } }
+            if (g && g.hn && g.hn.t !== (window.__zgHn || 0)) { window.__zgHn = g.hn.t; const r_ = RM[g.hn.r]; if (r_ && Date.now() - g.hn.t < 60000) { popFx(r_.ic, 'Дім гільдії: ' + r_.n + ' — рівень ' + g.hn.l, r_.e, r_.c); tn('triangle', 392, 784, .5, .08, { rev: 1 }); try { X.burst(player.x + 12, player.y + 6, r_.c, 30, 4, { up: 2 }); recalcStats(); } catch (e) { } } }
             // повідомлення про рівень / проєкт
             if (g && g.news && g.news.t !== (window.__zgNews || 0)) { window.__zgNews = g.news.t; const p = PRJ.find(q => q.id === g.news.id); if (p && Date.now() - g.news.t < 60000) { popFx(p.ic, 'Проєкт завершено: ' + p.n, 'Нагороди чекають на стягу. Рівень гільдії: ' + g.news.lv, g.c); tn('triangle', 330, 1320, 0.6, 0.1, { rev: 1 }); } }
         }
@@ -54399,6 +54546,18 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
 #zr-ov .zgtabs{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap}
 #zr-ov .zgtabs button{flex:1;min-width:110px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#f0e8d0;cursor:pointer;font:600 13px system-ui}
 #zr-ov .zgtabs button.on{background:var(--c);color:#111;border-color:#fff}
+#zr-ov .zgh{width:100%;border-radius:12px;display:block;margin:4px 0 8px;box-shadow:0 4px 18px rgba(0,0,0,.45)}
+#zr-ov .zgh-win{animation:zghw 2.6s ease-in-out infinite}@keyframes zghw{0%,100%{opacity:.75}50%{opacity:1;filter:brightness(1.3)}}
+#zr-ov .zgh-st{animation:zghst 2.4s ease-in-out infinite}@keyframes zghst{0%,100%{opacity:.25}50%{opacity:1}}
+#zr-ov .zgh-sm{animation:zghsm 3.6s ease-out infinite;opacity:0;transform-box:fill-box;transform-origin:center}@keyframes zghsm{0%{opacity:.7;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(12px,-34px) scale(2.2)}}
+#zr-ov .zgh-fl{animation:zghfl 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:left center}@keyframes zghfl{0%,100%{transform:skewY(0)}50%{transform:skewY(6deg) scaleX(1.06)}}
+#zr-ov .zgh-au{animation:zghau 7s ease-in-out infinite}@keyframes zghau{0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(5px)}}
+#zr-ov .zgh-fire{animation:zghfi .5s ease-in-out infinite alternate}@keyframes zghfi{0%{opacity:.8;filter:brightness(.95)}100%{opacity:1;filter:brightness(1.4)}}
+#zr-ov .zgh-ff{animation:zghff 5s ease-in-out infinite}@keyframes zghff{0%,100%{opacity:0;transform:translate(0,0)}30%{opacity:1}50%{transform:translate(14px,-18px);opacity:.9}80%{opacity:.2;transform:translate(-8px,-30px)}}
+#zr-ov .zgh-sw{animation:zghsw 3s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}@keyframes zghsw{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+#zr-ov .zgrm{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 10px}
+#zr-ov .zgrm button{flex:1;min-width:92px;padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#f0e8d0;cursor:pointer;font:600 12px system-ui}
+#zr-ov .zgrm button.on{background:var(--c);color:#111;border-color:#fff}
 #zr-ov .zgp{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 #zr-ov .zgi{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
 #zr-ov .zgi img{width:30px;height:30px;image-rendering:pixelated}#zr-ov .zgit{flex:1;min-width:0;font-size:13px}#zr-ov .zgit small{display:block;opacity:.8;margin-bottom:3px}
@@ -54409,7 +54568,7 @@ html.zph #zph-hint{opacity:.85;transform:translate(-50%,0)}
 #zr-ov .zlci{font-size:13px;opacity:.88;margin:6px 0 10px;font-style:italic}
 #zr-ov .zlcd{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;opacity:.85}`;
     document.head.appendChild(css);
-    window.__zguild = { S, PRJ, PERK, LVX, myGuild, act, applyAct, lvOf, panel: openPanel, FB, COLS, startFeast };
+    window.__zguild = { ROOMS, hl, S, PRJ, PERK, LVX, myGuild, act, applyAct, lvOf, panel: openPanel, FB, COLS, startFeast };
 })();
 // ================= v46.68: тематичні вікна — Алхімічний стіл, Погріб, Гільдія, Літописець ==========
 // Тема вмикається атрибутом data-th на #zr-ov (його ставить Z.open п'ятим параметром). Лише стилі.
@@ -56021,6 +56180,18 @@ ${B}legend] .zlcd{color:#3a2410}
     T('overclock', 'Розгін станцій', '🚀', 'gbpsr', 70, 96, ['out3'], [], [['out', '+', .4]], 'Усі генератори віддають ще на 40% більше.');
     T('collective', 'Колективний розум', '🧠', 'gbpsr', 70, 96, ['lab3', 'frugal', 'rift_flask'], [], [['lab', '+', 1.5]], 'Лабораторії вивчають у 2.5 рази швидше ніж на початку.');
     T('singularity', 'Сингулярність', '🌀', 'gbpsr', 120, 140, ['master', 'overclock', 'collective', 'twin', 'precision'], [], [['save', '*', .7], ['out', '+', .5], ['ins', '+', 1], ['smelt', '+', 1], ['asm', '+', 1], ['drill', '+', 1], ['belt', '+', 1]], 'Вершина всієї науки Світлоплетених: вся мережа працює на межі можливого.');
+    // ---- гілки: з кожної групи можна обрати лише одну технологію (передумати — за колби Аврори) ----
+    const EXN = { doc: 'Доктрина мережі', sch: 'Школа вчених', jet: 'Школа польоту', yl: 'Видобуток' };
+    T('br_scale', 'Доктрина Масштабу', '🏗', 'gbps', 44, 64, ['storm_flask', 'auto3'], [], [['cap', '+', .6], ['pr', '+', .5]], 'Гілка «Доктрина мережі»: акумулятори +60%, лінії між стовпами довші на 50%.');
+    T('br_thrift', 'Доктрина Ощадності', '🌿', 'gbps', 44, 64, ['storm_flask', 'auto3'], [], [['save', '*', .82], ['loss', '*', .6]], 'Гілка «Доктрина мережі»: машини споживають на 18% менше, втрати на 40% менші.');
+    T('br_peak', 'Доктрина Піку', '🚀', 'gbps', 44, 64, ['storm_flask', 'auto3'], [], [['out', '+', .25], ['smelt', '+', .3], ['drill', '+', .3], ['asm', '+', .3]], 'Гілка «Доктрина мережі»: генератори +25%, плавильні, бури й складальники швидші на 30%.');
+    T('br_fast', 'Школа Швидкості', '⏱', 'gbp', 30, 46, ['labs2', 'aur_flask'], [], [['lab', '+', .8]], 'Гілка «Школа вчених»: лабораторії вивчають на 80% швидше.');
+    T('br_frugal', 'Школа Ощадності', '🧪', 'gbp', 30, 46, ['labs2', 'aur_flask'], [], [['fs', '+', .35], ['lab', '+', .2]], 'Гілка «Школа вчених»: колба не витрачається з шансом 35% і лабораторії +20% швидші.');
+    T('br_rich', 'Жила Багатства', '💎', 'gbps', 40, 60, ['yield1', 'auto3'], [], [['yl', '+', .3]], 'Гілка «Видобуток»: електробур із шансом +30% здобуває подвійно.');
+    T('br_twin2', 'Подвійний жар', '♨', 'gbps', 40, 60, ['yield1', 'auto3'], [], [['tw', '+', .3]], 'Гілка «Видобуток»: електроплавильня з шансом +30% видає злиток подвійно.');
+    const BRG = { br_scale: 'doc', br_thrift: 'doc', br_peak: 'doc', br_fast: 'sch', br_frugal: 'sch', br_rich: 'yl', br_twin2: 'yl' };
+    for (const id in BRG) TECH[id].ex = BRG[id];
+    R.lab.EXN = EXN; R.lab.avail = id => { try { return prereqOk(TECH[id]); } catch (e) { return false; } }; R.lab.branch = (id, g) => { if (TECH[id]) TECH[id].ex = g; };
     R.lab.TECH = TECH;
     const FXN = { loss: 'Втрати в проводці', smelt: 'Швидкість плавильні', drill: 'Швидкість бура', asm: 'Швидкість складальника', save: 'Споживання машин', cap: 'Ємність акумуляторів', out: 'Віддача генераторів', lab: 'Швидкість досліджень', ins: 'Швидкість маніпуляторів', fuel: 'Витрата палива', sol: 'Віддача сонячних станцій', fire: 'Віддача теплових станцій', nat: 'Віддача станцій стихій', pr: 'Дальність лінії стовпів', belt: 'Швидкість стрічок', cool: 'Потужність охолодження', chg: 'Сила зарядної станції', yl: 'Шанс додаткового видобутку', tw: 'Шанс подвійної плавки', pc: 'Шанс додаткового виробу', fs: 'Шанс зберегти колбу' };
     R.lab.T = T; R.lab.TL = TL; R.lab.FXN = FXN;
@@ -56034,13 +56205,14 @@ ${B}legend] .zlcd{color:#3a2410}
     R.recOk = r => { const S = St(); return !!(S && S.un[r.result]); };
     function unlock(list) { const S = St(); if (!S) return; for (const id of list) S.un[id] = 1; try { R.syncRecipes(); } catch (e) { } }
     R.lab.unlock = unlock;
-    const prereqOk = t => { const S = St(); return t.pre.every(p => S.done[p]); };
+    const exOf = t => { if (!t.ex) return null; const S = St(); return TL.find(o => o !== t && o.ex === t.ex && S.done[o.id]) || null; };
+    const prereqOk = t => { const S = St(); return t.pre.every(p => S.done[p]) && !exOf(t); };
     const flaskList = t => t.fl.split('').map(k => FK[k]);
     function complete(tid) {
         const S = St(), t = TECH[tid]; if (!S || !t || S.done[tid]) return;
         S.done[tid] = 1; S.n = (S.n || 0) + 1; unlock(t.un); recompute(); S.prog[tid] = t.u;
+        S.q = S.q.filter(q => q !== tid && !(t.ex && TECH[q] && TECH[q].ex === t.ex));
         if (S.cur === tid) S.cur = S.q.length ? S.q.shift() : null;
-        S.q = S.q.filter(q => q !== tid);
         const what = t.un.length ? 'Нові рецепти: ' + t.un.map(nm).join(', ') : t.fx.map(([k, op, v]) => FXN[k] + (op === '+' ? ' +' + Math.round(v * 100) + '%' : v === 0 ? ' → 0' : ' ×' + v)).join(', ');
         try { popFx(t.ic, 'Вивчено: ' + t.n, what, '#7fe8ff'); } catch (e) { }
         tn('triangle', 520, 1040, .5, .08, { rev: 1 }); tn('sine', 1040, 1560, .5, .05);
@@ -56247,26 +56419,33 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
             return '<div class="lbt ' + st + (anim ? ' an' : '') + '" style="animation-delay:' + Math.min(i, 12) * 0.03 + 's"><div class="ti"><div class="ic">' + ((x.un[0] && itemSprites[x.un[0]]) ? imgOf(x.un[0], 30) : x.ic) + '</div><div style="flex:1"><b>' + x.n + (done ? ' ✔' : '') + '</b><div class="pips">' + x.fl.split('').map(pip).join('') + ' <span>× ' + x.u + ' · ' + x.t + ' с</span></div></div></div>' +
                 '<div class="lbd">' + x.d + '</div>' +
                 '<div class="chips">' + x.un.map(u => '<span class="chip">' + imgOf(u, 14) + ' ' + nm(u) + '</span>').join('') + (x.fx.length ? '<span class="chip fx">' + fxText(x) + '</span>' : '') + '</div>' +
+                (x.ex ? '<div class="chips"><span class="chip fx" style="border-color:#c8a0ff;color:#e6d0ff">🔀 Гілка «' + (EXN[x.ex] || x.ex) + '» — обрати можна лише одну</span>' + (exOf(x) && !done ? '<span class="chip no">🚫 Обрано: ' + exOf(x).n + '</span>' : '') + '</div>' : '') +
                 (!done && x.pre.length ? '<div class="chips">' + x.pre.map(p => '<span class="chip ' + (S.done[p] ? '' : 'no') + '">' + (S.done[p] ? '✔ ' : '🔒 ') + TECH[p].n + '</span>').join('') + '</div>' : '') +
                 (!done && pr ? '<div class="pbar"><i style="width:' + Math.round(100 * pr / x.u) + '%"></i></div>' : '') +
                 (!done ? '<div class="lbd">≈ ' + fmtT(x.u * x.t) + ' лабораторного часу' + (needFl ? ' · <span style="color:#ff9a8a">колба ще не вивчена</span>' : '') + '</div>' : '') +
+                (done && x.ex ? '<div class="act"><button data-z="forget:' + x.id + '">↺ Передумати · ' + Object.keys(FORGET).map(k => nm(k) + ' ×' + FORGET[k]).join(', ') + '</button></div>' : '') +
                 (!done ? '<div class="act">' + (cur ? '<button data-z="stop">⏸ Зупинити</button>' : '<button class="go" data-z="go:' + x.id + '" ' + (ok ? '' : 'disabled') + '>' + (S.cur && S.cur !== x.id ? (queued ? '✓ у черзі' : '➕ У чергу') : '▶ Вивчати') + '</button>' + (S.cur && S.cur !== x.id && ok ? '<button data-z="now:' + x.id + '">⏩ Зараз</button>' : '')) + '</div>' : '') + '</div>';
         }).join('') + '</div>';
         h += '<div class="lbd" style="margin-top:12px;text-align:center">Бонуси: втрати ×' + PW.B.loss.toFixed(2) + ' · споживання ×' + PW.B.save.toFixed(2) + ' · віддача ×' + PW.B.out.toFixed(2) + ' · швидкість досліджень ×' + PW.B.lab.toFixed(2) + '</div>';
         return h;
     }
-    const QOP = /^(go|now|unq):|^stop$/;
+    const QOP = /^(go|now|unq|forget):|^stop$/;
+    const FORGET = { flask_p: 4 };
     function qOp(z) {
         const S = St(); if (!S) return;
         if (z.startsWith('go:')) { const id = z.slice(3), t = TECH[id]; if (!t || S.done[id] || !prereqOk(t)) return; if (!S.cur) { S.cur = id; tn('triangle', 400, 700, .15, .05); toast('🔬 Розпочато: ' + t.n); } else if (S.cur !== id && !S.q.includes(id) && S.q.length < 6) { S.q.push(id); toast('➕ У черзі: ' + t.n); } }
         else if (z.startsWith('now:')) { const id = z.slice(4); if (!TECH[id]) return; if (S.cur && S.cur !== id) { S.q = S.q.filter(q => q !== id); S.q.unshift(S.cur); } S.cur = id; }
         else if (z.startsWith('unq:')) S.q = S.q.filter(q => q !== z.slice(4));
+        else if (z.startsWith('forget:')) { const id = z.slice(7), t = TECH[id]; if (t && t.ex && S.done[id]) { delete S.done[id]; S.n = Math.max(0, (S.n || 1) - 1); S.prog[id] = 0; recompute(); try { popFx('↺', 'Гілку забуто: ' + t.n, 'Тепер можна обрати іншу технологію групи «' + (EXN[t.ex] || t.ex) + '».', '#c8a0ff'); } catch (e) { } tn('sine', 700, 300, .5, .06, { rev: 1 }); } }
         else if (z === 'stop') { S.cur = S.q.length ? S.q.shift() : null; }
     }
     function labClick(z) {
         const S = St(); if (!S) return;
         if (z.startsWith('tab:')) tab = z.slice(4);
-        else if (QOP.test(z)) { qOp(z); if (guest()) sendA({ k: 'lab', z }); }
+        else if (QOP.test(z)) {
+            if (z.startsWith('forget:')) { const ok = Object.keys(FORGET).every(k => cnt(k) >= FORGET[k]); if (!ok) { toast('↺ Щоб передумати, потрібно ' + Object.keys(FORGET).map(k => nm(k) + ' ×' + FORGET[k]).join(', ') + '.'); return; } Object.keys(FORGET).forEach(k => take(k, FORGET[k])); }
+            qOp(z); if (guest()) sendA({ k: 'lab', z });
+        }
         else if (z.startsWith('put:')) {
             const [, id, n] = z.split(':'); if (!LF || !FL[id]) return; if (!guest()) LF.fl = LF.fl || {}; const have = cnt(id), want = n === 'all' ? have : Math.min(+n, have), a = Math.min(want, FLCAP - (((LF.fl && LF.fl[id]) || 0)));
             if (a > 0) {
@@ -56988,6 +57167,8 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
         L.T('jet_fast', 'Швидка зарядка ранця', '⚡', 'gbp', 24, 40, ['jet_cap1', 'aur_flask'], [], [['jt', '+', 1]], 'Зарядна станція заряджає ранець удвічі швидше.');
         L.T('jet_cap2', 'Кристальні комірки ранця', '💎', 'gbp', 28, 44, ['jet_fast'], [], [['jc', '+', 0.6]], 'Ємність заряду ранця ще +60%.');
         L.T('jet_eff', 'Економні мотори', '🌿', 'gbps', 34, 56, ['jet_cap2', 'storm_flask'], [], [['je', '*', 0.7]], 'Ранець витрачає на 30% менше заряду.');
+        L.T('br_jrange', 'Дальній політ', '🛰', 'gbps', 34, 56, ['jet_cap2'], [], [['jc', '+', .5], ['je', '*', .85]], 'Гілка «Школа польоту»: ємність заряду ранця ще +50% і витрата −15%.'); L.branch('br_jrange', 'jet');
+        L.T('br_jspeed', 'Швидкий рекуперат', '⚡', 'gbps', 34, 56, ['jet_cap2'], [], [['jt', '+', 1.2], ['jc', '+', .15]], 'Гілка «Школа польоту»: станція заряджає ранець ще на 120% швидше, ємність +15%.'); L.branch('br_jspeed', 'jet');
     }
 
     // ---------- стан ----------
@@ -57048,8 +57229,8 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
             if (hov && (player.vy > -4 || prev === 2)) mode = 2;
             else if (up && (player.vy > -2.5 || prev === 1)) mode = 1;
         }
-        if (mode === 1) { player.vy += (-d.rise - player.vy) * 0.2; FS.fuel -= cost / 60; FS.g0 = g; }
-        else if (mode === 2) { player.vy += (0 - player.vy) * 0.35; FS.fuel -= cost * d.hov / 60; FS.g0 = g; }
+        if (mode === 1) { player.vy += (-d.rise - player.vy) * 0.2; FS.fuel -= cost * (R.wings.fm ? R.wings.fm() : 1) / 60; FS.g0 = g; }
+        else if (mode === 2) { player.vy += (0 - player.vy) * 0.35; FS.fuel -= cost * d.hov * (R.wings.fm ? R.wings.fm() : 1) / 60; FS.g0 = g; }
         else if (!dive) { FS.cap = d.fall; if (!jet && d.ar && FS.fuel < FS.max) FS.fuel = Math.min(FS.max, FS.fuel + d.ar / 60); }
         if (mode || !dive) FS.spd = d.hs * (mode ? 1 : 0.9);
         player.fallDist = 0;
@@ -57213,7 +57394,7 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
             if (cur.has(b) && b.hp > 0) continue;
             TRK.delete(b);
             const near = Math.hypot(player.x - r.x, player.y - r.y) < 2200;
-            if (near && gameState === 'PLAYING' && (b.hp <= 0 || r.hp / r.max < 0.4) && !r.done) { r.done = 1; try { rollBoss(r.max, cleanName(b, r)); } catch (e) { console.error('zwings roll', e); } }
+            if (near && gameState === 'PLAYING' && (b.hp <= 0 || r.hp / r.max < 0.4) && !r.done) { r.done = 1; try { rollBoss(r.max, cleanName(b, r)); } catch (e) { console.error('zwings roll', e); } try { if (R.wings.onBoss) R.wings.onBoss(r.max, cleanName(b, r), r.x, r.y); } catch (e) { } }
         }
     });
     function cleanName(b, r) { let n = ''; try { n = (b.name || (typeof defOf === 'function' && b.type && defOf(b.type) && defOf(b.type).name) || (typeof XBOSS !== 'undefined' && b.k && XBOSS[b.k] && XBOSS[b.k].name) || r.n || 'бос') + ''; } catch (e) { n = r.n || 'бос'; } return n.replace(/^[^A-Za-zА-Яа-яІіЇїЄє]+/, ''); }
@@ -57243,16 +57424,316 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
     })(openChestUI);
     R.wings.CH = CHEST;
 })();
+// ================= v46.71 «Таємниці й Обтяження» =================
+// 1) Таймер Громового Арбітра: після перемоги Вівтар остигає; відпочилий вівтар дає бонусну здобич.
+// 2) Книга таємниць Аврорії: 17 відкриттів-таємниць із уривками історії, титули й нагороди (прогрес — на гравця).
+// 3) Обтяження: добровільні ускладнення при створенні світу в обмін на більше досвіду й здобичі з босів.
+// (Гілки технологій — у zlabr.js/zwings.js, Гільдійний дім — у zguild.js.)
+(function () {
+    'use strict';
+    const Z = window.__zr, X = window.__zpfx, E = window.__zend, XT = window.__zxtra, R = window.__zpt;
+    if (!Z || !X || !E || !XT || !R || !R.lab) return;
+    const { card, hero, bar, tag, wrap } = XT.H, { popFx } = XT;
+    const { cnt, take, give, toast, guest, gl } = E;
+    const TAU = Math.PI * 2, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const nm = id => (ITEM_METADATA[id] && ITEM_METADATA[id].name) || id;
+    const tn = (a, b, c, d, e, o) => { try { if (audioCtx && audioVolume > 0) tone(a, b, c, d, e, o || {}); } catch (er) { } };
+    const isHost = () => Z.host() || !Z.mpOn();
+    const OL = '#1a1030';
+
+    // ---------- стан світу ----------
+    function S() { const w = currentWorld; if (!w) return null; if (!w.zmt) w.zmt = { cd: 0, rest: 0 }; return w.zmt; }
+    function burdens() { const w = currentWorld; return (w && w.zbd && Array.isArray(w.zbd.m)) ? w.zbd.m : []; }
+    const hasB = id => burdens().indexOf(id) >= 0;
+
+    // =====================================================================
+    // 3. ОБТЯЖЕННЯ
+    // =====================================================================
+    const BD = [
+        { id: 'foes', ic: '🛡', n: 'Гартовані вороги', p: 2, d: 'Усі вороги й боси мають на 35% більше здоров’я.' },
+        { id: 'frail', ic: '🩸', n: 'Крихке тіло', p: 2, d: 'Максимальне здоров’я героя −25%.' },
+        { id: 'perm', ic: '☠', n: 'Тяжка смерть', p: 2, d: 'Смерть забирає 15% досвіду поточного рівня.' },
+        { id: 'decay', ic: '🥀', n: 'Швидкий розпад', p: 1, d: 'Їжа псується вдвічі швидше.' },
+        { id: 'lead', ic: '🪽', n: 'Свинцеві крила', p: 1, d: 'Крила й Електроранець витрачають на 60% більше сили польоту.' },
+        { id: 'long', ic: '🕰', n: 'Довгі кордони', p: 1, d: 'Вівтар остигає після Аетерона вдвічі довше.' }
+    ];
+    const BDM = {}; BD.forEach(b => BDM[b.id] = b);
+    const ptsOf = () => burdens().reduce((a, id) => a + (BDM[id] ? BDM[id].p : 0), 0);
+    window.__zmeta = { burdens, hasB, pts: ptsOf, BD };
+    window.__zmeta.xpMul = () => xpMul();
+    const xpMul = () => 1 + 0.06 * ptsOf();
+
+    // ефекти
+    try { rpgMobHp = (function (o) { return function () { return o() * (hasB('foes') ? 1.35 : 1); }; })(rpgMobHp); } catch (e) { }
+    try { rpgBossHp = (function (o) { return function () { return o() * (hasB('foes') ? 1.35 : 1); }; })(rpgBossHp); } catch (e) { }
+    try { addXP = (function (o) { return function (n) { return o(n * xpMul()); }; })(addXP); } catch (e) { }
+    try {
+        killPlayer = (function (o) {
+            return function (c) {
+                const was = gameState === 'PLAYING'; o(c);
+                try { if (was && gameState === 'DEAD' && hasB('perm') && RPG.level < LEVEL_CAP && RPG.xp > 0) { const l = Math.floor(RPG.xp * 0.15); RPG.xp -= l; if (l > 0) floatingTexts.push({ x: player.x, y: player.y - 56, text: '☠ −' + l + ' досвіду', life: 120, color: '#c8a0ff' }); } } catch (e) { }
+            };
+        })(killPlayer);
+    } catch (e) { }
+    accApply = (function (o) { return function (st) { o.apply(this, arguments); try { if (hasB('frail')) st.maxHp = Math.round(st.maxHp * 0.75); } catch (e) { } }; })(accApply);
+    {
+        const prev = window.__zfMul || (() => 1);
+        window.__zfMul = () => prev() * (hasB('decay') ? 2 : 1);
+    }
+    {
+        const W = window.__zwg, T0 = W && W.fm;
+        if (W) W.fm = () => (T0 ? T0() : 1) * (hasB('lead') ? 1.6 : 1) * (window.__zguild ? 1 - 0.06 * window.__zguild.hl('tower') : 1);
+    }
+
+    // бонусна здобич з босів
+    function dropAt(id, n, x, y) { try { if (typeof v20Drop === 'function') v20Drop(id, n, x, y, 0); else floatingItems.push({ x, y, vx: (Math.random() - .5) * 3, vy: -4, itemId: id, count: n }); } catch (e) { } }
+    function bossBonus(maxHp, name, x, y) {
+        const P = ptsOf(); if (!P || guest()) return;
+        x = x || player.x; y = (y || player.y) - 10;
+        dropAt('gold_ingot', P, x, y);
+        if (Math.random() < Math.min(0.6, 0.08 * P)) dropAt('phoenix_feather', 1, x + 10, y);
+        if (P >= 5 && Math.random() < 0.15) dropAt('time_essence', 1, x - 10, y);
+        try { popFx('🎚', 'Нагорода за Обтяження', '+' + P + ' золотих зливків (' + P + ' очок обтяжень)', '#c8a0ff'); } catch (e) { }
+    }
+    // монтуємо хук одразу ж, коли зʼявиться R.wings
+    (function () { const W = window.__zwg; if (!W) return; const prev = W.onBoss; W.onBoss = (mx, name, x, y) => { try { if (prev) prev(mx, name, x, y); } catch (e) { } try { bossBonus(mx, name, x, y); } catch (e) { } }; })();
+
+    // синхронізація: хост розсилає список обтяжень
+    let bdSig = '';
+    Z.MSG.x_mtb = m => { try { if (isHost() || !Array.isArray(m.m)) return; const l = m.m.filter(id => BDM[id]); if (currentWorld) { currentWorld.zbd = { m: l }; } try { recalcStats(); } catch (e) { } } catch (e) { } };
+
+    // інтерфейс створення світу
+    let picked = {};
+    const bdCss = document.createElement('style'); bdCss.textContent = `
+#zb-box{flex:0 0 100%;width:100%;margin:6px 0;padding:10px 12px;border-radius:12px;background:linear-gradient(135deg,rgba(80,40,120,.35),rgba(30,20,60,.55));border:1px solid rgba(200,160,255,.4)}
+#zb-box h4{margin:0 0 4px;font:700 1rem system-ui;color:#e6d0ff}
+#zb-box small{display:block;opacity:.8;margin-bottom:8px}
+#zb-box .zb-row{display:flex;gap:8px;align-items:center;padding:6px 8px;margin:4px 0;border-radius:9px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .15s,background .15s,border-color .15s}
+#zb-box .zb-row:hover{transform:translateX(3px);background:rgba(120,70,190,.35)}
+#zb-box .zb-row.on{background:rgba(150,90,230,.45);border-color:#d8b8ff;box-shadow:0 0 14px rgba(200,150,255,.35)}
+#zb-box .zb-row i{font-style:normal;font-size:1.3rem}
+#zb-box .zb-row b{flex:1;font-size:.9rem}#zb-box .zb-row b span{display:block;font-weight:400;font-size:.78rem;opacity:.85}
+#zb-box .zb-p{font:700 .8rem system-ui;padding:2px 7px;border-radius:8px;background:#6a3ab8;color:#fff}
+#zb-sum{margin-top:8px;font:700 .9rem system-ui;color:#ffe27a;text-align:center;min-height:1.2em}`;
+    document.head.appendChild(bdCss);
+    function bdSum() {
+        const ids = Object.keys(picked).filter(k => picked[k]), P = ids.reduce((a, id) => a + BDM[id].p, 0), el = document.getElementById('zb-sum');
+        if (el) el.textContent = P ? 'Очків обтяжень: ' + P + ' · досвід +' + Math.round(P * 6) + '% · з кожного боса — ' + P + ' золотих зливків і шанс на перо фенікса' : 'Без обтяжень: звичайна гра';
+        document.querySelectorAll('#zb-box .zb-row').forEach(r => r.classList.toggle('on', !!picked[r.dataset.b]));
+    }
+    function buildBdUI() {
+        if (document.getElementById('zb-box')) return; const df = document.getElementById('new-world-difficulty'); if (!df) return; const grp = df.closest('.input-group'); if (!grp) return;
+        const d = document.createElement('div'); d.id = 'zb-box';
+        d.innerHTML = '<h4>🎚 Обтяження — добровільний ризик</h4><small>Обери кілька ускладнень: більше досвіду та здобичі з босів. Діють увесь час у цьому світі.</small>' + BD.map(b => '<div class="zb-row" data-b="' + b.id + '"><i>' + b.ic + '</i><b>' + b.n + '<span>' + b.d + '</span></b><em class="zb-p">+' + b.p + '</em></div>').join('') + '<div id="zb-sum"></div>';
+        grp.after(d);
+        d.addEventListener('click', e => { const r = e.target.closest('.zb-row'); if (!r) return; picked[r.dataset.b] = !picked[r.dataset.b]; tn('triangle', picked[r.dataset.b] ? 520 : 380, picked[r.dataset.b] ? 760 : 300, .12, .05); bdSum(); });
+        bdSum();
+    }
+    try { openScreen = (function (o) { return function (id) { const r = o.apply(this, arguments); if (id === 'world-create-screen') { try { picked = {}; buildBdUI(); bdSum(); } catch (e) { } } return r; }; })(openScreen); } catch (e) { }
+    try { buildBdUI(); } catch (e) { }
+    try {
+        createNewWorld = (function (o) {
+            return function () {
+                const m = Object.keys(picked).filter(k => picked[k] && BDM[k]); const r = o.apply(this, arguments);
+                try { if (currentWorld) currentWorld.zbd = { m }; picked = {}; bdSum(); if (m.length) setTimeout(() => { try { popFx('🎚', 'Обтяження активні', m.map(id => BDM[id].n).join(', '), '#c8a0ff'); recalcStats(); } catch (e) { } }, 1500); } catch (e) { }
+                return r;
+            };
+        })(createNewWorld);
+    } catch (e) { }
+
+    // =====================================================================
+    // 1. ТАЙМЕР ГРОМОВОГО АРБІТРА
+    // =====================================================================
+    const COOL = 45 * 60 * 1000, SPEED = 4 * 60 * 1000;
+    const coolMs = () => COOL * (hasB('long') ? 2 : 1);
+    const left = () => { const s = S(); return s && s.cd ? Math.max(0, s.cd - Date.now()) : 0; };
+    const fmt = ms => { const s = Math.ceil(ms / 1000), m = Math.floor(s / 60), r = s % 60; return (m >= 60 ? Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0') : m) + ':' + String(r).padStart(2, '0'); };
+    function sendCd() { if (Z.mpOn() && Z.host()) { try { Z.send({ t: 'x_mtc', cd: S().cd, rest: S().rest }); } catch (e) { } } }
+    Z.MSG.x_mtc = m => { try { if (isHost()) return; const s = S(); if (!s) return; s.cd = +m.cd || 0; s.rest = m.rest ? 1 : 0; } catch (e) { } };
+    Z.MSG.x_mtq = m => { try { if (!Z.host() || m.k !== 'speed') return; const s = S(); if (s && s.cd) { s.cd = Math.max(Date.now(), s.cd - SPEED); sendCd(); } } catch (e) { } };
+
+    const oBD = R.onBossDown;
+    R.onBossDown = function (first, x, y) {
+        try { if (oBD) oBD.apply(this, arguments); } catch (e) { console.error(e); }
+        try {
+            const s = S(); if (!s) return;
+            if (isHost() || guest()) {
+                if (!guest()) {
+                    if (s.rest) {
+                        s.rest = 0; const px = x || player.x, py = (y || player.y) - 12, n = 10 + (Math.random() * 7 | 0);
+                        dropAt('aur_shard', n, px, py); dropAt('gem_diamond', 1 + (Math.random() < .4 ? 1 : 0), px + 12, py);
+                        try { popFx('✦', 'Відпочилий вівтар', 'Вівтар зібрав силу: +' + n + ' осколків Аврори та алмази.', '#ffe27a'); } catch (e) { }
+                        sec('rest');
+                    }
+                    s.cd = Date.now() + coolMs(); sendCd();
+                    try { popFx('❄', 'Вівтар остигає', 'Наступний виклик Арбітра — через ' + fmt(coolMs()) + '.', '#7fe8ff'); } catch (e) { }
+                }
+                sec('boss');
+            }
+        } catch (e) { console.error('zmeta bossdown', e); }
+    };
+    const oAO = R.altarOpen;
+    R.altarOpen = function (fu, q) {
+        sec('altar');
+        if (left() > 0) { openCool(); return; }
+        return oAO.apply(this, arguments);
+    };
+    function ringHtml() {
+        const L = left(), tot = coolMs(), p = clamp(1 - L / tot, 0, 1), C = 2 * Math.PI * 54;
+        return '<div class="zcl"><svg viewBox="0 0 140 140"><defs><linearGradient id="zclg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fe8ff"/><stop offset="1" stop-color="#c8a0ff"/></linearGradient></defs>' +
+            '<circle cx="70" cy="70" r="62" fill="none" stroke="rgba(127,232,255,.15)" stroke-width="1" stroke-dasharray="2 6" class="zcl-rot"/>' +
+            '<circle cx="70" cy="70" r="54" fill="rgba(10,14,40,.7)" stroke="rgba(255,255,255,.12)" stroke-width="8"/>' +
+            '<circle cx="70" cy="70" r="54" fill="none" stroke="url(#zclg)" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 70 70)"/>' +
+            '<text x="70" y="64" text-anchor="middle" font-size="26" fill="#eaffff" font-family="Georgia,serif">' + fmt(L) + '</text><text x="70" y="86" text-anchor="middle" font-size="11" fill="#9fc8ff">до пробудження</text></svg></div>';
+    }
+    function coolHtml() {
+        const L = left(); if (L <= 0) return '<div class="alstat" style="text-align:center;padding:20px">Вівтар охолов — він відпочив і готовий.</div>';
+        const have = cnt('aur_shard');
+        return ringHtml() + '<div class="alstat" style="text-align:center">Ритуал виснажив Вівтар. Руни Світлоплетених згасли, і поки вони не відновляться, Аетерона не прикликати.<br><b>Відпочилий Вівтар дає бонусну здобич</b> при наступній перемозі: 10–16 осколків Аврори та алмази.' + (hasB('long') ? '<br><span style="color:#ffb0b0">🕰 Довгі кордони: охолодження подвоєне.</span>' : '') + '</div>' +
+            '<div style="display:flex;justify-content:center;margin-top:12px"><button data-z="speed" ' + (have ? '' : 'disabled') + ' style="padding:9px 16px;font-size:.95rem">💎 Прискорити: 1 осколок Аврори (−4 хв) · у тебе ' + have + '</button></div>';
+    }
+    function openCool() { Z.open('❄ Вівтар остигає', '#7fe8ff', coolHtml, z => { if (z === 'speed' && cnt('aur_shard') > 0 && left() > 0) { take('aur_shard', 1); const s = S(); if (isHost()) { s.cd = Math.max(Date.now(), s.cd - SPEED); sendCd(); } else { s.cd = Math.max(Date.now(), s.cd - SPEED); try { Z.send({ t: 'x_mtq', k: 'speed' }); } catch (e) { } } tn('sine', 700, 1300, .2, .06); try { X.burst(player.x + 12, player.y + 6, '#7fe8ff', 14, 3, { up: 2 }); } catch (e) { } try { Z.render(); } catch (e) { } } }, 'altar'); tn('sawtooth', 120, 70, .5, .05); }
+    const clCss = document.createElement('style'); clCss.textContent = `
+#zr-ov .zcl{display:flex;justify-content:center;margin:6px 0 10px}#zr-ov .zcl svg{width:190px;height:190px;filter:drop-shadow(0 0 16px rgba(127,232,255,.45))}
+#zr-ov .zcl-rot{animation:zclrot 14s linear infinite;transform-origin:70px 70px}@keyframes zclrot{to{transform:rotate(360deg)}}`;
+    document.head.appendChild(clCss);
+
+    // вівтар у світі: кільце й іскри
+    let altF = null, altAt = 0;
+    function findAlt() { altF = null; try { const fu = currentWorld && currentWorld.furn; if (fu) for (const k in fu) if (fu[k] && fu[k].t === 'storm_altar') { altF = fu[k]; break; } } catch (e) { } }
+    Z.DRAW.push((t, x0, x1) => {
+        try {
+            const s = S(); if (!s) return; if (!altF || altF.x == null) { if (performance.now() - altAt > 1500) { altAt = performance.now(); findAlt(); } if (!altF) return; }
+            const ax = (altF.x + 1) * 32, ay = altF.y * 32; if (ax < x0 - 100 || ax > x1 + 100) return; const c = ctx, L = left();
+            c.save(); c.translate(ax, ay);
+            if (L > 0) {
+                const p = clamp(1 - L / coolMs(), 0, 1), pulse = .5 + .5 * Math.sin(t * 1.4);
+                gl(c, 0, 20, 70, '#7fe8ff', .1 + .05 * pulse);
+                c.strokeStyle = 'rgba(127,232,255,.25)'; c.lineWidth = 3; c.beginPath(); c.arc(0, -42, 14, 0, TAU); c.stroke();
+                c.strokeStyle = '#9fe8ff'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.arc(0, -42, 14, -Math.PI / 2, -Math.PI / 2 + TAU * p); c.stroke();
+                c.fillStyle = 'rgba(10,14,40,.8)'; c.fillRect(-22, -72, 44, 11); c.fillStyle = '#d8f4ff'; c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillText('❄ ' + fmt(L), 0, -63.5); c.textAlign = 'left';
+                for (let i = 0; i < 4; i++) { const q = (t * .25 + i * .25) % 1; c.fillStyle = 'rgba(200,240,255,' + (.7 * Math.sin(q * Math.PI)).toFixed(2) + ')'; c.beginPath(); c.arc(Math.sin(t + i * 2) * 22, 6 - q * 40, 1.5, 0, TAU); c.fill(); }
+            } else if (s.rest) {
+                const pulse = .5 + .5 * Math.sin(t * 2);
+                gl(c, 0, 0, 80, '#ffe27a', .14 + .08 * pulse);
+                for (let i = 0; i < 6; i++) { const a = t * .8 + i * TAU / 6; c.fillStyle = 'rgba(255,230,140,' + (.55 + .3 * Math.sin(t * 3 + i)).toFixed(2) + ')'; c.beginPath(); c.arc(Math.cos(a) * 26, -30 + Math.sin(a) * 9, 1.8, 0, TAU); c.fill(); }
+            }
+            c.restore();
+        } catch (e) { }
+    });
+
+    // =====================================================================
+    // 2. КНИГА ТАЄМНИЦЬ АВРОРІЇ
+    // =====================================================================
+    // [id, іконка, назва, підказка, уривок історії, нагорода]
+    const SC = [
+        ['first', '🌠', 'Перший подих', 'Ступи в Аврорію крізь Портал Розлому.', 'Повітря тут пахне озоном і медом. Світлоплетені лишили цей вечір не гаснути — щоб гість не відчув себе чужим.', [['aur_shard', 3]]],
+        ['z1', '💜', 'Лавандові береги', 'Пройди глибоко в перший край Аврорії.', 'Лаванда тут цвіте без сонця. Кажуть, кожна квітка — це подих того, хто став світлом.', [['crystal_shard', 4]]],
+        ['z2', '🔷', 'Кристальний хор', 'Дійди до кристальних плато другого краю.', 'Кристали тут співають, якщо прикласти вухо до землі. Це не вітер: у них замкнені голоси Ткачів.', [['crystal_shard', 6]]],
+        ['z3', '⛈', 'Під грозою', 'Дійди до Грозових Висот третього краю.', 'Гроза на Висотах не вщухає століттями. Аетерон дозволяє їй, бо вона нагадує йому про ту, що пішла.', [['aur_shard', 4]]],
+        ['cave', '🕳', 'Підземні сяйва', 'Спустися глибоко під землю Аврорії.', 'Кристальні печери — це подарунок Світлоплетених нащадкам: тут нічого не страшно, якщо тримати світло в руці.', [['gold_ingot', 2]]],
+        ['deep', '🏺', 'Склепи Тиші', 'Дістанься найглибшого рівня Аврорії.', 'Усередині склепів лежать не скарби, а листи. Скарби — це лише чим їх притиснуто до дна.', [['gem_diamond', 1]]],
+        ['sky', '☁', 'Над хмарами', 'Піднімись високо над землею Аврорії.', 'Згори видно, що Аврорія — це коло, і воно замикається там, де ти вперше постав. Нічого не загублено.', [['aur_shard', 3]]],
+        ['dusk', '🌌', 'Вічний вечір', 'Проведи в Аврорії чотири хвилини.', 'Тут завжди вечір, бо Світлоплетені боялися ночі більше за смерть. Тепер ти розумієш чому.', [['star_thread', 2]]],
+        ['wing', '🪽', 'Небо належить тобі', 'Політай на крилах над Аврорією.', 'У давній пісні кажуть: «Хто піднявся на крилах, той не повертається таким самим».', [['aur_shard', 4]]],
+        ['jet', '🔋', 'Дзижчання мотора', 'Політай з Електроранцем над Аврорією.', 'Мотори Світлоплетених гули так само — тихо, ніби колискова. Це Аетерон придумав їх.', [['voltite_ingot', 2]]],
+        ['note', '📜', 'Слова Аетерона', 'Прочитай записку, що випала з Аетерона.', 'Остання сторінка записки закінчується невимовним: «Прости мене». Невідомо, кого він просить.', [['ink_essence', 1]]],
+        ['tech', '🔬', 'Тиха наука', 'Вивчи п’ять технологій у лабораторії.', 'Колби лишаються теплими навіть коли їх ніхто не тримає. Наука Світлоплетених не засинає.', [['flask_b', 3]]],
+        ['altar', '⚡', 'Руни вівтаря', 'Торкнися Вівтаря жертвоприношення.', 'Руни на вівтарі не вирізьблені, а виплавлені блискавкою: кожна — це дар, що колись було віддано.', [['aur_shard', 3]]],
+        ['boss', '🌩', 'Тихий грім', 'Переможи Аетерона, Громового Арбітра.', 'Коли він падав, грім змовк. Вперше за століття на Висотах стало тихо.', [['aeteron_core', 1]]],
+        ['rest', '✦', 'Відпочилий вівтар', 'Дочекайся, поки Вівтар відпочине, і переможи Аетерона знову.', 'Вівтар теж живий. Якщо дати йому відпочити, він поділиться тим, що збирав століттями.', [['gem_diamond', 2], ['aur_shard', 6]]],
+        ['branch', '🔀', 'Власний шлях', 'Обери гілку технологій у лабораторії.', 'Кожна доктрина — це відповідь на питання, яке Світлоплетені так і не поставили. Ти вже відповів.', [['flask_p', 3]]],
+        ['house', '🏡', 'Дім, де світло', 'Збудуй щонайменше три рівні кімнат гільдійного дому.', 'Дім — це не стіни, а те, що хтось лишив ввімкнене світло.', [['gold_ingot', 4]]]
+    ];
+    const SCM = {}; SC.forEach(r => SCM[r[0]] = r);
+    const TITLES = [[0, 'Гість'], [4, 'Мандрівник Аврорії'], [9, 'Літописець Світлоплетених'], [14, 'Хранитель сяйва'], [17, 'Хранитель Аврорії']];
+    const titleOf = n => { let t = TITLES[0][1]; for (const [k, v] of TITLES) if (n >= k) t = v; return t; };
+    let SEC = { f: {}, t: 0, fw: 0, fj: 0, gb: 0, key: '' };
+    const LSK = () => 'zmt_sec_v1_' + ((currentWorld && currentWorld.name) || 'w');
+    function load() { const k = LSK(); if (SEC.key === k) return; SEC = { f: {}, t: 0, fw: 0, fj: 0, gb: 0, key: k }; try { const d = JSON.parse(localStorage.getItem(k) || 'null'); if (d) { SEC.f = d.f || {}; SEC.t = d.t | 0; SEC.gb = d.gb | 0; } } catch (e) { } }
+    function save() { try { localStorage.setItem(LSK(), JSON.stringify({ f: SEC.f, t: SEC.t, gb: SEC.gb })); } catch (e) { } }
+    const nFound = () => Object.keys(SEC.f).length;
+    function sec(id) {
+        load(); if (SEC.f[id] || !SCM[id]) return; const r = SCM[id]; SEC.f[id] = Date.now(); save();
+        for (const [it, n] of r[5]) { if (ITEM_METADATA[it]) give(it, n); }
+        tn('sine', 660, 1320, .6, .08, { rev: 1 }); tn('triangle', 990, 1980, .6, .05, { rev: 1, delay: .12 });
+        try { popFx(r[1], 'Таємницю відкрито: ' + r[2], r[4], '#c8a0ff'); } catch (e) { }
+        try { Z.flash('#e6d0ff'); X.burst(player.x + 12, player.y + 6, '#c8a0ff', 36, 4, { up: 2.5 }); X.burst(player.x + 12, player.y + 6, '#ffffff', 16, 2.6, { up: 1.5 }); } catch (e) { }
+        const n = nFound(); const prevT = titleOf(n - 1), nowT = titleOf(n);
+        if (prevT !== nowT) setTimeout(() => { try { popFx('👑', 'Новий титул: ' + nowT, n + ' / ' + SC.length + ' таємниць Аврорії', '#ffe27a'); tn('triangle', 392, 1568, 1, .09, { rev: 1 }); } catch (e) { } }, 1800);
+        if (n === SC.length) setTimeout(() => { try { give('cosmic_ingot', 5); give('gem_diamond', 3); give('aur_shard', 20); E.banner('🌌 Хранитель Аврорії', 'Усі таємниці розкрито. Аврорія тепер зветься твоїм домом.'); Z.flash('#ffffff'); X.burst(player.x + 12, player.y, '#ffe27a', 80, 6, { up: 3 }); } catch (e) { } }, 3600);
+        try { if (Z.isOpen()) Z.render(); } catch (e) { }
+    }
+    window.__zmeta.sec = sec;
+
+    // предмет-книга
+    E.item('secret_book', 'Книга таємниць Аврорії', 3, '📖 Лор', 'ПКМ — відкрити', 'Дописує себе сама: кожна таємниця Аврорії, яку ти знаходиш, лишає в ній запис. Виповнені сторінки дарують титули й нагороди.', c => {
+        gl(c, 16, 16, 15, '#c8a0ff', .4);
+        c.fillStyle = '#3a2a6a'; c.strokeStyle = OL; c.lineWidth = 1.6; c.beginPath(); c.moveTo(4, 5); c.lineTo(15, 7); c.lineTo(15, 27); c.lineTo(4, 25); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#4c3a8a'; c.beginPath(); c.moveTo(28, 5); c.lineTo(17, 7); c.lineTo(17, 27); c.lineTo(28, 25); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(255,232,168,.8)'; c.lineWidth = 1; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(6, 10 + i * 4); c.lineTo(13, 11 + i * 4); c.moveTo(19, 11 + i * 4); c.lineTo(26, 10 + i * 4); c.stroke(); }
+        c.fillStyle = '#ffe27a'; c.beginPath(); c.moveTo(16, 1); c.lineTo(17.4, 4.6); c.lineTo(21, 5); c.lineTo(18.2, 7.4); c.lineTo(19, 11); c.lineTo(16, 9); c.lineTo(13, 11); c.lineTo(13.8, 7.4); c.lineTo(11, 5); c.lineTo(14.6, 4.6); c.closePath(); c.fill();
+    });
+    try { recipes.push({ result: 'secret_book', count: 1, req: { wood: 4, crystal_shard: 2 }, lvl: 1 }); } catch (e) { }
+    Z.RC.push((bx, by, pressed) => { if (!pressed || Z.held() !== 'secret_book') return false; mouse.rightDown = false; openBook(); return true; });
+
+    function bookHtml() {
+        load(); const n = nFound(), tot = SC.length; let h = hero('📖', 'Книга таємниць Аврорії', titleOf(n) + ' · ' + n + ' / ' + tot, '#c8a0ff', n / tot, { t: n + '/' + tot });
+        h += SC.map(r => {
+            const ok = !!SEC.f[r[0]];
+            return card({ ic: ok ? r[1] : '❔', c: ok ? '#c8a0ff' : '#6a6478', t: ok ? r[2] : '??? — ' + r[2].replace(/[^\s]/g, '•'), tags: ok ? tag('відкрито', 'ok') : tag('таємниця', ''), d: ok ? '<i>' + r[4] + '</i>' : '🔎 ' + r[3], x: ok ? '<div style="font-size:11.5px;opacity:.8;margin-top:4px">Нагорода: ' + r[5].map(([it, q]) => nm(it) + ' ×' + q).join(', ') + '</div>' : '' });
+        }).join('');
+        h += '<div class="zcsec">Титули</div><div class="zlcd">' + TITLES.map(([k, v]) => '<span style="' + (n >= k ? '' : 'opacity:.45') + '">' + (n >= k ? '✔ ' : '🔒 ') + v + ' (' + k + ')</span>').join('') + '</div>';
+        const bs = burdens(); if (bs.length) h += '<div class="zcsec">Обтяження цього світу · ' + ptsOf() + ' очок</div>' + bs.map(id => card({ ic: BDM[id].ic, c: '#c8a0ff', t: BDM[id].n, tags: tag('+' + BDM[id].p, 'gold'), d: BDM[id].d })).join('') + '<div class="alstat" style="font-size:12px;opacity:.85;margin-top:4px">Нагорода: досвід +' + Math.round(ptsOf() * 6) + '%, з кожного боса — ' + ptsOf() + ' золотих зливків і шанс на перо фенікса.</div>';
+        return wrap(h);
+    }
+    function openBook() { Z.open('📖 Книга таємниць', '#c8a0ff', bookHtml, () => { }, 'guild'); tn('triangle', 260, 340, .3, .05); }
+    window.__zmeta.book = openBook;
+
+    // перевірка умов
+    const FS = () => (window.__zwg && window.__zwg.FS) || {};
+    let ft = 0, lastDim = 0, wasName = '';
+    Z.TICK.push(() => {
+        ft++; load();
+        const w = currentWorld; if (w && w.name !== wasName) { wasName = w.name; bdSig = ''; }
+        // хост: кінець охолодження + розсилка
+        if (isHost() && ft % 30 === 0) { const s = S(); if (s && s.cd && Date.now() >= s.cd) { s.cd = 0; s.rest = 1; sendCd(); try { popFx('✦', 'Вівтар відпочив', 'Аетерона можна прикликати знову — і він дасть бонусну здобич.', '#ffe27a'); tn('triangle', 440, 880, .6, .06, { rev: 1 }); } catch (e) { } } }
+        if (isHost() && Z.mpOn() && ft % 600 === 7) { sendCd(); try { const m = burdens(); Z.send({ t: 'x_mtb', m }); } catch (e) { } }
+        if (ft % 20 !== 0) { if (ft % 60 === 0 && Z.isOpen() && left() > 0 && document.getElementById('zr-ov') && /остигає/.test((document.getElementById('zr-ov').textContent || '').slice(0, 60))) { try { Z.render(); } catch (e) { } } return; }
+        if (gameState !== 'PLAYING') return;
+        // книга: видати при першому вході в Аврорію
+        let inDim = false; try { inDim = R.inDim(); } catch (e) { }
+        const q = w && w.zpt;
+        if (inDim && q) {
+            if (!SEC.gb) { SEC.gb = 1; save(); if (cnt('secret_book') === 0) { give('secret_book', 1); setTimeout(() => { try { popFx('📖', 'Книга таємниць Аврорії', 'У ній записуватимуться всі твої відкриття. ПКМ — відкрити.', '#c8a0ff'); } catch (e) { } }, 2500); } }
+            sec('first'); SEC.t += 20; if (SEC.t >= 60 * 240) sec('dusk');
+            const col = (player.x + 12) / 32 - q.x0, row = player.y / 32, sh = surfaceHeights[Math.floor(col + q.x0)] || 0;
+            if (col >= 30 && col <= 120) sec('z1'); if (col >= 130 && col <= 230) sec('z2'); if (col >= 250) sec('z3');
+            if (row > sh + 25) sec('cave'); if (q.floor0 && row > q.floor0 - 14) sec('deep'); if (sh - row > 38) sec('sky');
+            const fs = FS(), W = window.__zwg; if (fs && fs.mode > 0 && W) { if (fs.w === W.JET) { SEC.fj += 20; if (SEC.fj >= 180) sec('jet'); } else { SEC.fw += 20; if (SEC.fw >= 180) sec('wing'); } }
+            if (SEC.t % 1200 === 0) save();
+        }
+        try { const ls = R.lab.St(); if (ls) { if (ls.read) sec('note'); if (Object.keys(ls.done).length >= 5) sec('tech'); if (R.lab.TECH) for (const id in ls.done) if (R.lab.TECH[id] && R.lab.TECH[id].ex) { sec('branch'); break; } } } catch (e) { }
+        try { const G = window.__zguild; if (G && G.myGuild) { const g = G.myGuild(); if (g && g.h && G.ROOMS.reduce((a, r) => a + (g.h[r.id] | 0), 0) >= 3) sec('house'); } } catch (e) { }
+    });
+})();
 
         // ================= 📖 v40.2: «ЩО НОВОГО» — ВЕРСІЇ ВІД СВІЖИХ ДО СТАРИХ =================
         const Z9_MAP = {"⚔ Нова бойовка": "40.0", "👹 Еволюція мобів": "40.0", "🦇 Нові моби шахт і ночі": "40.0", "🎲 Скарби данжів": "40.0", "🧬 Адаптація ворогів": "40.1", "🧠 Розумні мешканці": "38.3", "🌿 Травник і ⚗ Алхімік": "38.3", "Монети замість злитків": "38.3", "🥁 Розумніша орда": "38.3", "🛡 Сторожові пости": "38.2", "🚶 Прогулянки й візити": "38.2", "♀♂ Стать гравця та голоси": "38.2", "🧑‍🌾 Селяни та професії": "38.1", "💣 Шахтар і шахтарські товари": "38.1", "♀♂ Стать, скіни та шлюби": "38.1", "✨ Зоряна руда": "38.0", "🏰 Рівні поселення": "38.0", "🛋 13 нових меблів": "38.0", "💞 Сімейні історії": "37.9", "🍲 Кухня та кулінарія": "37.9", "🏷 Підписи скринь": "37.8", "🧱 Камінь і цегла додають затишку": "37.8", "🛠 Виправлено": "37.8", "🥁 Орда": "37.7", "🏹 Турелі та пастки": "37.7", "🏆 Мисливські трофеї": "37.7", "🌿 Сад та акваріум": "37.7", "📚 Книга колекціонера (L)": "37.7", "👥 Мультиплеєр": "37.7", "🌴 Дикі тропіки": "37.6", "⚗ Стіл Алхіміка": "37.6", "🔥 Ефекти": "37.6", "🧱 Будівництво й скрині": "37.6", "🌊 Рідка вода": "37.5", "🪣 Відро": "37.5", "🧠 Розумні моби": "37.5", "🌲 Дерева без глюків": "37.5", "✨ Екран завантаження": "37.4", "🎯 Розшук": "37.3", "🧬 Мутації зброї": "37.3", "🎵 Жива музика": "37.3", "📍 Мітки на мапі": "37.1", "⇅ Швидкий перенос і 🔒 доступ": "37.1", "✂ Розділювання": "36", "🦴 Падіння та порядок": "36", "📦 Стаки та досвід": "36", "🪝 Крюк": "36", "🌲 Дерева і бої": "36", "⚔ Баланс": "36", "🧹 Сортування і 🗑 смітник": "36", "🚪 Двері": "36", "🌫 Туман і темрява": "36", "📦 Скрині та піч": "36"};
         const Z9_VERS = [
-            ['46.70', 'Крила й ранець', 'new'], ['46.69', 'Розлом і Аврорія'], ['46.68', 'Свіжість і Погріб'], ['46.67', 'Академія й Ферма'], ['46.66', 'Спадщина Вартових'], ['46.65', 'Вартові Світанку'], ['46.64', 'Моди без меж'], ['46.63', 'Характер, Фото, Моди'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
+            ['46.71', 'Таємниці й Обтяження', 'new'], ['46.70', 'Крила й ранець'], ['46.69', 'Розлом і Аврорія'], ['46.68', 'Свіжість і Погріб'], ['46.67', 'Академія й Ферма'], ['46.66', 'Спадщина Вартових'], ['46.65', 'Вартові Світанку'], ['46.64', 'Моди без меж'], ['46.63', 'Характер, Фото, Моди'], ['46.62', 'Диск у меню'], ['46.61', 'Рівний кадр 2'], ['46.60', 'Тихі вікна 6'], ['46.59', 'Тихі вікна 5'], ['46.58', 'Тихі вікна 4'], ['46.57', 'Тихі вікна 3'], ['46.56', 'Тихі вікна 2'], ['46.55', 'Тихі вікна'], ['46.54', 'Тихе небо'], ['46.53', 'Світло на вході'], ['46.52', 'Швидкий старт'], ['46.51', 'Плавний вхід'], ['46.50', 'Летючий острів'], ['46.49', 'Табір біля вогню'], ['46.48', 'Чиста вода'], ['46.47', 'Тихий берег'], ['46.46', 'Рівний кадр'], ['46.45', 'Без мікрофризів'], ['46.44', 'Сніг і настрій'], ['46.43', 'Живі звуки'], ['46.42', 'Глибина і швидкість'], ['46.41', 'Глибина і швидкість (зламана)'], ['46.40', 'Без підвисань'], ['46.39', 'Біоми Ультра+'], ['46.38', 'Без обводок'], ['46.37', 'Суцільна земля'], ['46.36', 'Плавний фон'], ['46.35', 'Теми босів'], ['46.34', 'Кіно-обробка'], ['46.33', 'Жива трава'], ['46.32', 'Гарні персонажі'], ['46.31', 'Темна ніч'], ['46.30', 'Ультра+ ще краще'], ['46.29', 'Світи, слизи, компакт'], ['46.28', 'Туманні скелі'], ['46.27', 'Живе листя'], ['46.26', 'Піксельний ліс'], ['46.25', 'Ультра+'], ['46.24', 'Тиха гроза'], ['46.23', 'Адаптація без примусу'], ['46.22', 'Епічний арсенал'],  ['46.21', 'Печери в старих світах'], ['46.20', 'Нові глибини'], ['46.19', 'Видимий герой'], ['46.18', 'Болотна вода'], ['46.17', 'Охайний HUD'], ['46.16', 'Майстер сам'], ['46.15', 'Стіни й юрба'], ['46.14', 'Плавний крафт'], ['46.13', 'Короткі вартові'], ['46.12', 'Плавність'], ['46.11', 'Швидкий крафт'], ['46.10', 'Океан'], ['46.9', 'Глибини й мурашник'], ['46.8', 'Фікс багів'], ['46.7', 'Фікс багів'], ['46.6', 'Оптимізація'], ['46.5', 'Фікс багів'], ['46.4', 'Легенди й табори'], ['46.3', 'Своє поселення'], ['46.2', 'Майстри та події'], ['46.1', 'Рідкісні руїни'], ['46.0', 'Ігнарох'], ['45.99', 'Лад у рідкості'], ['45.98', 'Нова екіпіровка'], ['45.97', 'Відновлений кінематограф'], ['45.96', 'Сяйво руїн'], ['45.95', 'Духи й дзеркала'], ['45.94', 'Після дощу'], ['45.93', 'Світлі склепи'], ['45.92', 'Рідкісні дари'], ['45.91', 'Злита хвоя'], ['45.90', 'Ясна земля'], ['45.89', 'Чисте небо'], ['45.88', 'Спільний світ'], ['45.87', 'Справжнє листя'], ['45.86', 'Живі дерева'], ['45.85', 'Хатина відьми'], ['45.84', 'Живе болото'], ['45.83', 'Лад у крафті'], ['45.82', 'Знайди рецепт'], ['45.81', 'Без цокання'], ['45.8', 'Болото і Рада'], ['45.71', 'Дорожчі чари'], ['45.7', 'Майстри й підказки'], ['45.6', 'Тихі кроки'], ['45.5', 'Дуелі'], ['45.4', 'Тихі радощі'], ['45.3', 'Арсенал'], ['45.2', 'Скайблок'], ['45.1', 'Спогади'], ['45.0', 'Живий світ'], ['44.9', 'Звук і друзі'], ['44.8', 'Кіно-відчуття'], ['44.7', 'Надійність'], ['44.6', 'Голос і мітки'], ['44.5', 'Світло рятунку'], ['44.4', 'Разом'], ['44.3', 'Спокійніший світ'], ['44.2', 'Онлайн у грі'], ['44.1', 'Онлайн швидше'], ['44.0', 'Лічильник онлайн'], ['43.9', 'Квітнева злива'], ['43.8', 'Карта неба'], ['43.7', 'Дрібні виправлення'], ['43.6', 'Парк і таємниці'], ['43.5', 'Затишні традиції'], ['43.4', 'Свято в поселенні'], ['43.3', 'Складність назавжди'], ['43.2', 'Листи, коні й манекен'], ['43.1', 'Просторий інвентар'], ['43.0', 'Порядок у кишенях'], ['42.9', 'Скромніші прохання'], ['42.8', 'Баланс прохань'], ['42.7', 'Прохання жителів'], ['42.6', 'Рівні зброї'], ['42.5', 'Світле небо'], ['42.4', 'Небо замість шахти'], ['42.3', 'Вільний політ'], ['42.2', 'Висока небесна зона'], ['42.1', 'Вільний хід'], ['42.0', 'Недосяжне небо'], ['41.9', 'Скарбниця Чотирьох Пір'], ['41.8', 'Конструктор заклять'], ['41.7', 'Пори року'], ['41.6', 'Щоденні завдання'], ['41.5', 'Глибини'], ['41.4', 'Мегаструктури й контракти'], ['41.3', 'Спільна куля і міцніші боси'], ['41.2', 'Аеростат'], ['41.1', 'Небо і Безодня'], ['41.0', 'Перевтілення'], ['40.4', 'Темп бою'], ['40.3', 'Ритм атак'], ['40.2', 'Зручність і події', 'new'], ['40.1', 'Адаптація ворогів'], ['40.0', 'Нова бойовка'], ['39.x', 'Лаунчер і збереження', 'new'],
             ['38.3', 'Розумні мешканці'], ['38.2', 'Сторожові пости'], ['38.1', 'Селяни й шахтарі'], ['38.0', 'Зоряна руда'],
             ['37.9', 'Родини та кухня'], ['37.8', 'Затишні стіни'], ['37.7', 'Орда та оборона'], ['37.6', 'Дикі тропіки'], ['37.5', 'Рідка вода'],
             ['37.4', 'Екран завантаження'], ['37.3', 'Розшук і мутації'], ['37.1', 'Мітки й порядок'], ['36', 'Інвентар і світ (36.x)'], ['old', 'Раніші оновлення']
         ];
         const Z9_NEW = {
+            '46.71': [
+                ['#7fe8ff', '❄ Вівтар остигає', 'Після перемоги над Аетероном Вівтар жертвоприношення остигає 45 хвилин: на ньому видно кільце таймера. Можна пришвидшити осколком Аврори (−4 хв). Якщо дочекатися, Вівтар стає відпочилим, і наступна перемога дає бонусні осколки Аврори та алмази.'],
+                ['#c8a0ff', '🔀 Гілки технологій', 'У лабораторії з’явилися технології-гілки: з кожної групи (Доктрина мережі, Школа вчених, Видобуток, Школа польоту) можна обрати лише одну. Передумати можна за колби Аврори — і вибрати інакше.'],
+                ['#e8c860', '🏡 Дім гільдії', 'У вікні гільдії нова вкладка «Дім»: п’ять кімнат по три рівні (Камін, Бібліотека, Зброярня, Комора, Вежа неба). Всі вносять предмети, а кімнати дають постійні бонуси всім учасникам. Будинок живий: світяться вікна, йде дим, навколо стяга літають ліхтарі.'],
+                ['#ffb0ff', '🎚 Обтяження', 'Під час створення світу можна обрати добровільні ускладнення (міцніші вороги, крихке тіло, тяжка смерть, швидкий розпад, свинцеві крила, довші кордони). Чим більше очок, тим більше досвіду та золота з босів.'],
+                ['#9fe8b0', '📖 Книга таємниць Аврорії', 'Увійди в Аврорію — отримаєш Книгу таємниць. 17 відкриттів із уривками історії, нагородами й титулами, від Мандрівника до Хранителя Аврорії. Прогрес у кожного гравця свій.']
+            ],
             '46.70': [
                 ['#ffe7a8', '🪽 Чотири крила', 'Крила Світанку, Нічні крила Ткача, Крила Ігнарох і Крила Серафима Аврорії — від слабших до найкращих. Не крафтяться: випадають з босів (чим сильніший бос, тим кращі крила; гарантовано раз на ~13 перемог) і зрідка лежать у скринях. Вдягаються в слот аксесуара, по одному.'],
                 ['#9ff0ff', '🕊 Політ', 'Тримай стрибок у повітрі — підйом, відпусти — ширяння без шкоди від падіння, Shift — зависання (крила III–IV), S — пікірування. Сила польоту видна смужкою над героєм і відновлюється на землі. Крила анімовані, лишають сліди: пір’я, зорі, жар, сяйво.'],
