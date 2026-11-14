@@ -59168,8 +59168,8 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
 .cg-cat:hover{filter:brightness(1.25)}
 .cg-cat.on{background:#3a2f12;border-color:#ffd23a;box-shadow:0 0 12px #ffd23a55}
 .cg-cat b{position:absolute;right:-7px;top:-6px;background:#2a8d5b;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 6px;border:2px solid #111a2c}
-.cg-cat i{display:none;position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;background:#0a0f1c;border:1px solid #ffd23a;border-radius:7px;padding:4px 9px;font-style:normal;font-size:12.5px;font-weight:700;color:#fff;z-index:6;pointer-events:none}
-.cg-cat:hover i{display:block}
+.cg-cat i{display:none}
+#cg-tt{position:fixed;z-index:30;display:none;white-space:nowrap;background:#0a0f1c;border:1px solid #ffd23a;border-radius:7px;padding:5px 10px;font-size:12.5px;font-weight:700;color:#fff;pointer-events:none;box-shadow:0 4px 14px #000a}
 .cg-main{display:flex;flex-direction:column;min-height:0;min-width:0}
 .cg-tools{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 .cg-q{flex:1;display:flex;align-items:center;gap:8px;background:#0c1424;border:2px solid #34476b;border-radius:10px;padding:0 12px;height:40px}
@@ -59228,19 +59228,19 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
 .cg-ref .cg-btn{height:34px;font-size:12px;flex:1}
 /* вкладка інвентарю: компактна панель */
 #zcg-pane{display:flex;flex-direction:column;gap:12px;min-height:0;flex:1}
-.zp-card{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:linear-gradient(#1f2c47,#16203a);border:2px solid #3b4d6e;cursor:pointer;position:relative}
-.zp-card:hover{border-color:#ffd23a;filter:brightness(1.1)}
-.zp-ham{position:relative;width:60px;height:60px;border-radius:14px;background:linear-gradient(#f0b94a,#c9852b);border:2px solid #ffe08a;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 20px #f0b94a77;flex:none}
-.zp-ham i{position:absolute;right:-8px;top:-8px;background:#e04a4a;color:#fff;font:800 12px 'Segoe UI';border-radius:10px;padding:2px 7px;border:2px solid #111a2c}
-.zp-card b{display:block;font-size:17px;color:#fff}.zp-card b small{color:#7f93b8;font-weight:600;font-size:12.5px}
-.zp-card span{color:#9fb4d8;font-size:12.5px}
-.zp-h{font-size:12px;font-weight:800;color:#9fb4d8;letter-spacing:.4px;text-transform:uppercase}
-.zp-grid{display:grid;grid-template-columns:repeat(auto-fill,58px);gap:6px;overflow-y:auto;min-height:0;padding:4px 4px 6px 2px;scrollbar-width:thin;scrollbar-color:#c58a1d #0b0e13}
-.zp-grid .cg-cell{width:58px;height:58px}.zp-grid .cg-cell img{width:38px;height:38px}
-.zp-none{color:#7f93b8;font-size:13px;padding:10px 4px;line-height:1.4}
-.zp-link{background:none;border:0;color:#7f93b8;font:600 12px 'Segoe UI';cursor:pointer;text-decoration:underline;padding:2px;align-self:flex-start}.zp-link:hover{color:#cfe0ff}
+.cgp-card{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:linear-gradient(#1f2c47,#16203a);border:2px solid #3b4d6e;cursor:pointer;position:relative}
+.cgp-card:hover{border-color:#ffd23a;filter:brightness(1.1)}
+.cgp-ham{position:relative;width:60px;height:60px;border-radius:14px;background:linear-gradient(#f0b94a,#c9852b);border:2px solid #ffe08a;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 20px #f0b94a77;flex:none}
+.cgp-ham i{position:absolute;right:-8px;top:-8px;background:#e04a4a;color:#fff;font:800 12px 'Segoe UI';border-radius:10px;padding:2px 7px;border:2px solid #111a2c}
+.cgp-card b{display:block;font-size:17px;color:#fff}.cgp-card b small{color:#7f93b8;font-weight:600;font-size:12.5px}
+.cgp-card span{color:#9fb4d8;font-size:12.5px}
+.cgp-h{font-size:12px;font-weight:800;color:#9fb4d8;letter-spacing:.4px;text-transform:uppercase}
+.cgp-grid{display:grid;grid-template-columns:repeat(auto-fill,58px);gap:6px;overflow-y:auto;min-height:0;padding:4px 4px 6px 2px;scrollbar-width:thin;scrollbar-color:#c58a1d #0b0e13}
+.cgp-grid .cg-cell{width:58px;height:58px}.cgp-grid .cg-cell img{width:38px;height:38px}
+.cgp-none{color:#7f93b8;font-size:13px;padding:10px 4px;line-height:1.4}
+.cgp-link{background:none;border:0;color:#7f93b8;font:600 12px 'Segoe UI';cursor:pointer;text-decoration:underline;padding:2px;align-self:flex-start}.cgp-link:hover{color:#cfe0ff}
 #inventory-modal:not(.zcg-legacy) .crafting-section>:not(h3):not(#zcg-pane){display:none!important}
-#inventory-modal.zcg-legacy #zcg-pane .zp-card,#inventory-modal.zcg-legacy #zcg-pane .zp-h,#inventory-modal.zcg-legacy #zcg-pane .zp-grid,#inventory-modal.zcg-legacy #zcg-pane .zp-none{display:none}
+#inventory-modal.zcg-legacy #zcg-pane .cgp-card,#inventory-modal.zcg-legacy #zcg-pane .cgp-h,#inventory-modal.zcg-legacy #zcg-pane .cgp-grid,#inventory-modal.zcg-legacy #zcg-pane .cgp-none{display:none}
 #inventory-modal.zcg-legacy #zcg-pane{flex:none;gap:4px;margin-bottom:6px}
 #item-tooltip{z-index:2200!important}
 @media (max-width:900px){.cg-body{grid-template-columns:104px 1fr}.cg-det{display:none}}
@@ -59260,10 +59260,16 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
         $('cg-x').onclick = close;
         const q = $('cg-q'); q.addEventListener('input', () => { const s = $('craft-q'); if (s) { s.value = q.value; s.dispatchEvent(new Event('input', { bubbles: true })); } });
         $('cg-can').onclick = () => { const b = document.querySelector('#craft-cats button.can'); if (b) b.click(); };
-        ov.addEventListener('click', onClick); ov.addEventListener('mousemove', onMove); ov.addEventListener('mouseleave', () => hideTipSafe());
+        ov.addEventListener('click', onClick); ov.addEventListener('mousemove', onMove); ov.addEventListener('mouseover', onCatTip); ov.addEventListener('mouseleave', () => hideTipSafe());
         ov.addEventListener('wheel', e => { const t = e.target.closest && e.target.closest('.cg-qty'); if (t && cur()) { e.preventDefault(); step(e.deltaY < 0 ? 1 : -1, e.shiftKey); } }, { passive: false });
     }
-    function hideTipSafe() { try { hideTooltip(); } catch (e) { } curTip = null; }
+    function onCatTip(e) {
+        let tt = $('cg-tt'); if (!tt) { tt = document.createElement('div'); tt.id = 'cg-tt'; ov.appendChild(tt); }
+        const c = e.target.closest && e.target.closest('.cg-cat'); if (!c) { tt.style.display = 'none'; return; }
+        const i = c.querySelector('i'); tt.textContent = i ? i.textContent : ''; tt.style.display = 'block'; const r = c.getBoundingClientRect(), w = tt.offsetWidth;
+        const rl = $('cg-rail') ? $('cg-rail').getBoundingClientRect() : r; tt.style.left = Math.min(innerWidth - w - 6, rl.right + 4) + 'px'; tt.style.top = (r.top + r.height / 2 - tt.offsetHeight / 2) + 'px';
+    }
+    function hideTipSafe() { try { const t = $('cg-tt'); if (t) t.style.display = 'none'; } catch (e) { } try { hideTooltip(); } catch (e) { } curTip = null; }
 
     // ---------- малювання ----------
     function schedule() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; refresh(); }); }
@@ -59375,18 +59381,18 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
     function paneInit() {
         if ($('zcg-pane')) return; const sec = document.querySelector('#inventory-modal .crafting-section'); if (!sec) return; css();
         const p = document.createElement('div'); p.id = 'zcg-pane';
-        p.innerHTML = '<div class="zp-card" id="zp-open" title="Відкрити сітку рецептів [C]"><div class="zp-ham">🔨<i id="zp-n">0</i></div><div><b>Крафт <small>[C]</small></b><span>Натисни — відкриється сітка всіх рецептів</span></div></div><div class="zp-h">Можна створити зараз</div><div class="zp-grid" id="zp-grid"></div><button class="zp-link" id="zp-leg">☰ Показати старий список</button>';
+        p.innerHTML = '<div class="cgp-card" id="cgp-open" title="Відкрити сітку рецептів [C]"><div class="cgp-ham">🔨<i id="cgp-n">0</i></div><div><b>Крафт <small>[C]</small></b><span>Натисни — відкриється сітка всіх рецептів</span></div></div><button class="cgp-link" id="cgp-leg">☰ Показати старий список</button>';
         const h3 = sec.querySelector('h3'); if (h3) h3.after(p); else sec.prepend(p);
         const m = $('inventory-modal'); try { if (localStorage.getItem(LS) === '1') { m.classList.add('zcg-legacy'); legLabel(); } } catch (e) { }
         p.addEventListener('click', e => {
-            if (e.target.closest('#zp-leg')) { const on = m.classList.toggle('zcg-legacy'); try { localStorage.setItem(LS, on ? '1' : '0'); } catch (er) { } legLabel(); try { renderCraftingRecipes(); } catch (er) { } return; }
+            if (e.target.closest('#cgp-leg')) { const on = m.classList.toggle('zcg-legacy'); try { localStorage.setItem(LS, on ? '1' : '0'); } catch (er) { } legLabel(); try { renderCraftingRecipes(); } catch (er) { } return; }
             const c = e.target.closest('.cg-cell'); if (c && c.dataset.id) { try { catSet(catOf(c.dataset.id)); } catch (er) { } openCg(c.dataset.id); return; }
-            if (e.target.closest('#zp-open')) openCg();
+            if (e.target.closest('#cgp-open')) openCg();
         });
         p.addEventListener('mousemove', e => { const c = e.target.closest && e.target.closest('.cg-cell'); if (!c || !c.dataset.id) { if (curTip) hideTipSafe(); return; } try { showTooltip(e, c.dataset.id); curTip = c.dataset.id; } catch (er) { } });
         p.addEventListener('mouseleave', hideTipSafe);
     }
-    function legLabel() { const m = $('inventory-modal'), b = $('zp-leg'); if (!b) return; b.textContent = m.classList.contains('zcg-legacy') ? '🔨 Повернути сітку' : '☰ Показати старий список'; }
+    function legLabel() { const m = $('inventory-modal'), b = $('cgp-leg'); if (!b) return; b.textContent = m.classList.contains('zcg-legacy') ? '🔨 Повернути сітку' : '☰ Показати старий список'; }
     function craftableAll() {
         const out = []; if (typeof recipes === 'undefined') return out;
         for (const r of recipes) { try {
@@ -59396,11 +59402,9 @@ ${Bq}note] .nt h3{margin:0 0 10px;text-align:center;font-size:22px;color:#3a2410
         } catch (e) { } }
         return out;
     }
-    function stripCell(r) { return '<button class="cg-cell can" data-id="' + esc(r.result) + '"><img src="' + esc(spr(r.result)) + '">' + (r.count > 1 ? '<b>×' + r.count + '</b>' : '') + '</button>'; }
     function paneRefresh() {
-        paneInit(); const g = $('zp-grid'); if (!g) return; const can = craftableAll();
-        const n = $('zp-n'); if (n) { n.textContent = can.length; n.style.display = can.length ? '' : 'none'; }
-        g.innerHTML = can.length ? can.slice(0, 40).map(stripCell).join('') + (can.length > 40 ? '<div class="zp-none">…+' + (can.length - 40) + '</div>' : '') : '<div class="zp-none">Зараз нічого не вдасться створити. Збери матеріали або стань біля верстака — а повний перелік рецептів у сітці.</div>';
+        paneInit(); const can = craftableAll();
+        const n = $('cgp-n'); if (n) { n.textContent = can.length; n.style.display = can.length ? '' : 'none'; }
     }
 
     // ---------- клавіатура ----------
